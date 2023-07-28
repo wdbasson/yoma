@@ -8,7 +8,7 @@ namespace Yoma.Core.Domain.Core
         [Description("Local")]
         Local,
         [Description("Development")]
-        Develop,
+        Dev,
         [Description("Testing / Staging")]
         Stage,
         [Description("Production")]
