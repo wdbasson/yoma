@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  yoma-web-app:
+    platform: "linux/amd64"
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # args:
+      # CLIENT VARIABLES
+      #   - NEXTAUTH_SECRET=0vpMHSn0ufXwrEr1NKn6u1m+BKryJct5Cj7Jwt9mSSU=
+      #   - NEXTAUTH_URL=http://localhost:3000
+      #   - KEYCLOAK_ISSUER=http://keycloak:8080/realms/yoma
+      #   - KEYCLOAK_CLIENT_ID=yoma-web-app
+      #   - KEYCLOAK_CLIENT_SECRET=secret
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    image: ${REGISTRY:-local}/yoma-web-app:${IMAGE_TAG:-latest}
+    environment:
+      # SERVER VARIABLES
+      - NEXTAUTH_SECRET=0vpMHSn0ufXwrEr1NKn6u1m+BKryJct5Cj7Jwt9mSSU=
+      - NEXTAUTH_URL=http://localhost:3000
+      - KEYCLOAK_ISSUER=http://host.docker.internal:8080/realms/yoma
+      - KEYCLOAK_CLIENT_ID=yoma-web-app
+      - KEYCLOAK_CLIENT_SECRET=secret
