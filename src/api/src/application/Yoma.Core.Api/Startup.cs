@@ -37,7 +37,7 @@ namespace Yoma.Core.Api
                .Get<KeycloakAuthenticationOptions>();
 
             if (keycloakAuthenticationOptions == null)
-                throw new InvalidOperationException($"Failed to retrieve configuration section '{KeycloakAuthenticationOptions.Section}.{nameof(KeycloakAuthenticationOptions)}'");
+                throw new InvalidOperationException($"Failed to retrieve configuration section '{KeycloakAuthenticationOptions.Section}'");
 
             _keycloakAuthenticationOptions = keycloakAuthenticationOptions;
         }
