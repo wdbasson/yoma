@@ -35,14 +35,14 @@ namespace Yoma.Core.Api.Controllers
         #region Constructors
         public KeycloakController(ILogger<KeycloakController> logger,
           IOptions<AppSettings> appSettings,
-          KeycloakAuthenticationOptions keycloakAuthenticationOptions,
+          IOptions<KeycloakAuthenticationOptions> keycloakAuthenticationOptions,
           IUserService userService,
           IGenderService genderService,
           ICountryService countryService)
         {
             _logger = logger;
             _appSettings = appSettings.Value;
-            _keycloakAuthenticationOptions = keycloakAuthenticationOptions;
+            _keycloakAuthenticationOptions = keycloakAuthenticationOptions.Value;
             _userService = userService;
             _genderService = genderService;
             _countryService = countryService;

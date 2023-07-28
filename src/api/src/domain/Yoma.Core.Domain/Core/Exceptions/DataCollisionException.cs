@@ -5,5 +5,9 @@ namespace Yoma.Core.Domain.Exceptions
         public DataCollisionException(string message) : base(message)
         {
         }
+
+        public DataCollisionException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
     }
 }
