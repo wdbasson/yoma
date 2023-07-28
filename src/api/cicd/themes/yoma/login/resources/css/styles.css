@@ -1,0 +1,157 @@
+.login-pf,
+.login-pf body {
+    background: none;
+    background-image: linear-gradient(to right, rgb(249, 171, 63) 50%, #f5f6f8 50%);
+    color: #0a0c0d;
+}
+
+h1#kc-page-title {
+    color: #020304;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.2;
+    padding: 0 20px;
+}
+
+.form-group:has(> div > input#terms_and_conditions) {
+    display: none;
+}
+
+.login-pf-page .login-pf-page-header {
+    margin-bottom: 20px;
+    text-align: left;
+
+}
+
+.login-pf-page .card-pf {
+    padding: 20px 40px 30px 40px;
+    padding-top: 20px;
+    padding-right: 20px;
+    padding-bottom: 80px;
+    padding-left: 20px;
+    background-color: white;
+    border-radius: 25px;
+    border: none;
+    box-shadow: none;
+}
+
+#kc-info-wrapper {
+    font-size: 13px;
+    padding: 15px 35px;
+    background-color: #461d4d;
+    color: white;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 16px;
+    height: 48px;
+    width: 50%;
+    margin: 0 auto;
+    display: block;
+}
+
+.pf-c-button.pf-m-primary {
+    font-size: 13px;
+    padding: 15px 35px;
+    background-color: #461d4d;
+    color: white;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 16px;
+    height: 48px;
+    width: 60%;
+    margin: 0 auto;
+    display: block;
+}
+
+.pf-c-form-control:not(textarea) {
+    font-size: 13px;
+    background-color: #e6e8eb;
+    color: #495057;
+    border-radius: 50px;
+    font-size: 16px;
+    height: 48px;
+    width: 90%;
+    margin: 0 auto;
+    display: block;
+    border-color: white;
+    border: solid;
+    border: 1px;
+    padding: 0 16px;
+    /* Add padding for the text */
+}
+
+/* Add styles for the placeholder text */
+.pf-c-form-control:not(textarea)::placeholder {
+    color: #a0a0a0;
+    /* Placeholder text color */
+    font-size: 16px;
+    /* Placeholder text font size */
+}
+
+a {
+    color: #387f6a;
+    text-align: center;
+    display: block;
+    width: 100%;
+}
+
+.grey-hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 10px 0;
+}
+
+#kc-register-form div {
+    text-align: left;
+    margin-left: 10px;
+}
+
+.login-pf body {
+    color: #495057;
+    text-align: left;
+    padding: 15px 35px;
+    margin-left: 10px;
+}
+
+.centered-div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.centered-subTitles {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: -20px;
+    margin-bottom: 20px;
+}
+
+.centered-label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.centered-checkbox {
+    margin-top: 10px;
+}
+
+.page-footer {
+    text-align: center;
+    background-color: #461d4d;
+    color: white;
+    padding: 20px;
+}
+
+.text-left {
+    text-align: left;
+    padding: 15px 35px;
+    margin-left: 10px;
+}
+
+.white-link {
+    color: white;
+    /* Add any additional styling for the link if needed */
+  }

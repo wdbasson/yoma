@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "./variables.module.scss";
+
+@layer base {
+  h1 {
+    @apply text-2xl;
+  }
+  h2 {
+    @apply text-xl;
+  }
+  /* ... */
+}
+
+.container-centered {
+  @apply container flex flex-col items-center justify-center gap-8 px-4 py-16;
+}
+
+.container-content {
+  @apply flex w-full max-w-[500px] flex-col;
+}
