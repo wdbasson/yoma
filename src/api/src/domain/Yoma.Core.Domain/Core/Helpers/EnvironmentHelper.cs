@@ -9,7 +9,7 @@
                 throw new ArgumentNullException(nameof(environment));
 
             var ret = Environment.None;
-            if (!Enum.TryParse(environment, out ret) || ret == Environment.None)
+            if (!Enum.TryParse(environment, true, out ret) || ret == Environment.None)
                 throw new ArgumentException($"Environment of '{environment}' not supported", nameof(environment));
 
             return ret;

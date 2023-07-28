@@ -26,13 +26,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SQL Scripts", "SQL Scripts", "{7CCA4173-A4C1-4A54-81DA-E6168DA5EB2B}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Local_Development", "Local_Development", "{EE8B7DE1-A281-4A28-82EA-F9030CBD15F6}"
-	ProjectSection(SolutionItems) = preProject
-		SQL Scripts\Local_Development\Post_Deployment.sql = SQL Scripts\Local_Development\Post_Deployment.sql
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,8 +61,6 @@ Global
 		{C0F0CBD7-1158-4CCD-9FB6-CD3CCA25B520} = {9F319868-A317-4569-AB7C-626B5729BE46}
 		{3A4B8F53-EE12-46A8-8A6B-24C598021FE4} = {2129F035-3D60-4CC4-AE25-9BFEE9340D8D}
 		{4F0A62C2-A213-41E5-BFA2-B7AEF98D46D0} = {05D8FFFB-7247-4182-AB28-DA5C1006E209}
-		{7CCA4173-A4C1-4A54-81DA-E6168DA5EB2B} = {E7BFE753-E55E-411C-8C02-9D1AEBBABE60}
-		{EE8B7DE1-A281-4A28-82EA-F9030CBD15F6} = {7CCA4173-A4C1-4A54-81DA-E6168DA5EB2B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D658A68F-8A10-4EF2-B8C9-F1350399BF58}
