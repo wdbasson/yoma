@@ -9,7 +9,7 @@ namespace Yoma.Core.Infrastructure.Database.Lookups.Entities
     [Index(nameof(Name), IsUnique = true)]
     public class Country : BaseEntity<Guid>
     {
-        [Column(TypeName = "varchar(20)")]
+        [Column(TypeName = "varchar(125)")]
         public string Name { get; set; }
 
         [Column(TypeName = "varchar(2)")]

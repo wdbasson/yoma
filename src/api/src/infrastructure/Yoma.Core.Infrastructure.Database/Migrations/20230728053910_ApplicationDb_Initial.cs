@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
+using static Yoma.Core.Infrastructure.Database.Migrations._20230728053910_ApplicationDb_Initial_Seeding;
 
 #nullable disable
 
@@ -25,7 +26,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "varchar(20)", nullable: false),
+                    Name = table.Column<string>(type: "varchar(125)", nullable: false),
                     CodeAlpha2 = table.Column<string>(type: "varchar(2)", nullable: false),
                     CodeAlpha3 = table.Column<string>(type: "varchar(3)", nullable: false),
                     CodeNumeric = table.Column<string>(type: "varchar(3)", nullable: false),
@@ -404,6 +405,8 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 table: "UserSkills",
                 columns: new[] { "UserId", "SkillId" },
                 unique: true);
+
+            ApplicationDb_Initial_Seeding.Seed(migrationBuilder);
         }
 
         /// <inheritdoc />

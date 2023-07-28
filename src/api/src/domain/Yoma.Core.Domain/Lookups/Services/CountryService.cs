@@ -87,7 +87,7 @@ namespace Yoma.Core.Domain.Lookups.Services
             {
                 entry.SlidingExpiration = TimeSpan.FromHours(_appSettings.CacheSlidingExpirationLookupInHours);
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(_appSettings.CacheAbsoluteExpirationRelativeToNowLookupInDays);
-                return _countryRepository.Query().ToList();
+                return _countryRepository.Query().OrderBy(o => o.Name).ToList();
             });
 
             if (result == null)
