@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Yoma.Core.Domain.Core.Interfaces;
+﻿using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Entity.Extensions;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Models;
@@ -13,6 +12,9 @@ using Yoma.Core.Domain.Keycloak;
 using Yoma.Core.Domain.Core.Extensions;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Exceptions;
+using Yoma.Core.Domain.Entity.Validators;
+using FluentValidation;
+using System.Transactions;
 
 namespace Yoma.Core.Domain.Entity.Services
 {
@@ -23,6 +25,8 @@ namespace Yoma.Core.Domain.Entity.Services
         private readonly KeycloakAuthenticationOptions _keycloakAuthenticationOptions;
         private readonly IGenderService _genderService;
         private readonly ICountryService _countryService;
+        private readonly UserValidator _userValidator;
+        private readonly UserProfileRequestValidator _userProfileRequestValidator;
         private readonly IRepository<User> _userRepository;
         #endregion
 
@@ -31,12 +35,16 @@ namespace Yoma.Core.Domain.Entity.Services
             IOptions<KeycloakAuthenticationOptions> keycloakAuthenticationOptions,
             IGenderService genderService,
             ICountryService countryService,
+            UserValidator userValidator,
+            UserProfileRequestValidator userProfileRequestValidator,
             IRepository<User> userRepository)
         {
             _appSettings = appSettings.Value;
             _keycloakAuthenticationOptions = keycloakAuthenticationOptions.Value;
             _genderService = genderService;
             _countryService = countryService;
+            _userValidator = userValidator;
+            _userProfileRequestValidator = userProfileRequestValidator;
             _userRepository = userRepository;
         }
         #endregion
@@ -80,8 +88,8 @@ namespace Yoma.Core.Domain.Entity.Services
         {
             var user = GetByEmail(email);
 
-            //TODO: validate model
-
+            await _userProfileRequestValidator.ValidateAndThrowAsync(request);
+            
             var emailUpdated = !string.Equals(user.Email, request.Email, StringComparison.CurrentCultureIgnoreCase);
             if (emailUpdated)
                 if (GetByEmailOrNull(request.Email) != null)
@@ -98,10 +106,15 @@ namespace Yoma.Core.Domain.Entity.Services
             user.GenderId = request.GenderId;
             user.DateOfBirth = request.DateOfBirth;
 
-            await _userRepository.Update(user);
-            user.DateModified = DateTimeOffset.Now;
+            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
+            {
+                await _userRepository.Update(user);
+                user.DateModified = DateTimeOffset.Now;
 
-            await updateKeycloak(user, request.ResetPassword);
+                await updateKeycloak(user, request.ResetPassword);
+
+                scope.Complete();
+            }
 
             return user;
         }
@@ -109,27 +122,42 @@ namespace Yoma.Core.Domain.Entity.Services
         public async Task<User> Upsert(User request)
         {
             if (request == null)
-                throw new ArgumentNullException();
+                throw new ArgumentNullException(nameof(request));
 
-            //TODO: validate model
+            await _userValidator.ValidateAndThrowAsync(request);
 
             // check if user exists
             var isNew = !request.Id.HasValue;
             var user = !request.Id.HasValue ? new User { Id = Guid.NewGuid() } : GetById(request.Id.Value);
 
-            //TODO: validate email; update keycloak; verify email
+            var existingByEmail = GetByEmailOrNull(user.Email);
+            if (existingByEmail != null && (isNew || user.Id != existingByEmail.Id))
+                throw new ValidationException($"An user with the specified email address '{request.Email}' already exists");
 
-            user.Email = request.Email;
+            //profile fields updatable via UpdateProfile; Keycloak is source of truth
+            if (isNew)
+            {
+                //ensure user exists in keycloak
+                using var httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl,
+                    _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);
+                using var usersApi = ApiClientFactory.Create<UsersApi>(httpClient);
+                var kcUser = (await usersApi.GetUsersAsync(_keycloakAuthenticationOptions.Realm, username: user.Email, exact: true)).SingleOrDefault();
+                if (kcUser == null)
+                    throw new InvalidOperationException($"User with email '{user.Email}' does not exist in Keycloak");
+
+                user.Email = request.Email;
+                user.FirstName = request.FirstName;
+                user.Surname = request.Surname;
+                user.SetDisplayName();
+                user.PhoneNumber = request.PhoneNumber;
+                user.CountryId = request.CountryId;
+                user.CountryOfResidenceId = request.CountryOfResidenceId;
+                user.GenderId = request.GenderId;
+                user.DateOfBirth = request.DateOfBirth;
+            }
+
             user.EmailConfirmed = request.EmailConfirmed;
-            user.FirstName = request.FirstName;
-            user.Surname = request.Surname;
-            user.DisplayName = request.DisplayName;
-            user.PhoneNumber = request.PhoneNumber;
-            user.CountryId = request.CountryId;
-            user.CountryOfResidenceId = request.CountryOfResidenceId;
             user.PhotoId = request.PhotoId;
-            user.GenderId = request.GenderId;
-            user.DateOfBirth = request.DateOfBirth;
             user.DateLastLogin = request.DateLastLogin;
             user.ExternalId = request.ExternalId;
             user.ZltoWalletId = request.ZltoWalletId;

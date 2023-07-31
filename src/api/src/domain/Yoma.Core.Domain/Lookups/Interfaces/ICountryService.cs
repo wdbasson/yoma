@@ -14,6 +14,8 @@ namespace Yoma.Core.Domain.Lookups.Interfaces
 
         Country GetById(Guid id);
 
+        Country? GetByIdOrNull(Guid id);
+
         List<Country> List();
     }
 }

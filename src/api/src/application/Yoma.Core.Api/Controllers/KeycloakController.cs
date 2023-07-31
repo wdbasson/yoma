@@ -86,9 +86,10 @@ namespace Yoma.Core.Api.Controllers
                 {
                     if (!authorized) return;
 
-                    _logger.LogInformation("Received Keycloak Event: " + JsonConvert.SerializeObject(payload, Formatting.Indented));
+                    var sType = payload.type;
+                    _logger.LogInformation($"{sType} event received");
 
-                    Enum.TryParse<WebhookRequestEventType>(payload.type, true, out var type);
+                    Enum.TryParse<WebhookRequestEventType>(sType, true, out var type);
 
                     switch (type)
                     {
@@ -110,7 +111,7 @@ namespace Yoma.Core.Api.Controllers
                             break;
 
                         default:
-                            _logger.LogInformation($"Unknown event type of '{payload.type}' receive. Processing skipped");
+                            _logger.LogInformation($"Unknown event type of '{sType}' receive. Processing skipped");
                             return;
                     }
                 });

@@ -1,5 +1,4 @@
-﻿using FluentValidation;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net;
@@ -16,18 +15,15 @@ namespace Yoma.Core.Api.Controllers
     {
         #region Class Variables
         private readonly ILogger<UserController> _logger;
-        private IValidator<User> _userValidator;
         private readonly IUserService _userService;
         #endregion
 
         #region Constructor
         public UserController(
             ILogger<UserController> logger,
-            IValidator<User> userValidator,
             IUserService userService)
         {
             _logger = logger;
-            _userValidator = userValidator;
             _userService = userService;
         }
         #endregion
@@ -68,11 +64,11 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Update the authenticated user's profile, within Yoma and Keycloak, optionally requesting a email verification and/or password reset")]
         [HttpPatch()]
         [ProducesResponseType(typeof(User), (int)HttpStatusCode.OK)]
-        public IActionResult UpdateProfile([FromBody] UserProfileRequest profile)
+        public async Task<IActionResult> UpdateProfile([FromBody] UserProfileRequest profile)
         {
-            _logger.LogInformation($"Handling request {nameof(UpdateProfile)} ({nameof(profile)}: {profile}");
+            _logger.LogInformation($"Handling request {nameof(UpdateProfile)}");
 
-            var result = _userService.UpdateProfile(HttpContext.User.Identity?.Name, profile);
+            var result = await _userService.UpdateProfile(HttpContext.User.Identity?.Name, profile);
 
             _logger.LogInformation($"Request {nameof(UpdateProfile)} handled");
 

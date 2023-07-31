@@ -10,6 +10,8 @@ namespace Yoma.Core.Domain.Lookups.Interfaces
 
         Gender GetById(Guid id);
 
+        Gender? GetByIdOrNull(Guid id);
+
         List<Gender> List();
     }
 }

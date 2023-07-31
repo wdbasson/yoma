@@ -1,6 +1,7 @@
 ﻿namespace Yoma.Core.Domain.Entity.Models
 {
     public class User
+
     {
         #region Public Members
         public Guid? Id { get; set; }
@@ -18,18 +19,14 @@
         public string? PhoneNumber { get; set; }
 
         public Guid? CountryId { get; set; }
-        
-        public string? CountryCodeAlpha2 { get; set; }
 
         public Guid? CountryOfResidenceId { get; set; }
-
-        public string? CountryOfResidenceCodeAlpha2 { get; set; }
-
-        public Guid? PhotoId { get; set; }
 
         public Guid? GenderId { get; set; }
 
         public DateTimeOffset? DateOfBirth { get; set; }
+
+        public Guid? PhotoId { get; set; }
 
         public DateTimeOffset? DateLastLogin { get; set; }
 

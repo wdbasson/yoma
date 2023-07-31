@@ -67,15 +67,20 @@ namespace Yoma.Core.Domain.Lookups.Services
 
         public Country GetById(Guid id)
         {
-            if (id == Guid.Empty)
-                throw new ArgumentNullException(nameof(id));
-
-            var result = List().SingleOrDefault(o => o.Id == id);
+            var result = GetByIdOrNull(id);
 
             if (result == null)
                 throw new ArgumentException($"{nameof(Gender)} for '{id}' does not exists", nameof(id));
 
             return result;
+        }
+
+        public Country? GetByIdOrNull(Guid id)
+        {
+            if (id == Guid.Empty)
+                throw new ArgumentNullException(nameof(id));
+
+            return List().SingleOrDefault(o => o.Id == id);
         }
 
         public List<Country> List()
