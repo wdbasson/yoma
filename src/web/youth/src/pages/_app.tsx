@@ -9,6 +9,8 @@ import type { AppProps } from "next/app";
 import { type AppType } from "next/app";
 import type { ReactElement, ReactNode } from "react";
 import { useState } from "react";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { config } from "~/lib/react-query-config";
 import "~/styles/globals.scss";
 
@@ -35,7 +37,11 @@ const MyApp: AppType<object> = ({
     <ThemeProvider attribute="class" enableSystem={false} defaultTheme="light">
       <QueryClientProvider client={queryClient}>
         <Hydrate state={pageProps.dehydratedState}>
-          <Component {...pageProps} />{" "}
+          <Component {...pageProps} />
+          <ToastContainer
+            containerId="toastContainer"
+            className="mt-16 w-full md:mt-10 md:w-[340px]"
+          />
         </Hydrate>
       </QueryClientProvider>
     </ThemeProvider>
