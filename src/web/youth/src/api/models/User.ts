@@ -1,15 +1,16 @@
 export interface User {
-  id: string;
+  id: string | null;
+  email: string;
   emailConfirmed: boolean;
+  firstName: string;
+  surname: string;
   displayName: string | null;
   phoneNumber: string | null;
   countryId: string | null;
-  countryCodeAlpha2: string | null;
   countryOfResidenceId: string | null;
-  countryOfResidenceCodeAlpha2: string | null;
-  photoId: string | null;
   genderId: string | null;
   dateOfBirth: string | null;
+  photoId: string | null;
   dateLastLogin: string | null;
   externalId: string | null;
   zltoWalletId: string | null;

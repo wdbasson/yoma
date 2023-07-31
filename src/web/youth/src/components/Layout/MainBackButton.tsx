@@ -48,7 +48,7 @@ const MainBackButtonLayout: LayoutProps = ({
         </Head>
         <NavbarBackButton rightMenuChildren={rightMenuChildren} />
         {/* items-center justify-center */}
-        <main className="flex min-h-screen flex-col items-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
+        <main className="flex min-h-screen flex-col items-center bg-white dark:bg-slate-800">
           {children}
         </main>
         <Footer />

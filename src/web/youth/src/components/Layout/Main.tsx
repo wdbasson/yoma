@@ -45,7 +45,7 @@ const MainLayout: LayoutProps = ({
         </Head>
         <Navbar />
         {/* items-center justify-center */}
-        <main className="flex min-h-screen flex-col bg-gradient-to-b from-[#2e026d] to-[#15162c]">
+        <main className="flex min-h-screen flex-col bg-white dark:bg-slate-800">
           {children}
         </main>
         <Footer />
