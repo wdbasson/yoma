@@ -16,7 +16,6 @@ using Yoma.Core.Domain.Entity.Validators;
 using FluentValidation;
 using System.Transactions;
 using Microsoft.AspNetCore.Http;
-using Amazon.S3.Model;
 
 namespace Yoma.Core.Domain.Entity.Services
 {
