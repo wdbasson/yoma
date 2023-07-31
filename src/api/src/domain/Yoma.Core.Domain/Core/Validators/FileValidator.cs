@@ -13,17 +13,17 @@ namespace Yoma.Core.Domain.Core.Validators
         {
             switch (type)
             {
-                case FileTypeEnum.Photo:
+                case FileTypeEnum.Photos:
                     extensions = new[] { ".png", ".jpg", ".jpeg", ".svg", ".webp" };
                     maxSizeBytes = 5000000;
                     break;
 
-                case FileTypeEnum.Certificate:
+                case FileTypeEnum.Certificates:
                     extensions = new[] { ".pdf" };
                     maxSizeBytes = 25000000;
                     break;
 
-                case FileTypeEnum.RegistrationDocument:
+                case FileTypeEnum.RegistrationDocuments:
                     extensions = new[] { ".pdf" };
                     maxSizeBytes = 25000000;
                     break;

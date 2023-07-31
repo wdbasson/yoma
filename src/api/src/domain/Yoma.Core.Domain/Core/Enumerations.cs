@@ -8,11 +8,11 @@ namespace Yoma.Core.Domain.Core
         [Description("Local")]
         Local,
         [Description("Development")]
-        Dev,
+        Development,
         [Description("Testing / Staging")]
-        Stage,
+        Staging,
         [Description("Production")]
-        Prod
+        Production
     }
 
     [Flags]
@@ -24,8 +24,8 @@ namespace Yoma.Core.Domain.Core
 
     public enum FileTypeEnum
     {
-        Photo, //logo and profile photo
-        Certificate,
-        RegistrationDocument
+        Photos, //logo and profile photo
+        Certificates,
+        RegistrationDocuments
     }
 }
