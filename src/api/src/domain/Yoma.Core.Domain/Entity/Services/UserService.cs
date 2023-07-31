@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Yoma.Core.Domain.Core.Interfaces;
+﻿using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Entity.Extensions;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Models;

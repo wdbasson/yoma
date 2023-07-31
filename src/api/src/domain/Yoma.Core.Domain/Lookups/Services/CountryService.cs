@@ -68,9 +68,7 @@ namespace Yoma.Core.Domain.Lookups.Services
         public Country GetById(Guid id)
         {
             var result = GetByIdOrNull(id);
-
-            var result = List().SingleOrDefault(o => o.Id == id);
-
+            
             if (result == null)
                 throw new ArgumentException($"{nameof(Gender)} for '{id}' does not exists", nameof(id));
 
