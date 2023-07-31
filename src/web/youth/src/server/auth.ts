@@ -138,6 +138,8 @@ async function getYomaUserProfile(access_token: string): Promise<User | null> {
 // eslint-disable-next-line
 async function refreshAccessToken(token: any) {
   try {
+    console.log("Refreshing access token...");
+
     const url = process.env.KEYCLOAK_ISSUER + "/protocol/openid-connect/token?";
 
     const response = await fetch(url, {
