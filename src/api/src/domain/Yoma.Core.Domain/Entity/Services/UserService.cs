@@ -1,4 +1,5 @@
-﻿using Yoma.Core.Domain.Core.Interfaces;
+﻿using System.ComponentModel.DataAnnotations;
+using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Entity.Extensions;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Models;
@@ -89,7 +90,7 @@ namespace Yoma.Core.Domain.Entity.Services
             var user = GetByEmail(email);
 
             await _userProfileRequestValidator.ValidateAndThrowAsync(request);
-            
+
             var emailUpdated = !string.Equals(user.Email, request.Email, StringComparison.CurrentCultureIgnoreCase);
             if (emailUpdated)
                 if (GetByEmailOrNull(request.Email) != null)
@@ -108,10 +109,10 @@ namespace Yoma.Core.Domain.Entity.Services
 
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
-                await _userRepository.Update(user);
-                user.DateModified = DateTimeOffset.Now;
+            await _userRepository.Update(user);
+            user.DateModified = DateTimeOffset.Now;
 
-                await updateKeycloak(user, request.ResetPassword);
+            await updateKeycloak(user, request.ResetPassword);
 
                 scope.Complete();
             }
@@ -145,15 +146,17 @@ namespace Yoma.Core.Domain.Entity.Services
                 if (kcUser == null)
                     throw new InvalidOperationException($"User with email '{user.Email}' does not exist in Keycloak");
 
-                user.Email = request.Email;
-                user.FirstName = request.FirstName;
-                user.Surname = request.Surname;
+            user.Email = request.Email;
+            user.EmailConfirmed = request.EmailConfirmed;
+            user.FirstName = request.FirstName;
+            user.Surname = request.Surname;
                 user.SetDisplayName();
-                user.PhoneNumber = request.PhoneNumber;
-                user.CountryId = request.CountryId;
-                user.CountryOfResidenceId = request.CountryOfResidenceId;
-                user.GenderId = request.GenderId;
-                user.DateOfBirth = request.DateOfBirth;
+            user.PhoneNumber = request.PhoneNumber;
+            user.CountryId = request.CountryId;
+            user.CountryOfResidenceId = request.CountryOfResidenceId;
+            user.PhotoId = request.PhotoId;
+            user.GenderId = request.GenderId;
+            user.DateOfBirth = request.DateOfBirth;
             }
 
             user.EmailConfirmed = request.EmailConfirmed;

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net;
@@ -15,15 +16,18 @@ namespace Yoma.Core.Api.Controllers
     {
         #region Class Variables
         private readonly ILogger<UserController> _logger;
+        private IValidator<User> _userValidator;
         private readonly IUserService _userService;
         #endregion
 
         #region Constructor
         public UserController(
             ILogger<UserController> logger,
+            IValidator<User> userValidator,
             IUserService userService)
         {
             _logger = logger;
+            _userValidator = userValidator;
             _userService = userService;
         }
         #endregion

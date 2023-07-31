@@ -788,7 +788,7 @@ clients:
       id.token.signed.response.alg: RS256
       backchannel.logout.session.required: "true"
       client_credentials.use_refresh_token: "false"
-      acr.loa.map: '{}'
+      acr.loa.map: "{}"
       require.pushed.authorization.requests: "false"
       tls.client.certificate.bound.access.tokens: "false"
       display.on.consent.screen: "false"
@@ -890,7 +890,7 @@ clientScopes:
         config: {}
   - id: e7ade252-f739-4f26-8c38-c7b62560f381
     name: profile
-    description: 'OpenID Connect built-in scope: profile'
+    description: "OpenID Connect built-in scope: profile"
     protocol: openid-connect
     attributes:
       include.in.token.scope: "true"
@@ -1088,7 +1088,7 @@ clientScopes:
           jsonType.label: String
   - id: a8fd77e8-02c6-48e4-9105-c67867fff8ab
     name: email
-    description: 'OpenID Connect built-in scope: email'
+    description: "OpenID Connect built-in scope: email"
     protocol: openid-connect
     attributes:
       include.in.token.scope: "true"
@@ -1130,7 +1130,7 @@ clientScopes:
       consent.screen.text: ""
   - id: 918f4f81-39e0-482b-8275-31da2933a0db
     name: phone
-    description: 'OpenID Connect built-in scope: phone'
+    description: "OpenID Connect built-in scope: phone"
     protocol: openid-connect
     attributes:
       include.in.token.scope: "true"
@@ -1272,7 +1272,7 @@ clientScopes:
           access.token.claim: "true"
   - id: 9303bbba-3220-428e-9b45-83a51d872c33
     name: address
-    description: 'OpenID Connect built-in scope: address'
+    description: "OpenID Connect built-in scope: address"
     protocol: openid-connect
     attributes:
       include.in.token.scope: "true"
@@ -1296,7 +1296,7 @@ clientScopes:
           user.attribute.locality: locality
   - id: b0deb57f-c057-45f8-8c87-5af32420ad2a
     name: offline_access
-    description: 'OpenID Connect built-in scope: offline_access'
+    description: "OpenID Connect built-in scope: offline_access"
     protocol: openid-connect
     attributes:
       consent.screen.text: ${offlineAccessScopeConsentText}
@@ -1328,7 +1328,7 @@ smtpServer:
   auth: "true"
   envelopeFrom: ""
   ssl: "false"
-  password: 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
+  password:
   port: "587"
   host: smtp.sendgrid.net
   replyTo: ""
@@ -1564,7 +1564,7 @@ components:
         priority:
           - "100"
 internationalizationEnabled: true
-supportedLocales: [ "en", "fr" ]
+supportedLocales: ["en", "fr"]
 defaultLocale: "en"
 authenticationFlows:
   - id: 06ed9c83-a641-4e98-b063-a0993f629128
@@ -2080,7 +2080,7 @@ attributes:
   cibaExpiresIn: "120"
   de.adorsys.keycloak.config.state-default-roles-client-yoma-web-app-0: '["uma_protection","OrganisationAdmin","Admin","User"]'
   de.adorsys.keycloak.config.state-default-roles-client-admin-cli-0: '["Admin","uma_protection"]'
-  de.adorsys.keycloak.config.state-default-roles-client-security-admin-console-0: '[]'
+  de.adorsys.keycloak.config.state-default-roles-client-security-admin-console-0: "[]"
   frontendUrl: ""
   de.adorsys.keycloak.config.state-default-resources-client-yoma-web-app-0: '["Default Resource"]'
   de.adorsys.keycloak.config.state-default-components-1: nerated"]
@@ -2099,7 +2099,7 @@ attributes:
   de.adorsys.keycloak.config.state-default-resources-client-admin-cli-0: '["Default Resource"]'
   parRequestUriLifespan: "60"
   clientSessionMaxLifespan: "0"
-  acr.loa.map: '{}'
+  acr.loa.map: "{}"
   de.adorsys.keycloak.config.state-default-clients-0: '["account","account-console","admin-cli","broker","realm-management","security-admin-console","yoma-web-app"]'
   de.adorsys.keycloak.config.state-default-roles-client-account-0: '["manage-consent","manage-account-links","manage-account","delete-account","view-groups","view-profile","view-applications","view-consent"]'
 keycloakVersion: 21.1.2

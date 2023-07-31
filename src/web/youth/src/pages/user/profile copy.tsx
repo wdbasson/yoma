@@ -1,10 +1,7 @@
 import { getSession } from "next-auth/react";
-import { useRouter } from "next/router";
-import { useCallback, type ReactElement } from "react";
-import { IoMdPerson, IoMdSettings } from "react-icons/io";
-import MainBackButton from "~/components/Layout/MainBackButton";
+import { type ReactElement } from "react";
 import { useHttpAuth } from "~/hooks/useHttpAuth";
-import MainLayout from "../../components/layout";
+import MainLayout from "../../components/Layout/Main";
 import type { NextPageWithLayout } from "../_app";
 
 const UserProfile: NextPageWithLayout = () => {
@@ -22,53 +19,17 @@ const UserProfile: NextPageWithLayout = () => {
 
   return (
     <>
-      <div className="container-centered">
-        <div className="container-content">
-          <div className="flex flex-col items-center">
-            <div className="relative h-11 w-11 cursor-pointer overflow-hidden rounded-full border-2 hover:border-white">
-              <IoMdPerson className="absolute -left-1 h-12 w-12 text-gray-400 animate-in slide-in-from-top-4" />
-            </div>
-            <h1>Sam Henderson</h1>
-            <h2>South Africa</h2>
-          </div>
+      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
+        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
+          <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
+            Hello
+          </h1>
+          {/* <div>userProfile: {JSON.stringify(userProfile)}</div> */}
+          {<div>session: {JSON.stringify(session?.user.profile)}</div>}
 
-          <div className="flex flex-col items-start gap-2">
-            <h1>Wallet</h1>
-            <ul className="list-disc pl-8">
-              <li>100 $YOMA</li>
-              <li>50 $ZLTO</li>
-            </ul>
-            <div className="flex gap-2 py-4">
-              <button className="btn btn-primary">Receive</button>
-              <button className="btn btn-primary">Send</button>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-start gap-2">
-            <h1>Skills</h1>
-            <ul className="list-disc pl-8">
-              <li>Project Management</li>
-              <li>3D Mapping</li>
-            </ul>
-            <div className="flex gap-2 py-4">
-              <button className="btn btn-primary">Add to</button>
-              <button className="btn btn-primary">Share</button>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-start gap-2">
-            <h1>Achievements</h1>
-            <ul className="list-disc pl-8">
-              <li>Birth Registration</li>
-              <li>Plant 100 Trees</li>
-            </ul>
-            <div className="flex gap-2 py-4">
-              <button className="btn btn-primary">Add to</button>
-              <button className="btn btn-primary">Share</button>
-            </div>
-          </div>
+          <button onClick={handleClick}>Refresh</button>
         </div>
-      </div>
+      </main>
     </>
   );
 
@@ -124,29 +85,8 @@ const UserProfile: NextPageWithLayout = () => {
   // );
 };
 
-const Settings: NextPageWithLayout = () => {
-  const router = useRouter();
-
-  const handleClick = useCallback(() => {
-    router.push("/user/settings");
-  }, [router]);
-
-  return (
-    <button
-      type="button"
-      aria-label="Close"
-      className="btn-hover-grow btn btn-square gap-2 border-none bg-transparent hover:border-none hover:bg-transparent"
-      onClick={handleClick}
-    >
-      <IoMdSettings className="h-6 w-6" />
-    </button>
-  );
-};
-
 UserProfile.getLayout = function getLayout(page: ReactElement) {
-  return (
-    <MainBackButton rightMenuChildren={<Settings />}>{page}</MainBackButton>
-  );
+  return <MainLayout>{page}</MainLayout>;
 };
 
 export default UserProfile;

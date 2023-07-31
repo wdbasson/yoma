@@ -22,6 +22,8 @@
 
         public Guid? CountryOfResidenceId { get; set; }
 
+        public Guid? PhotoId { get; set; }
+
         public Guid? GenderId { get; set; }
 
         public DateTimeOffset? DateOfBirth { get; set; }
