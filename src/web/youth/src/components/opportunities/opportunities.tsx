@@ -1,5 +1,5 @@
 import { dehydrate, QueryClient } from "@tanstack/react-query";
-import { getOpportunities } from "~/api/opportunities";
+import { getOpportunities } from "~/api/lookups";
 
 export const getServerSideProps = async (ctx: any) => {
   const { id } = ctx.params;

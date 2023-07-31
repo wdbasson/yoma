@@ -7,7 +7,7 @@ import {
 } from "next-auth";
 import { type DefaultJWT } from "next-auth/jwt";
 import KeycloakProvider from "next-auth/providers/keycloak";
-import { User as YomaUserProfile } from "~/api/models/User";
+import { User as YomaUserProfile } from "~/api/models/user";
 import { env } from "~/env.mjs";
 
 /**

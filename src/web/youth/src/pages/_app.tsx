@@ -4,6 +4,7 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import type { NextPage } from "next";
+import { ThemeProvider } from "next-themes";
 import type { AppProps } from "next/app";
 import { type AppType } from "next/app";
 import type { ReactElement, ReactNode } from "react";
@@ -31,11 +32,13 @@ const MyApp: AppType<object> = ({
   const getLayout = Component.getLayout ?? ((page) => page);
 
   return getLayout(
-    <QueryClientProvider client={queryClient}>
-      <Hydrate state={pageProps.dehydratedState}>
-        <Component {...pageProps} />{" "}
-      </Hydrate>
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" enableSystem={false} defaultTheme="light">
+      <QueryClientProvider client={queryClient}>
+        <Hydrate state={pageProps.dehydratedState}>
+          <Component {...pageProps} />{" "}
+        </Hydrate>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 };
 
