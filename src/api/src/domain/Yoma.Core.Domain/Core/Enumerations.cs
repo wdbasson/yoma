@@ -21,4 +21,11 @@ namespace Yoma.Core.Domain.Core
         None = 0,
         Lookups = 1 //lookup entities i.e. countries; reference data store in lookup db namespace
     }
+
+    public enum FileTypeEnum
+    {
+        Photo, //logo and profile photo
+        Certificate,
+        RegistrationDocument
+    }
 }

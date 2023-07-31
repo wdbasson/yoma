@@ -15,6 +15,7 @@ using Yoma.Core.Domain.Exceptions;
 using Yoma.Core.Domain.Entity.Validators;
 using FluentValidation;
 using System.Transactions;
+using Microsoft.AspNetCore.Http;
 
 namespace Yoma.Core.Domain.Entity.Services
 {
@@ -23,6 +24,7 @@ namespace Yoma.Core.Domain.Entity.Services
         #region Class Variables
         private readonly AppSettings _appSettings;
         private readonly KeycloakAuthenticationOptions _keycloakAuthenticationOptions;
+        private readonly IS3ObjectService _s3ObjectService;
         private readonly IGenderService _genderService;
         private readonly ICountryService _countryService;
         private readonly UserValidator _userValidator;
@@ -33,6 +35,7 @@ namespace Yoma.Core.Domain.Entity.Services
         #region Constructor
         public UserService(IOptions<AppSettings> appSettings,
             IOptions<KeycloakAuthenticationOptions> keycloakAuthenticationOptions,
+            IS3ObjectService s3ObjectService,
             IGenderService genderService,
             ICountryService countryService,
             UserValidator userValidator,
@@ -41,6 +44,7 @@ namespace Yoma.Core.Domain.Entity.Services
         {
             _appSettings = appSettings.Value;
             _keycloakAuthenticationOptions = keycloakAuthenticationOptions.Value;
+            _s3ObjectService = s3ObjectService;
             _genderService = genderService;
             _countryService = countryService;
             _userValidator = userValidator;
@@ -59,6 +63,8 @@ namespace Yoma.Core.Domain.Entity.Services
             if (result == null)
                 throw new ArgumentOutOfRangeException(nameof(email), $"User with email '{email}' does not exist");
 
+            result.PhotoURL = GetPhotoURL(result.PhotoId);
+
             return result;
         }
 
@@ -68,7 +74,12 @@ namespace Yoma.Core.Domain.Entity.Services
                 throw new ArgumentNullException(nameof(email));
             email = email.Trim();
 
-            return _userRepository.Query().SingleOrDefault(o => o.Email == email);
+            var result = _userRepository.Query().SingleOrDefault(o => o.Email == email);
+            if (result == null) return result;
+
+            result.PhotoURL = GetPhotoURL(result.PhotoId);
+
+            return result;
         }
 
         public User GetById(Guid id)
@@ -81,42 +92,46 @@ namespace Yoma.Core.Domain.Entity.Services
             if (result == null)
                 throw new ArgumentOutOfRangeException(nameof(id), $"User with id '{id}' does not exist");
 
+            result.PhotoURL = GetPhotoURL(result.PhotoId);
+
             return result;
         }
 
         public async Task<User> UpdateProfile(string? email, UserProfileRequest request)
         {
-            var user = GetByEmail(email);
+            var result = GetByEmail(email);
 
             await _userProfileRequestValidator.ValidateAndThrowAsync(request);
 
-            var emailUpdated = !string.Equals(user.Email, request.Email, StringComparison.CurrentCultureIgnoreCase);
+            var emailUpdated = !string.Equals(result.Email, request.Email, StringComparison.CurrentCultureIgnoreCase);
             if (emailUpdated)
                 if (GetByEmailOrNull(request.Email) != null)
                     throw new ValidationException($"An user with the specified email address '{request.Email}' already exists");
 
-            user.Email = request.Email;
-            if (emailUpdated) user.EmailConfirmed = false;
-            user.FirstName = request.FirstName;
-            user.Surname = request.Surname;
-            user.SetDisplayName();
-            user.PhoneNumber = request.PhoneNumber;
-            user.CountryId = request.CountryId;
-            user.CountryOfResidenceId = request.CountryOfResidenceId;
-            user.GenderId = request.GenderId;
-            user.DateOfBirth = request.DateOfBirth;
+            result.Email = request.Email;
+            if (emailUpdated) result.EmailConfirmed = false;
+            result.FirstName = request.FirstName;
+            result.Surname = request.Surname;
+            result.SetDisplayName();
+            result.PhoneNumber = request.PhoneNumber;
+            result.CountryId = request.CountryId;
+            result.CountryOfResidenceId = request.CountryOfResidenceId;
+            result.GenderId = request.GenderId;
+            result.DateOfBirth = request.DateOfBirth;
 
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
-            await _userRepository.Update(user);
-            user.DateModified = DateTimeOffset.Now;
+                await _userRepository.Update(result);
+                result.DateModified = DateTimeOffset.Now;
 
-            await updateKeycloak(user, request.ResetPassword);
+                await updateKeycloak(result, request.ResetPassword);
 
                 scope.Complete();
             }
 
-            return user;
+            result.PhotoURL = GetPhotoURL(result.PhotoId);
+
+            return result;
         }
 
         public async Task<User> Upsert(User request)
@@ -128,10 +143,10 @@ namespace Yoma.Core.Domain.Entity.Services
 
             // check if user exists
             var isNew = !request.Id.HasValue;
-            var user = !request.Id.HasValue ? new User { Id = Guid.NewGuid() } : GetById(request.Id.Value);
+            var result = !request.Id.HasValue ? new User { Id = Guid.NewGuid() } : GetById(request.Id.Value);
 
-            var existingByEmail = GetByEmailOrNull(user.Email);
-            if (existingByEmail != null && (isNew || user.Id != existingByEmail.Id))
+            var existingByEmail = GetByEmailOrNull(result.Email);
+            if (existingByEmail != null && (isNew || result.Id != existingByEmail.Id))
                 throw new ValidationException($"An user with the specified email address '{request.Email}' already exists");
 
             //profile fields updatable via UpdateProfile; Keycloak is source of truth
@@ -141,46 +156,70 @@ namespace Yoma.Core.Domain.Entity.Services
                 using var httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl,
                     _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);
                 using var usersApi = ApiClientFactory.Create<UsersApi>(httpClient);
-                var kcUser = (await usersApi.GetUsersAsync(_keycloakAuthenticationOptions.Realm, username: user.Email, exact: true)).SingleOrDefault();
+                var kcUser = (await usersApi.GetUsersAsync(_keycloakAuthenticationOptions.Realm, username: result.Email, exact: true)).SingleOrDefault();
                 if (kcUser == null)
-                    throw new InvalidOperationException($"User with email '{user.Email}' does not exist in Keycloak");
+                    throw new InvalidOperationException($"User with email '{result.Email}' does not exist in Keycloak");
 
-            user.Email = request.Email;
-            user.EmailConfirmed = request.EmailConfirmed;
-            user.FirstName = request.FirstName;
-            user.Surname = request.Surname;
-                user.SetDisplayName();
-            user.PhoneNumber = request.PhoneNumber;
-            user.CountryId = request.CountryId;
-            user.CountryOfResidenceId = request.CountryOfResidenceId;
-            user.PhotoId = request.PhotoId;
-            user.GenderId = request.GenderId;
-            user.DateOfBirth = request.DateOfBirth;
+                result.Email = request.Email;
+                result.EmailConfirmed = request.EmailConfirmed;
+                result.FirstName = request.FirstName;
+                result.Surname = request.Surname;
+                result.SetDisplayName();
+                result.PhoneNumber = request.PhoneNumber;
+                result.CountryId = request.CountryId;
+                result.CountryOfResidenceId = request.CountryOfResidenceId;
+                result.PhotoId = request.PhotoId;
+                result.GenderId = request.GenderId;
+                result.DateOfBirth = request.DateOfBirth;
             }
 
-            user.EmailConfirmed = request.EmailConfirmed;
-            user.PhotoId = request.PhotoId;
-            user.DateLastLogin = request.DateLastLogin;
-            user.ExternalId = request.ExternalId;
-            user.ZltoWalletId = request.ZltoWalletId;
-            user.ZltoWalletCountryId = request.ZltoWalletCountryId;
-            user.TenantId = request.TenantId;
+            result.EmailConfirmed = request.EmailConfirmed;
+            result.PhotoId = request.PhotoId;
+            result.DateLastLogin = request.DateLastLogin;
+            result.ExternalId = request.ExternalId;
+            result.ZltoWalletId = request.ZltoWalletId;
+            result.ZltoWalletCountryId = request.ZltoWalletCountryId;
+            result.TenantId = request.TenantId;
 
-            user.SetDisplayName();
+            result.PhotoURL = GetPhotoURL(result.PhotoId);
 
             if (isNew)
-                user = await _userRepository.Create(user);
+                result = await _userRepository.Create(result);
             else
             {
-                await _userRepository.Update(user);
-                user.DateModified = DateTimeOffset.Now;
+                await _userRepository.Update(result);
+                result.DateModified = DateTimeOffset.Now;
             }
 
-            return user;
+            return result;
+        }
+
+        public async Task<User> UpsertPhoto(string? email, IFormFile file)
+        {
+            var result = GetByEmail(email);
+
+            if (result.PhotoId.HasValue)
+                await _s3ObjectService.Delete(result.PhotoId.Value);
+
+            var s3Object = await _s3ObjectService.Create(file, Core.FileTypeEnum.Photo);
+
+            result.PhotoId = s3Object.Id;
+
+            await _userRepository.Update(result);
+
+            result.PhotoURL = GetPhotoURL(result.PhotoId);
+
+            return result;
         }
         #endregion
 
         #region Private Members
+        private string? GetPhotoURL(Guid? id)
+        {
+            if (!id.HasValue) return null;
+            return _s3ObjectService.GetURL(id.Value);
+        }
+
         private async Task updateKeycloak(User user, bool resetPassword)
         {
             using var httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl, _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);

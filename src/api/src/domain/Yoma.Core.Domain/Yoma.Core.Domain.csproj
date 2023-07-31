@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.7" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.201.4" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
     <PackageReference Include="Flurl.Http" Version="3.2.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
@@ -15,10 +17,6 @@
     <PackageReference Include="Keycloak.AuthServices.Authentication" Version="1.5.2" />
 	<PackageReference Include="Keycloak.AuthServices.Authorization" Version="1.5.2" />
 	<PackageReference Include="Schick.Keycloak.RestApiClient" Version="21.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Core\Services\" />
   </ItemGroup>
 
 </Project>
