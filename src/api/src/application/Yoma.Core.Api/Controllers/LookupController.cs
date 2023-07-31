@@ -8,7 +8,7 @@ using Yoma.Core.Domain.Lookups.Models;
 
 namespace Yoma.Core.Api.Controllers
 {
-    [Route("api/v3/user")]
+    [Route("api/v3/lookup")]
     [ApiController]
     public class LookupController : Controller
     {

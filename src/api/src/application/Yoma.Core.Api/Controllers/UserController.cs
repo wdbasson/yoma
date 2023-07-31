@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using Yoma.Core.Domain.Core;
 using Yoma.Core.Domain.Entity.Interfaces;
@@ -75,6 +76,20 @@ namespace Yoma.Core.Api.Controllers
             var result = await _userService.UpdateProfile(HttpContext.User.Identity?.Name, profile);
 
             _logger.LogInformation($"Request {nameof(UpdateProfile)} handled");
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
+        [SwaggerOperation(Summary = "Insert or update the authenticated user's profile photo")]
+        [HttpPost("image")]
+        [ProducesResponseType(typeof(User), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> UpsertPhoto([Required] IFormFile file)
+        {
+            _logger.LogInformation($"Handling request {nameof(UpsertPhoto)} ({file.Name})");
+
+            var result = await _userService.UpsertPhoto(HttpContext.User.Identity?.Name, file);
+
+            _logger.LogInformation($"Request {nameof(UpsertPhoto)} handled");
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }

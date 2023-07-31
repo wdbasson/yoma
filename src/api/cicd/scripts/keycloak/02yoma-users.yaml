@@ -24,6 +24,8 @@ users:
         - Male
       countryOfResidence:
         - Afghanistan
+      termsAndConditions:
+        - Yes
     credentials:
       - id: dcce4349-236f-4619-8f84-7d1949c91d38
         type: password
@@ -59,6 +61,8 @@ users:
         - Male
       countryOfResidence:
         - Afghanistan
+      termsAndConditions:
+        - Yes
     credentials:
       - id: 7fccb8f6-48ef-48e7-a793-5e3569542c96
         type: password
@@ -94,6 +98,8 @@ users:
         - Male
       countryOfResidence:
         - Afghanistan
+      termsAndConditions:
+        - Yes
     credentials:
       - id: 4831379d-25ba-4f87-9076-15c914c3600a
         type: password

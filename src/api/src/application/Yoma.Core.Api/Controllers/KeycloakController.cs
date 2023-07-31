@@ -5,7 +5,6 @@ using FS.Keycloak.RestApiClient.Client;
 using FS.Keycloak.RestApiClient.Model;
 using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.Core.Extensions;
-using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Text;
 using Yoma.Core.Domain.Core.Models;

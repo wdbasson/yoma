@@ -28,6 +28,8 @@
 
         public Guid? PhotoId { get; set; }
 
+        public string? PhotoURL { get; set; }
+
         public DateTimeOffset? DateLastLogin { get; set; }
 
         public Guid? ExternalId { get; set; }

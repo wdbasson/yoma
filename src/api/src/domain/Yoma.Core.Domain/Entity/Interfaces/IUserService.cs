@@ -1,4 +1,5 @@
-﻿using Yoma.Core.Domain.Entity.Models;
+﻿using Microsoft.AspNetCore.Http;
+using Yoma.Core.Domain.Entity.Models;
 
 namespace Yoma.Core.Domain.Entity.Interfaces
 {
@@ -13,5 +14,7 @@ namespace Yoma.Core.Domain.Entity.Interfaces
         Task<User> Upsert(User request);
 
         Task<User> UpdateProfile(string? email, UserProfileRequest request);
+
+        Task<User> UpsertPhoto(string? email, IFormFile file);
     }
 }

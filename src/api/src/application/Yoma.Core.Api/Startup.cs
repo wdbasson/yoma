@@ -12,6 +12,8 @@ using Flurl;
 using Newtonsoft.Json.Converters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Yoma.Core.Domain.Core.Converters;
+using Yoma.Core.Domain.Core.Interfaces;
+using Yoma.Core.Domain.Core.Services;
 
 namespace Yoma.Core.Api
 {
@@ -49,8 +51,10 @@ namespace Yoma.Core.Api
             #region Configuration
             services.Configure<AppSettings>(options => 
                 _configuration.GetSection(nameof(AppSettings)).Bind(options));
-            services.Configure<KeycloakAuthenticationOptions>(options => 
-                _configuration.GetSection(KeycloakAuthenticationOptions.Section).Bind(options));
+            services.Configure<KeycloakAuthenticationOptions>(options =>
+            _configuration.GetSection(KeycloakAuthenticationOptions.Section).Bind(options));
+
+            services.AddSingleton<IEnvironmentProvider>(p => ActivatorUtilities.CreateInstance<EnvironmentProvider>(p, _webHostEnvironment.EnvironmentName));
             #endregion Configuration
 
             #region System
@@ -77,6 +81,7 @@ namespace Yoma.Core.Api
 
             #region Services & Infrastructure
             services.ConfigureServices_DomainServices(_configuration);
+            services.ConfigureServices_AWSClients(_configuration);
             services.ConfigureServices_InfrastructureDatabase(_configuration);
             #endregion Services & Infrastructure
         }
