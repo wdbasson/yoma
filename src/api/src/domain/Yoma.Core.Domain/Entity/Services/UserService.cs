@@ -16,6 +16,7 @@ using Yoma.Core.Domain.Entity.Validators;
 using FluentValidation;
 using System.Transactions;
 using Microsoft.AspNetCore.Http;
+using Amazon.S3.Model;
 
 namespace Yoma.Core.Domain.Entity.Services
 {
@@ -197,15 +198,30 @@ namespace Yoma.Core.Domain.Entity.Services
         public async Task<User> UpsertPhoto(string? email, IFormFile file)
         {
             var result = GetByEmail(email);
+            var currentPhotoId = result.PhotoId;
 
-            if (result.PhotoId.HasValue)
-                await _s3ObjectService.Delete(result.PhotoId.Value);
+            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
+            {
+                Core.Models.S3Object? s3Object = null;
+                try
+                {
+                    s3Object = await _s3ObjectService.Create(file, Core.FileTypeEnum.Photos);
+                    result.PhotoId = s3Object.Id;
+                    await _userRepository.Update(result);
 
-            var s3Object = await _s3ObjectService.Create(file, Core.FileTypeEnum.Photo);
+                    if (currentPhotoId.HasValue)
+                        await _s3ObjectService.Delete(currentPhotoId.Value);
 
-            result.PhotoId = s3Object.Id;
+                    scope.Complete();
+                }
+                catch 
+                {
+                    if (s3Object != null)
+                        await _s3ObjectService.Delete(s3Object.Id);
 
-            await _userRepository.Update(result);
+                    throw;
+                }
+            }
 
             result.PhotoURL = GetPhotoURL(result.PhotoId);
 

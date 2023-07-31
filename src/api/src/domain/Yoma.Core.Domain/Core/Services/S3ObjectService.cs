@@ -14,14 +14,16 @@ namespace Yoma.Core.Domain.Core.Services
     public class S3ObjectService : IS3ObjectService
     {
         #region Class Variables
+        private readonly IEnvironmentProvider _environmentProvider;
         private readonly IAmazonS3 _s3Client;
-        private readonly AWSOptionsS3 _aWSOptions;
+        private readonly AWSSettings _aWSOptions;
         private readonly IRepository<Models.S3Object> _s3ObjectRepository;
         #endregion
 
         #region Constructor
-        public S3ObjectService(IAmazonS3 s3Client, IOptions<AWSOptionsS3> aWSOptions, IRepository<Models.S3Object> s3ObjectRepository)
+        public S3ObjectService(IEnvironmentProvider environmentProvider, IAmazonS3 s3Client, IOptions<AWSSettings> aWSOptions, IRepository<Models.S3Object> s3ObjectRepository)
         {
+            _environmentProvider = environmentProvider;
             _s3Client = s3Client;
             _aWSOptions = aWSOptions.Value;
             _s3ObjectRepository = s3ObjectRepository;
@@ -50,7 +52,7 @@ namespace Yoma.Core.Domain.Core.Services
             new FileValidator(type).Validate(file);
 
             var id = Guid.NewGuid();
-            var key = $"{type.ToString().ToLower()}/{id}";
+            var key = $"{_environmentProvider.Environment}/{type}/{id}";
 
             var result = new Models.S3Object
             {
@@ -67,7 +69,7 @@ namespace Yoma.Core.Domain.Core.Services
                 {
                     var request = new PutObjectRequest
                     {
-                        BucketName = _aWSOptions.BucketName,
+                        BucketName = _aWSOptions.S3BucketName,
                         Key = key,
                         InputStream = stream,
                         ContentType = file.ContentType
@@ -95,10 +97,9 @@ namespace Yoma.Core.Domain.Core.Services
 
             var request = new GetPreSignedUrlRequest
             {
-                BucketName = _aWSOptions.BucketName,
+                BucketName = _aWSOptions.S3BucketName,
                 Key = item.ObjectKey,
-                Expires = _aWSOptions.URLExpirationInMinutes.HasValue ? DateTime.UtcNow.AddMinutes(_aWSOptions.URLExpirationInMinutes.Value) : default
-
+                Expires =  DateTime.UtcNow.AddMinutes(_aWSOptions.S3URLExpirationInMinutes) 
             };
 
             try
@@ -109,26 +110,26 @@ namespace Yoma.Core.Domain.Core.Services
             {
                 throw new TechnicalException($"Failed to retrieve URL for S3 object with key '{item.ObjectKey}'", ex);
             }
-
         }
 
         public async Task Delete(Guid id)
         {
             var item = GetById(id);
 
-            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
+            using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
             {
+                await _s3ObjectRepository.Delete(item);
+
                 var deleteRequest = new DeleteObjectRequest
                 {
-                    BucketName = _aWSOptions.BucketName,
+                    BucketName = _aWSOptions.S3BucketName,
                     Key = item.ObjectKey
                 };
 
-                await _s3Client.DeleteObjectAsync(deleteRequest);
-
                 try
                 {
-                    await _s3ObjectRepository.Delete(item);
+                    await _s3Client.DeleteObjectAsync(deleteRequest);
+                    
                 }
                 catch (AmazonS3Exception ex)
                 {
