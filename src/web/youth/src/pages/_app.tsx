@@ -34,7 +34,7 @@ const MyApp: AppType<object> = ({
   const getLayout = Component.getLayout ?? ((page) => page);
 
   return getLayout(
-    <ThemeProvider attribute="class" enableSystem={false} defaultTheme="light">
+    <ThemeProvider attribute="class" enableSystem={false} defaultTheme="dark">
       <QueryClientProvider client={queryClient}>
         <Hydrate state={pageProps.dehydratedState}>
           <Component {...pageProps} />
