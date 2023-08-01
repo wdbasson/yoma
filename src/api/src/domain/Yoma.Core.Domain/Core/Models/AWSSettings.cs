@@ -1,6 +1,4 @@
-﻿using Amazon.Extensions.NETCore.Setup;
-
-namespace Yoma.Core.Domain.Core.Models
+﻿namespace Yoma.Core.Domain.Core.Models
 {
     public class AWSSettings
     {

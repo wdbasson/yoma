@@ -1,5 +1,4 @@
-﻿using FluentValidation;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel.DataAnnotations;
@@ -17,18 +16,15 @@ namespace Yoma.Core.Api.Controllers
     {
         #region Class Variables
         private readonly ILogger<UserController> _logger;
-        private IValidator<User> _userValidator;
         private readonly IUserService _userService;
         #endregion
 
         #region Constructor
         public UserController(
             ILogger<UserController> logger,
-            IValidator<User> userValidator,
             IUserService userService)
         {
             _logger = logger;
-            _userValidator = userValidator;
             _userService = userService;
         }
         #endregion
@@ -41,7 +37,7 @@ namespace Yoma.Core.Api.Controllers
         [Authorize(Roles = Constants.Role_Admin)]
         public IActionResult GetById([FromRoute] Guid id)
         {
-            _logger.LogInformation($"Handling request {nameof(GetById)} ({nameof(id)}: {id}");
+            _logger.LogInformation($"Handling request {nameof(GetById)} ({nameof(id)}: {id})");
 
             var result = _userService.GetById(id);
 
@@ -49,10 +45,40 @@ namespace Yoma.Core.Api.Controllers
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
+
+        [SwaggerOperation(Summary = "Assign the specified user as organization administrator (Admin or Organization Admin role required)")]
+        [HttpPut("{id}/assign/organization/{organizationId}/admin")]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [Authorize(Roles = $"{Constants.Role_Admin},{Constants.Role_OrganizationAdmin}")]
+        public IActionResult AssignAsOrganizationAdmin([FromRoute] Guid id, [FromRoute] Guid organizationId)
+        {
+            _logger.LogInformation($"Handling request {nameof(AssignAsOrganizationAdmin)} ({nameof(id)}: {id} | {nameof(organizationId)}: {organizationId})");
+
+            var result = _userService.AssignAsOrganizationAdmin(id, organizationId);
+
+            _logger.LogInformation($"Request {nameof(AssignAsOrganizationAdmin)} handled");
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
+        [SwaggerOperation(Summary = "Remove the specified user as organization administrator (Admin or Organization Admin role required)")]
+        [HttpDelete("{id}/assign/organization/{organizationId}/admin")]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [Authorize(Roles = $"{Constants.Role_Admin},{Constants.Role_OrganizationAdmin}")]
+        public IActionResult RemoveAsOrganizationAdmin([FromRoute] Guid id, [FromRoute] Guid organizationId)
+        {
+            _logger.LogInformation($"Handling request {nameof(RemoveAsOrganizationAdmin)} ({nameof(id)}: {id} | {nameof(organizationId)}: {organizationId})");
+
+            var result = _userService.RemoveAsOrganizationAdmin(id, organizationId);
+
+            _logger.LogInformation($"Request {nameof(RemoveAsOrganizationAdmin)} handled");
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
         #endregion Administrative Actions
 
         #region Authenticated User Based Actions
-        [SwaggerOperation(Summary = "Get the authenticated user")]
+        [SwaggerOperation(Summary = "Get the authenticated user (Authenticated User)")]
         [HttpGet("")]
         [ProducesResponseType(typeof(User), (int)HttpStatusCode.OK)]
         public IActionResult Get()
@@ -66,12 +92,12 @@ namespace Yoma.Core.Api.Controllers
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Update the authenticated user's profile, within Yoma and Keycloak, optionally requesting a email verification and/or password reset")]
+        [SwaggerOperation(Summary = "Update the authenticated user's profile, within Yoma and Keycloak, optionally requesting a email verification and/or password reset (Authenticated User)")]
         [HttpPatch()]
         [ProducesResponseType(typeof(User), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpdateProfile([FromBody] UserProfileRequest profile)
         {
-            _logger.LogInformation($"Handling request {nameof(UpdateProfile)}");
+            _logger.LogInformation($"Handling request {nameof(UpdateProfile)} (Username: {HttpContext.User.Identity?.Name}");
 
             var result = await _userService.UpdateProfile(HttpContext.User.Identity?.Name, profile);
 
@@ -80,8 +106,8 @@ namespace Yoma.Core.Api.Controllers
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Insert or update the authenticated user's profile photo")]
-        [HttpPost("image")]
+        [SwaggerOperation(Summary = "Insert or update the authenticated user's profile photo  (Authenticated User)")]
+        [HttpPost("photo")]
         [ProducesResponseType(typeof(User), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpsertPhoto([Required] IFormFile file)
         {

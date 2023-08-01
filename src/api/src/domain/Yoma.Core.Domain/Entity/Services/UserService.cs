@@ -16,7 +16,6 @@ using Yoma.Core.Domain.Entity.Validators;
 using FluentValidation;
 using System.Transactions;
 using Microsoft.AspNetCore.Http;
-using Amazon.S3.Model;
 
 namespace Yoma.Core.Domain.Entity.Services
 {
@@ -227,6 +226,17 @@ namespace Yoma.Core.Domain.Entity.Services
 
             return result;
         }
+
+        public async Task AssignAsOrganizationAdmin(Guid userId, Guid organizationId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task RemoveAsOrganizationAdmin(Guid userId, Guid organizationId)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
         #region Private Members

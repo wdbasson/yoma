@@ -3,7 +3,6 @@ using Amazon.Extensions.NETCore.Setup;
 using Amazon.Runtime;
 using Amazon.S3;
 using FluentValidation;
-using FS.Keycloak.RestApiClient.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Yoma.Core.Domain.Core.Interfaces;
@@ -25,6 +24,7 @@ namespace Yoma.Core.Domain
             services.AddValidatorsFromAssemblyContaining<UserService>();
 
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IOrganizationService, OrganizationService>();
             services.AddScoped<IGenderService, GenderService>();
             services.AddScoped<ICountryService, CountryService>();
             services.AddScoped<IS3ObjectService, S3ObjectService>();
@@ -36,20 +36,19 @@ namespace Yoma.Core.Domain
 
         public static void ConfigureServices_AWSClients(this IServiceCollection services, IConfiguration configuration)
         {
-            var options = configuration.GetSection(nameof(AWSSettings)).Get<AWSSettings>();
-
-            if (options == null)
+            var aWSSettings = configuration.GetSection(nameof(AWSSettings)).Get<AWSSettings>();
+            if (aWSSettings == null)
                 throw new InvalidOperationException($"Failed to retrieve configuration section '{nameof(AWSSettings)}'");
 
             services.Configure<AWSSettings>(options => configuration.GetSection(nameof(AWSSettings)).Bind(options));
 
-            var aWSOptions = new AWSOptions
+            var aWSS3Options = new AWSOptions
             {
-                Region = RegionEndpoint.GetBySystemName(options.S3Region),
-                Credentials = new BasicAWSCredentials(options.S3AccessKey, options.S3SecretKey)
+                Region = RegionEndpoint.GetBySystemName(aWSSettings.S3Region),
+                Credentials = new BasicAWSCredentials(aWSSettings.S3AccessKey, aWSSettings.S3SecretKey)
             };
 
-            services.AddAWSService<IAmazonS3>(aWSOptions);
+            services.AddAWSService<IAmazonS3>(aWSS3Options);
         }
         #endregion
     }
