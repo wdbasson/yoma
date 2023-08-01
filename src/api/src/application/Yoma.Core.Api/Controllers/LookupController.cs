@@ -18,6 +18,7 @@ namespace Yoma.Core.Api.Controllers
         private IValidator<User> _userValidator;
         private readonly IGenderService _genderService;
         private readonly ICountryService _countryService;
+        private readonly IProviderTypeService _providerTypeService; 
         #endregion
 
         #region Constructor
@@ -25,12 +26,14 @@ namespace Yoma.Core.Api.Controllers
             ILogger<UserController> logger,
             IValidator<User> userValidator,
             IGenderService genderService,
-            ICountryService countryService)
+            ICountryService countryService,
+            IProviderTypeService providerTypeService)
         {
             _logger = logger;
             _userValidator = userValidator;
             _genderService = genderService;
             _countryService = countryService;
+            _providerTypeService = providerTypeService;
         }
         #endregion
 
@@ -69,15 +72,13 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(List<ProviderType>), (int)HttpStatusCode.OK)]
         public IActionResult ListProviderTypes()
         {
-            throw new NotImplementedException();
+            _logger.LogInformation($"Handling request {nameof(ListProviderTypes)}");
 
-            //_logger.LogInformation($"Handling request {nameof(ListProviderTypes)}");
+            var result = _providerTypeService.List();
 
-            //var result = _countryService.List();
+            _logger.LogInformation($"Request {nameof(ListProviderTypes)} handled");
 
-            //_logger.LogInformation($"Request {nameof(ListProviderTypes)} handled");
-
-            //return StatusCode((int)HttpStatusCode.OK, result);
+            return StatusCode((int)HttpStatusCode.OK, result);
         }
 
         #endregion Anonymous Actions

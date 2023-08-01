@@ -24,7 +24,7 @@ namespace Yoma.Core.Domain.Entity.Services
             throw new NotImplementedException();
         }
 
-        public async Task<Organization> Upsert(Organization request)
+        public async Task<Organization> Upsert(OrganizationRequest request)
         {
             throw new NotImplementedException();
         }
