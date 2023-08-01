@@ -24,6 +24,7 @@ namespace Yoma.Core.Domain
             services.AddValidatorsFromAssemblyContaining<UserService>();
 
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IOrganizationService, OrganizationService>();
             services.AddScoped<IGenderService, GenderService>();
             services.AddScoped<ICountryService, CountryService>();
             services.AddScoped<IS3ObjectService, S3ObjectService>();

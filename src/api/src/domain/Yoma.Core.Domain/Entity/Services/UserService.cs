@@ -226,6 +226,17 @@ namespace Yoma.Core.Domain.Entity.Services
 
             return result;
         }
+
+        public async Task AssignAsOrganizationAdmin(Guid userId, Guid organizationId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task RemoveAsOrganizationAdmin(Guid userId, Guid organizationId)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
         #region Private Members

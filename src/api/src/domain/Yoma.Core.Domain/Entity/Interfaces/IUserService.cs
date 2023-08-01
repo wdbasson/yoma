@@ -16,5 +16,9 @@ namespace Yoma.Core.Domain.Entity.Interfaces
         Task<User> UpdateProfile(string? email, UserProfileRequest request);
 
         Task<User> UpsertPhoto(string? email, IFormFile file);
+
+        Task AssignAsOrganizationAdmin(Guid userId, Guid organizationId);
+
+        Task RemoveAsOrganizationAdmin(Guid userId, Guid organizationId);
     }
 }

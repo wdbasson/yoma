@@ -24,8 +24,6 @@
 
         public Guid? CountryId { get; set; }
 
-        public string? CountryCodeAlpha2 { get; set; }
-
         public string? StreetAddress { get; set; }
 
         public string? Province { get; set; }

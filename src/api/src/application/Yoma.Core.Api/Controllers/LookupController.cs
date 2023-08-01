@@ -10,6 +10,7 @@ namespace Yoma.Core.Api.Controllers
 {
     [Route("api/v3/lookup")]
     [ApiController]
+    [SwaggerTag("(Anonymous)")]
     public class LookupController : Controller
     {
         #region Class Variables
@@ -35,7 +36,7 @@ namespace Yoma.Core.Api.Controllers
 
         #region Public Members
         #region Anonymous Actions
-        [SwaggerOperation(Summary = "Return a list of gender's (Anonymous)")]
+        [SwaggerOperation(Summary = "Return a list of gender's")]
         [HttpGet("gender")]
         [ProducesResponseType(typeof(List<Gender>), (int)HttpStatusCode.OK)]
         public IActionResult ListGenders()
@@ -49,7 +50,7 @@ namespace Yoma.Core.Api.Controllers
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Return a list of countries (Anonymous)")]
+        [SwaggerOperation(Summary = "Return a list of countries")]
         [HttpGet("country")]
         [ProducesResponseType(typeof(List<Country>), (int)HttpStatusCode.OK)]
         public IActionResult ListCountries()
@@ -62,6 +63,23 @@ namespace Yoma.Core.Api.Controllers
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
+
+        [SwaggerOperation(Summary = "Return a list of provider types")]
+        [HttpGet("providerType")]
+        [ProducesResponseType(typeof(List<ProviderType>), (int)HttpStatusCode.OK)]
+        public IActionResult ListProviderTypes()
+        {
+            throw new NotImplementedException();
+
+            //_logger.LogInformation($"Handling request {nameof(ListProviderTypes)}");
+
+            //var result = _countryService.List();
+
+            //_logger.LogInformation($"Request {nameof(ListProviderTypes)} handled");
+
+            //return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
         #endregion Anonymous Actions
         #endregion 
     }
