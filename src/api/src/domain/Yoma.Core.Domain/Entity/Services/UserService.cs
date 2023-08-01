@@ -101,6 +101,9 @@ namespace Yoma.Core.Domain.Entity.Services
 
         public async Task<User> UpdateProfile(string? email, UserProfileRequest request)
         {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
             await _userProfileRequestValidator.ValidateAndThrowAsync(request);
 
             var result = GetByEmail(email);

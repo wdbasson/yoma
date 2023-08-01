@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
-using System.ComponentModel.DataAnnotations;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using System.Transactions;
 using Yoma.Core.Domain.Core;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Models;
+using Yoma.Core.Domain.Entity.Validators;
 using Yoma.Core.Domain.Lookups.Interfaces;
 
 namespace Yoma.Core.Domain.Entity.Services
@@ -16,6 +17,7 @@ namespace Yoma.Core.Domain.Entity.Services
         private readonly IUserService _userService;
         private readonly IProviderTypeService _providerTypeService;
         private readonly IS3ObjectService _s3ObjectService;
+        private readonly OrganizationRequestValidator _organizationRequestValidator;
         private readonly IRepository<Organization> _organizationRepository;
         private readonly IRepository<OrganizationUser> _organizationUserRepository;
         private readonly IRepository<OrganizationProviderType> _organizationProviderTypeRepository;
@@ -25,6 +27,7 @@ namespace Yoma.Core.Domain.Entity.Services
         public OrganizationService(IUserService userService,
             IProviderTypeService providerTypeService,
             IS3ObjectService s3ObjectService,
+            OrganizationRequestValidator organizationRequestValidator,
             IRepository<Organization> organizationRepository,
             IRepository<OrganizationUser> organizationUserRepository,
             IRepository<OrganizationProviderType> organizationProviderTypeRepository)
@@ -32,6 +35,7 @@ namespace Yoma.Core.Domain.Entity.Services
             _userService = userService;
             _providerTypeService = providerTypeService;
             _s3ObjectService = s3ObjectService;
+            _organizationRequestValidator = organizationRequestValidator;
             _organizationRepository = organizationRepository;
             _organizationUserRepository = organizationUserRepository;
             _organizationProviderTypeRepository = organizationProviderTypeRepository;   
@@ -75,8 +79,8 @@ namespace Yoma.Core.Domain.Entity.Services
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            //TODO: validate model
-
+            await _organizationRequestValidator.ValidateAndThrowAsync(request);
+            
             // check if user exists
             var isNew = !request.Id.HasValue;
             var result = !request.Id.HasValue ? new Organization { Id = Guid.NewGuid() } : GetById(request.Id.Value);
