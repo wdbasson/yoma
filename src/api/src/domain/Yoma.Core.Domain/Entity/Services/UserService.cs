@@ -16,6 +16,8 @@ using Yoma.Core.Domain.Entity.Validators;
 using FluentValidation;
 using System.Transactions;
 using Microsoft.AspNetCore.Http;
+using Yoma.Core.Domain.Core;
+using User = Yoma.Core.Domain.Entity.Models.User;
 
 namespace Yoma.Core.Domain.Entity.Services
 {
@@ -27,7 +29,7 @@ namespace Yoma.Core.Domain.Entity.Services
         private readonly IS3ObjectService _s3ObjectService;
         private readonly IGenderService _genderService;
         private readonly ICountryService _countryService;
-        private readonly UserValidator _userValidator;
+        private readonly UserRequestValidator _userValidator;
         private readonly UserProfileRequestValidator _userProfileRequestValidator;
         private readonly IRepository<User> _userRepository;
         #endregion
@@ -38,7 +40,7 @@ namespace Yoma.Core.Domain.Entity.Services
             IS3ObjectService s3ObjectService,
             IGenderService genderService,
             ICountryService countryService,
-            UserValidator userValidator,
+            UserRequestValidator userValidator,
             UserProfileRequestValidator userProfileRequestValidator,
             IRepository<User> userRepository)
         {
@@ -63,7 +65,7 @@ namespace Yoma.Core.Domain.Entity.Services
             if (result == null)
                 throw new ArgumentOutOfRangeException(nameof(email), $"User with email '{email}' does not exist");
 
-            result.PhotoURL = GetPhotoURL(result.PhotoId);
+            result.PhotoURL = GetS3ObjectURL(result.PhotoId);
 
             return result;
         }
@@ -77,7 +79,7 @@ namespace Yoma.Core.Domain.Entity.Services
             var result = _userRepository.Query().SingleOrDefault(o => o.Email == email);
             if (result == null) return result;
 
-            result.PhotoURL = GetPhotoURL(result.PhotoId);
+            result.PhotoURL = GetS3ObjectURL(result.PhotoId);
 
             return result;
         }
@@ -90,9 +92,9 @@ namespace Yoma.Core.Domain.Entity.Services
             var result = _userRepository.Query().SingleOrDefault(o => o.Id == id);
 
             if (result == null)
-                throw new ArgumentOutOfRangeException(nameof(id), $"User with id '{id}' does not exist");
+                throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(User)} with id '{id}' does not exist");
 
-            result.PhotoURL = GetPhotoURL(result.PhotoId);
+            result.PhotoURL = GetS3ObjectURL(result.PhotoId);
 
             return result;
         }
@@ -106,7 +108,7 @@ namespace Yoma.Core.Domain.Entity.Services
             var emailUpdated = !string.Equals(result.Email, request.Email, StringComparison.CurrentCultureIgnoreCase);
             if (emailUpdated)
                 if (GetByEmailOrNull(request.Email) != null)
-                    throw new ValidationException($"An user with the specified email address '{request.Email}' already exists");
+                    throw new ValidationException($"{nameof(User)} with the specified email address '{request.Email}' already exists");
 
             result.Email = request.Email;
             if (emailUpdated) result.EmailConfirmed = false;
@@ -129,12 +131,10 @@ namespace Yoma.Core.Domain.Entity.Services
                 scope.Complete();
             }
 
-            result.PhotoURL = GetPhotoURL(result.PhotoId);
-
             return result;
         }
 
-        public async Task<User> Upsert(User request)
+        public async Task<User> Upsert(UserRequest request)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -145,9 +145,9 @@ namespace Yoma.Core.Domain.Entity.Services
             var isNew = !request.Id.HasValue;
             var result = !request.Id.HasValue ? new User { Id = Guid.NewGuid() } : GetById(request.Id.Value);
 
-            var existingByEmail = GetByEmailOrNull(result.Email);
+            var existingByEmail = GetByEmailOrNull(request.Email);
             if (existingByEmail != null && (isNew || result.Id != existingByEmail.Id))
-                throw new ValidationException($"An user with the specified email address '{request.Email}' already exists");
+                throw new ValidationException($"{nameof(User)} with the specified email address '{request.Email}' already exists");
 
             //profile fields updatable via UpdateProfile; Keycloak is source of truth
             if (isNew)
@@ -158,30 +158,25 @@ namespace Yoma.Core.Domain.Entity.Services
                 using var usersApi = ApiClientFactory.Create<UsersApi>(httpClient);
                 var kcUser = (await usersApi.GetUsersAsync(_keycloakAuthenticationOptions.Realm, username: result.Email, exact: true)).SingleOrDefault();
                 if (kcUser == null)
-                    throw new InvalidOperationException($"User with email '{result.Email}' does not exist in Keycloak");
+                    throw new InvalidOperationException($"{nameof(User)} with email '{result.Email}' does not exist in Keycloak");
 
                 result.Email = request.Email;
-                result.EmailConfirmed = request.EmailConfirmed;
                 result.FirstName = request.FirstName;
                 result.Surname = request.Surname;
                 result.SetDisplayName();
                 result.PhoneNumber = request.PhoneNumber;
                 result.CountryId = request.CountryId;
                 result.CountryOfResidenceId = request.CountryOfResidenceId;
-                result.PhotoId = request.PhotoId;
                 result.GenderId = request.GenderId;
                 result.DateOfBirth = request.DateOfBirth;
             }
 
             result.EmailConfirmed = request.EmailConfirmed;
-            result.PhotoId = request.PhotoId;
             result.DateLastLogin = request.DateLastLogin;
             result.ExternalId = request.ExternalId;
             result.ZltoWalletId = request.ZltoWalletId;
             result.ZltoWalletCountryId = request.ZltoWalletCountryId;
             result.TenantId = request.TenantId;
-
-            result.PhotoURL = GetPhotoURL(result.PhotoId);
 
             if (isNew)
                 result = await _userRepository.Create(result);
@@ -201,10 +196,10 @@ namespace Yoma.Core.Domain.Entity.Services
 
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
-                Core.Models.S3Object? s3Object = null;
+                S3Object? s3Object = null;
                 try
                 {
-                    s3Object = await _s3ObjectService.Create(file, Core.FileTypeEnum.Photos);
+                    s3Object = await _s3ObjectService.Create(file, FileTypeEnum.Photos);
                     result.PhotoId = s3Object.Id;
                     await _userRepository.Update(result);
 
@@ -213,7 +208,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
                     scope.Complete();
                 }
-                catch 
+                catch
                 {
                     if (s3Object != null)
                         await _s3ObjectService.Delete(s3Object.Id);
@@ -222,25 +217,61 @@ namespace Yoma.Core.Domain.Entity.Services
                 }
             }
 
-            result.PhotoURL = GetPhotoURL(result.PhotoId);
+            result.PhotoURL = GetS3ObjectURL(result.PhotoId);
 
             return result;
         }
 
-        public async Task AssignAsOrganizationAdmin(Guid userId, Guid organizationId)
+        public async Task EnsureKeycloakRoles(Guid? externalId, List<string> roles)
         {
-            throw new NotImplementedException();
+            if (!externalId.HasValue || externalId == Guid.Empty)
+                throw new ArgumentNullException(nameof(externalId));
+
+            if (roles == null || !roles.Any())
+                throw new ArgumentNullException(nameof(roles));
+
+            var rolesInvalid = roles.Except(Constants.Roles_Supported);
+            if (rolesInvalid.Any())
+                throw new ArgumentOutOfRangeException(nameof(roles), $"Invalid role(s) specified: {string.Join(';', rolesInvalid)}");
+
+            using var httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl,
+                _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);
+            using var rolesApi = ApiClientFactory.Create<RoleContainerApi>(httpClient);
+            using var rolesMapperApi = ApiClientFactory.Create<RoleMapperApi>(httpClient);
+
+            var kcRoles = await rolesApi.GetRolesAsync(_keycloakAuthenticationOptions.Realm);
+
+            var roleRepresentations = kcRoles.IntersectBy(roles.Select(o => o.ToLower()), o => o.Name.ToLower()).ToList();
+            await rolesMapperApi.PostUsersRoleMappingsRealmByIdAsync(_keycloakAuthenticationOptions.Realm, externalId.Value.ToString(), roleRepresentations);
         }
 
-        public async Task RemoveAsOrganizationAdmin(Guid userId, Guid organizationId)
+        public async Task RemoveKeycloakRoles(Guid? externalId, List<string> roles)
         {
-            throw new NotImplementedException();
-        }
+            if (!externalId.HasValue || externalId == Guid.Empty)
+                throw new ArgumentNullException(nameof(externalId));
 
+            if (roles == null || !roles.Any())
+                throw new ArgumentNullException(nameof(roles));
+
+            var rolesInvalid = roles.Except(Constants.Roles_Supported);
+            if (rolesInvalid.Any())
+                throw new ArgumentOutOfRangeException(nameof(roles), $"Invalid role(s) specified: {string.Join(';', rolesInvalid)}");
+
+            using var httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl,
+                _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);
+            using var rolesApi = ApiClientFactory.Create<RoleContainerApi>(httpClient);
+            using var rolesMapperApi = ApiClientFactory.Create<RoleMapperApi>(httpClient);
+
+            var roleRepresentationsExisting = await rolesMapperApi.GetUsersRoleMappingsByIdAsync(_keycloakAuthenticationOptions.Realm, externalId.Value.ToString());
+
+            var roleRepresentations = roleRepresentationsExisting.RealmMappings.Where(o => roles.Contains(o.Name, StringComparer.InvariantCultureIgnoreCase)).ToList();
+
+            await rolesMapperApi.PostUsersRoleMappingsRealmByIdAsync(_keycloakAuthenticationOptions.Realm, externalId.Value.ToString(), roleRepresentations);
+        }
         #endregion
 
         #region Private Members
-        private string? GetPhotoURL(Guid? id)
+        private string? GetS3ObjectURL(Guid? id)
         {
             if (!id.HasValue) return null;
             return _s3ObjectService.GetURL(id.Value);

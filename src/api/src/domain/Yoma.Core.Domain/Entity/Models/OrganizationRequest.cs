@@ -33,7 +33,5 @@
         public string? Tagline { get; set; }
 
         public string? Biography { get; set; }
-
-        public bool Approved { get; set; }
     }
 }

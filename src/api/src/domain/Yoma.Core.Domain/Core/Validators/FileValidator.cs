@@ -23,7 +23,7 @@ namespace Yoma.Core.Domain.Core.Validators
                     maxSizeBytes = 25000000;
                     break;
 
-                case FileTypeEnum.RegistrationDocuments:
+                case FileTypeEnum.Documents:
                     extensions = new[] { ".pdf" };
                     maxSizeBytes = 25000000;
                     break;

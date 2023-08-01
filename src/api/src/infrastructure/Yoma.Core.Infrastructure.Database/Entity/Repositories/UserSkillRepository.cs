@@ -54,7 +54,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
             var entity = _context.UserSkills.Where(o => o.Id == item.Id).SingleOrDefault();
 
             if (entity == null)
-                throw new ArgumentOutOfRangeException(nameof(item), $"UserSkills with id '{item.Id}' does not exist");
+                throw new ArgumentOutOfRangeException(nameof(item), $"{nameof(UserSkill)} with id '{item.Id}' does not exist");
 
             _context.UserSkills.Remove(entity);
             await _context.SaveChangesAsync();

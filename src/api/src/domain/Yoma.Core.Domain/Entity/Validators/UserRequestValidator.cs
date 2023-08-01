@@ -5,7 +5,7 @@ using Yoma.Core.Domain.Lookups.Interfaces;
 
 namespace Yoma.Core.Domain.Entity.Validators
 {
-    public class UserValidator : AbstractValidator<User>
+    public class UserRequestValidator : AbstractValidator<UserRequest>
     {
         #region Class Variables
         private ICountryService _countryService;
@@ -13,7 +13,7 @@ namespace Yoma.Core.Domain.Entity.Validators
         #endregion
 
         #region Constructor
-        public UserValidator(ICountryService countryService,
+        public UserRequestValidator(ICountryService countryService,
             IGenderService genderService)
         {
             _countryService = countryService;
@@ -28,7 +28,6 @@ namespace Yoma.Core.Domain.Entity.Validators
             RuleFor(x => x.GenderId).Must(GenderExists).WithMessage($"Specified gender is invalid / does not exist.");
             RuleFor(x => x.DateOfBirth).Must(BeNotInFuture).WithMessage("'{PropertyName}' must not be in the future.");
             RuleFor(x => x.DateLastLogin).Must(BeNotInFuture).WithMessage("'{PropertyName}' must not be in the future.");
-            //TODO: PhotoId
             //TODO: ExternalId
             //TODO: ZltoWalletId
             //TODO: ZltoWalletCountryId

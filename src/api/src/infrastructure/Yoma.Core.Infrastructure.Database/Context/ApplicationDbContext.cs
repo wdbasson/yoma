@@ -16,7 +16,9 @@ namespace Yoma.Core.Infrastructure.Database.Context
 
         public DbSet<Organization> Organization { get; set; }
 
-        public DbSet<UserSkill> UserSkills { get; set; }   
+        public DbSet<UserSkill> UserSkills { get; set; }
+
+        public DbSet<OrganizationUser> OrganizationUsers { get; set; }
 
         public DbSet<OrganizationProviderType> OrganizationProviderTypes { get; set; }     
 

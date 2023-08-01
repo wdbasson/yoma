@@ -34,8 +34,6 @@
 
         public string? Biography { get; set; }
 
-        public Guid? UserId { get; set; }
-
         public bool Approved { get; set; }
 
         public DateTimeOffset? DateApproved { get; set; }
@@ -46,7 +44,11 @@
 
         public Guid? LogoId { get; set; }
 
+        public string? LogoURL { get; set; }
+
         public Guid? CompanyRegistrationDocumentId { get; set; }
+
+        public string? CompanyRegistrationDocumentURL { get; set; }
 
         public DateTimeOffset DateCreated { get; set; }
 

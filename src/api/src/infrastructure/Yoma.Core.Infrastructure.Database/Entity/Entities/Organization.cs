@@ -8,7 +8,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Entities
 {
     [Table("Organization", Schema = "entity")]
     [Index(nameof(Name), IsUnique = true)]
-    [Index(nameof(UserId), nameof(Approved), nameof(Active), nameof(DateModified), nameof(DateCreated))]
+    [Index(nameof(Approved), nameof(Active), nameof(DateModified), nameof(DateCreated))]
     public class Organization : BaseEntity<Guid>
     {
         [Required]
@@ -58,10 +58,6 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Entities
         [Column(TypeName = "varchar(MAX)")]
         public string? Biography { get; set; }
         
-        [ForeignKey("UserId")]
-        public Guid? UserId { get; set; }
-        public User User { get; set; }
-
         [Required]
         public bool Approved { get; set; }
 

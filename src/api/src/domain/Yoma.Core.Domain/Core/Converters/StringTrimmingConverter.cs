@@ -4,9 +4,12 @@ namespace Yoma.Core.Domain.Core.Converters
 {
     public class StringTrimmingConverter : JsonConverter
     {
+        #region Public Properties
         public override bool CanRead => true;
         public override bool CanWrite => false;
+        #endregion
 
+        #region Public Members
         public override bool CanConvert(Type objectType) => objectType == typeof(string);
 
         public override object? ReadJson(JsonReader reader, Type objectType,
@@ -18,7 +21,8 @@ namespace Yoma.Core.Domain.Core.Converters
 
         public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
         {
-            writer.WriteValue(value);
+            throw new NotImplementedException();
         }
+        #endregion
     }
 }

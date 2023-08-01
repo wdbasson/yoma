@@ -44,14 +44,12 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
             if(item == null)
                 throw new ArgumentNullException(nameof(item));
 
-            if (!item.Id.HasValue) item.Id = Guid.NewGuid();    
-
             item.DateCreated = DateTimeOffset.Now;
             item.DateModified = DateTimeOffset.Now;
 
             var entity = new User
             {
-                Id = item.Id.Value,
+                Id = item.Id,
                 Email = item.Email,
                 EmailConfirmed = item.EmailConfirmed,
                 FirstName = item.FirstName,

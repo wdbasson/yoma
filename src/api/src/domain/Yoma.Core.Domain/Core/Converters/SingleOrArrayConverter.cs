@@ -1,10 +1,16 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Yoma.Core.Domain.Core.Extensions
-{
+namespace Yoma.Core.Domain.Core.Converters
+{ 
     public class SingleOrArrayConverter<T> : JsonConverter
     {
+        #region Public Properties
+        public override bool CanRead => true;
+        public override bool CanWrite => false;
+        #endregion
+
+        #region Public Members
         public override bool CanConvert(Type objectType)
         {
             return (objectType == typeof(List<T>));
@@ -24,14 +30,10 @@ namespace Yoma.Core.Domain.Core.Extensions
             return new List<T> { item };
         }
 
-        public override bool CanWrite
-        {
-            get { return false; }
-        }
-
         public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
         {
             throw new NotImplementedException();
         }
+        #endregion
     }
 }

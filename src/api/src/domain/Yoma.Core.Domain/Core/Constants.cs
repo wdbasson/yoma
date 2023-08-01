@@ -5,5 +5,7 @@
         public const string Role_User = "User";
         public const string Role_Admin = "Admin";
         public const string Role_OrganizationAdmin = "OrganisationAdmin";
+
+        public static readonly string[] Roles_Supported = { Role_User, Role_Admin, Role_OrganizationAdmin };
     }
 }

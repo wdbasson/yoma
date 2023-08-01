@@ -14,6 +14,7 @@ using Yoma.Core.Domain.Keycloak.Models;
 using Yoma.Core.Domain.Entity.Models;
 using Yoma.Core.Domain.Core;
 using Yoma.Core.Domain.Lookups.Interfaces;
+using Yoma.Core.Domain.Entity.Extensions;
 
 namespace Yoma.Core.Api.Controllers
 {
@@ -158,27 +159,27 @@ namespace Yoma.Core.Api.Controllers
                 return;
             }
 
-            var user = _userService.GetByEmailOrNull(kcUser.Username);
+            var userRequest = _userService.GetByEmailOrNull(kcUser.Username)?.ToUserRequest();
 
             switch (type)
             {
                 case WebhookRequestEventType.Register:
                 case WebhookRequestEventType.UpdateProfile:
-                    if (user == null)
+                    if (userRequest == null)
                     {
                         if (type == WebhookRequestEventType.UpdateProfile)
                         {
                             _logger.LogError($"{type}: Failed to retrieve the Yoma user with username '{payload?.details.username}'");
                             return;
                         }
-                        user = new User { Id = Guid.NewGuid() };
+                        userRequest = new UserRequest();
                     }
 
-                    user.Email = kcUser.Email.Trim();
-                    user.FirstName = kcUser.FirstName.Trim();
-                    user.Surname = kcUser.LastName.Trim();
-                    user.EmailConfirmed = kcUser.EmailVerified.HasValue && kcUser.EmailVerified.Value;
-                    user.PhoneNumber = kcUser.Attributes[CustomAttributes.PhoneNumber.ToDescription()].FirstOrDefault()?.Trim();
+                    userRequest.Email = kcUser.Email.Trim();
+                    userRequest.FirstName = kcUser.FirstName.Trim();
+                    userRequest.Surname = kcUser.LastName.Trim();
+                    userRequest.EmailConfirmed = kcUser.EmailVerified.HasValue && kcUser.EmailVerified.Value;
+                    userRequest.PhoneNumber = kcUser.Attributes[CustomAttributes.PhoneNumber.ToDescription()].FirstOrDefault()?.Trim();
 
                     var sGender = kcUser.Attributes[CustomAttributes.Gender.ToDescription()].FirstOrDefault()?.Trim();
                     if (!string.IsNullOrEmpty(sGender))
@@ -188,7 +189,7 @@ namespace Yoma.Core.Api.Controllers
                         if (gender == null)
                             _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.Gender}' with value '{sGender}'");
                         else
-                            user.GenderId = gender.Id;
+                            userRequest.GenderId = gender.Id;
                     }
 
                     var sCountryOfOrigin = kcUser.Attributes[CustomAttributes.CountryOfOrigin.ToDescription()].FirstOrDefault()?.Trim();
@@ -199,7 +200,7 @@ namespace Yoma.Core.Api.Controllers
                         if (country == null)
                             _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.CountryOfOrigin}' with value '{sCountryOfOrigin}'");
                         else
-                            user.CountryId = country.Id;
+                            userRequest.CountryId = country.Id;
                     }
 
                     var sCountryOfResidence = kcUser.Attributes[CustomAttributes.CountryOfResidence.ToDescription()].FirstOrDefault()?.Trim();
@@ -210,7 +211,7 @@ namespace Yoma.Core.Api.Controllers
                         if (country == null)
                             _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.CountryOfOrigin}' with value '{sCountryOfResidence}'");
                         else
-                            user.CountryOfResidenceId = country.Id;
+                            userRequest.CountryOfResidenceId = country.Id;
                     }
 
                     var sDateOfBirth = kcUser.Attributes[CustomAttributes.DateOfBirth.ToDescription()].FirstOrDefault()?.Trim();
@@ -219,7 +220,7 @@ namespace Yoma.Core.Api.Controllers
                         if (!DateTime.TryParse(sDateOfBirth, out var dateOfBirth))
                             _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.DateOfBirth}' with value '{sDateOfBirth}'");
                         else
-                            user.DateOfBirth = dateOfBirth;
+                            userRequest.DateOfBirth = dateOfBirth;
                     }
 
                     if (type == WebhookRequestEventType.UpdateProfile) break;
@@ -241,15 +242,15 @@ namespace Yoma.Core.Api.Controllers
                     break;
 
                 case WebhookRequestEventType.Login:
-                    if (user == null)
+                    if (userRequest == null)
                     {
                         _logger.LogError($"{type}: Failed to retrieve the Yoma user with username '{payload?.details.username}'");
                         return;
                     }
 
                     //updated here after email verification a login event is raised
-                    user.EmailConfirmed = kcUser.EmailVerified.HasValue && kcUser.EmailVerified.Value;
-                    user.DateLastLogin = DateTime.Now;
+                    userRequest.EmailConfirmed = kcUser.EmailVerified.HasValue && kcUser.EmailVerified.Value;
+                    userRequest.DateLastLogin = DateTime.Now;
 
                     break;
 
@@ -258,9 +259,9 @@ namespace Yoma.Core.Api.Controllers
                     return;
             }
 
-            user.ExternalId = Guid.Parse(kcUser.Id);
+            userRequest.ExternalId = Guid.Parse(kcUser.Id);
 
-            await _userService.Upsert(user);
+            await _userService.Upsert(userRequest);
         }
     }
     #endregion

@@ -16,23 +16,25 @@ namespace Yoma.Core.Infrastructure.Database
     public static class Startup
     {
         #region Public Members
-        public static void ConfigureServices_InfrastructureDatabase(this IServiceCollection services,  IConfiguration configuration)
+        public static void ConfigureServices_InfrastructureDatabase(this IServiceCollection services, IConfiguration configuration)
         {
             // infrastructure
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("SQLConnection")), ServiceLifetime.Scoped, ServiceLifetime.Scoped);
 
             // repositories
+            services.AddScoped<IRepository<S3Object>, S3ObjectRepository>();
+
+            services.AddScoped<IRepository<OrganizationProviderType>, OrganizationProviderTypesRepository>();
+            services.AddScoped<IRepository<Organization>, OrganizationRepository>();
+            services.AddScoped<IRepository<OrganizationUser>, OrganizationUserRepository>();
+            services.AddScoped<IRepository<User>, UserRepository>();
+            services.AddScoped<IRepository<UserSkill>, UserSkillRepository>();
+
             services.AddScoped<IRepository<Country>, CountryRepository>();
             services.AddScoped<IRepository<Gender>, GenderRepository>();
             services.AddScoped<IRepository<ProviderType>, ProviderTypeRepository>();
             services.AddScoped<IRepository<Skill>, SkillRepository>();
-            services.AddScoped<IRepository<S3Object>, S3ObjectRepository>();
-            services.AddScoped<IRepository<User>, UserRepository>();
-            services.AddScoped<IRepository<Organization>, OrganizationRepository>();
-            services.AddScoped<IRepository<User>, UserRepository>();
-            services.AddScoped<IRepository<UserSkill>, UserSkillRepository>();
-            services.AddScoped<IRepository<OrganizationProviderType>, OrganizationProviderTypesRepository>();
         }
 
         public static void Configure_InfrastructureDatabase(this IServiceProvider serviceProvider)

@@ -1,8 +1,6 @@
-﻿using FluentValidation;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net;
-using Yoma.Core.Domain.Entity.Models;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Lookups.Models;
 
@@ -15,7 +13,6 @@ namespace Yoma.Core.Api.Controllers
     {
         #region Class Variables
         private readonly ILogger<UserController> _logger;
-        private IValidator<User> _userValidator;
         private readonly IGenderService _genderService;
         private readonly ICountryService _countryService;
         private readonly IProviderTypeService _providerTypeService; 
@@ -24,13 +21,11 @@ namespace Yoma.Core.Api.Controllers
         #region Constructor
         public LookupController(
             ILogger<UserController> logger,
-            IValidator<User> userValidator,
             IGenderService genderService,
             ICountryService countryService,
             IProviderTypeService providerTypeService)
         {
             _logger = logger;
-            _userValidator = userValidator;
             _genderService = genderService;
             _countryService = countryService;
             _providerTypeService = providerTypeService;
@@ -39,7 +34,7 @@ namespace Yoma.Core.Api.Controllers
 
         #region Public Members
         #region Anonymous Actions
-        [SwaggerOperation(Summary = "Return a list of gender's")]
+        [SwaggerOperation(Summary = "Return a list of genders")]
         [HttpGet("gender")]
         [ProducesResponseType(typeof(List<Gender>), (int)HttpStatusCode.OK)]
         public IActionResult ListGenders()

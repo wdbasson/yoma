@@ -23,12 +23,14 @@ namespace Yoma.Core.Domain
             //register all validators in Yoma.Core.Domain assembly
             services.AddValidatorsFromAssemblyContaining<UserService>();
 
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IOrganizationService, OrganizationService>();
-            services.AddScoped<IGenderService, GenderService>();
-            services.AddScoped<ICountryService, CountryService>();
-            services.AddScoped<IProviderTypeService, ProviderTypeService>();
             services.AddScoped<IS3ObjectService, S3ObjectService>();
+
+            services.AddScoped<IOrganizationService, OrganizationService>();
+            services.AddScoped<IUserService, UserService>();
+
+            services.AddScoped<ICountryService, CountryService>();
+            services.AddScoped<IGenderService, GenderService>();
+            services.AddScoped<IProviderTypeService, ProviderTypeService>();
         }
 
         public static void ConfigureServices_RecurringJobs(this IServiceProvider serviceProvider, IConfiguration configuration)

@@ -1,10 +1,8 @@
 ﻿namespace Yoma.Core.Domain.Entity.Models
 {
-    public class User
-
+    public class UserRequest
     {
-        #region Public Members
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
 
         public string Email { get; set; }
 
@@ -26,10 +24,6 @@
 
         public DateTimeOffset? DateOfBirth { get; set; }
 
-        public Guid? PhotoId { get; set; }
-
-        public string? PhotoURL { get; set; }
-
         public DateTimeOffset? DateLastLogin { get; set; }
 
         public Guid? ExternalId { get; set; }
@@ -38,14 +32,7 @@
 
         public Guid? ZltoWalletCountryId { get; set; }
 
-        public string? ZltoWalletCountryCodeAlpha2 { get; set; }
-
         public Guid? TenantId { get; set; }
 
-        public DateTimeOffset DateCreated { get; set; }
-
-        public DateTimeOffset DateModified { get; set; }
-        #endregion
     }
 }
-

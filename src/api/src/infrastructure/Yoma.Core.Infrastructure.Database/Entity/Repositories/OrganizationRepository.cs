@@ -32,7 +32,6 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
                 PostalCode = entity.PostalCode,
                 Tagline = entity.Tagline,
                 Biography = entity.Biography,
-                UserId = entity.UserId,
                 Approved = entity.Approved,
                 DateApproved = entity.DateApproved,
                 Active = entity.Active,
@@ -67,7 +66,6 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
                 PostalCode = item.PostalCode,
                 Tagline = item.Tagline,
                 Biography = item.Biography,
-                UserId = item.UserId,
                 Approved = item.Approved,
                 DateApproved = item.DateApproved,
                 Active = item.Active,
@@ -110,7 +108,6 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
             entity.PostalCode = item.PostalCode;
             entity.Tagline = item.Tagline;
             entity.Biography = item.Biography;
-            entity.UserId = item.UserId;
             entity.Approved = item.Approved;
             entity.DateApproved = item.DateApproved;
             entity.Active = item.Active;

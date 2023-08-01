@@ -26,6 +26,6 @@ namespace Yoma.Core.Domain.Core
     {
         Photos, //logo and profile photo
         Certificates,
-        RegistrationDocuments
+        Documents
     }
 }

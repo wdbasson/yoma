@@ -5,20 +5,20 @@ namespace Yoma.Core.Domain.Entity.Interfaces
 {
     public interface IUserService
     {
-        public User GetByEmail(string? email);
+        User GetByEmail(string? email);
 
-        public User? GetByEmailOrNull(string email);
+        User? GetByEmailOrNull(string email);
 
-        public User GetById(Guid Id);
+        User GetById(Guid Id);
 
-        Task<User> Upsert(User request);
+        Task<User> Upsert(UserRequest request);
 
         Task<User> UpdateProfile(string? email, UserProfileRequest request);
 
         Task<User> UpsertPhoto(string? email, IFormFile file);
 
-        Task AssignAsOrganizationAdmin(Guid userId, Guid organizationId);
+        Task EnsureKeycloakRoles(Guid? externalId, List<string> roles);
 
-        Task RemoveAsOrganizationAdmin(Guid userId, Guid organizationId);
+        Task RemoveKeycloakRoles(Guid? externalId, List<string> roles);
     }
 }
