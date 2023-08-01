@@ -20,8 +20,8 @@ namespace Yoma.Core.Domain.Entity.Validators
             _genderService = genderService;
 
             RuleFor(x => x.Email).NotEmpty().EmailAddress();
-            RuleFor(x => x.FirstName).NotEmpty().Length(0, 320);
-            RuleFor(x => x.Surname).NotEmpty().Length(0, 320);
+            RuleFor(x => x.FirstName).NotEmpty().Length(1, 320);
+            RuleFor(x => x.Surname).NotEmpty().Length(1, 320);
             RuleFor(x => x.PhoneNumber).Length(0, 50).Matches(RegExValidators.PhoneNumber()).WithMessage("'{PropertyName}' is invalid.").When(x => !string.IsNullOrEmpty(x.PhoneNumber));
             RuleFor(x => x.CountryId).Must(CountryExists).WithMessage($"Specified country is invalid / does not exist.");
             RuleFor(x => x.CountryOfResidenceId).Must(CountryExists).WithMessage($"Specified country of residence is invalid / does not exist.");

@@ -114,6 +114,7 @@ namespace Yoma.Core.Domain.Entity.Services
             if (emailUpdated) result.EmailConfirmed = false;
             result.FirstName = request.FirstName;
             result.Surname = request.Surname;
+            result.DisplayName = request.DisplayName;
             result.SetDisplayName();
             result.PhoneNumber = request.PhoneNumber;
             result.CountryId = request.CountryId;
@@ -163,6 +164,7 @@ namespace Yoma.Core.Domain.Entity.Services
                 result.Email = request.Email;
                 result.FirstName = request.FirstName;
                 result.Surname = request.Surname;
+                result.DisplayName = request.DisplayName;
                 result.SetDisplayName();
                 result.PhoneNumber = request.PhoneNumber;
                 result.CountryId = request.CountryId;
