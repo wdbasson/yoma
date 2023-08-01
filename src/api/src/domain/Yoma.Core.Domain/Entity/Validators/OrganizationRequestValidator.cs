@@ -20,18 +20,7 @@ namespace Yoma.Core.Domain.Entity.Validators
             RuleFor(x => x.PrimaryContactName).Length(0, 255);
             RuleFor(x => x.PrimaryContactName).Length(0, 320).EmailAddress();
 
-            //RuleFor(x => x.FirstName).NotEmpty().Length(1, 320);
-            //RuleFor(x => x.Surname).NotEmpty().Length(1, 320);
-            //RuleFor(x => x.PhoneNumber).Length(0, 50).Matches(RegExValidators.PhoneNumber()).WithMessage("'{PropertyName}' is invalid.").When(x => !string.IsNullOrEmpty(x.PhoneNumber));
-            //RuleFor(x => x.CountryId).Must(CountryExists).WithMessage($"Specified country is invalid / does not exist.");
-            //RuleFor(x => x.CountryOfResidenceId).Must(CountryExists).WithMessage($"Specified country of residence is invalid / does not exist.");
-            //RuleFor(x => x.GenderId).Must(GenderExists).WithMessage($"Specified gender is invalid / does not exist.");
-            //RuleFor(x => x.DateOfBirth).Must(BeNotInFuture).WithMessage("'{PropertyName}' must not be in the future.");
-            //RuleFor(x => x.DateLastLogin).Must(BeNotInFuture).WithMessage("'{PropertyName}' must not be in the future.");
-            ////TODO: ExternalId
-            ////TODO: ZltoWalletId
-            ////TODO: ZltoWalletCountryId
-            ////TODO: TenantId
+            //TODO: Complete
         }
         #endregion
 

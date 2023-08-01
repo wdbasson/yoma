@@ -62,6 +62,11 @@ namespace Yoma.Core.Api
                 .AddNewtonsoftJson(options => options.SerializerSettings.Converters.Add(new StringEnumConverter()))
                 .AddNewtonsoftJson(options => options.SerializerSettings.Converters.Add(new StringTrimmingConverter()));
 
+            services.AddMvc(options =>
+            {
+                options.Filters.Add(typeof(ReformatValidationProblemAttribute));
+            });
+
             services.AddHttpContextAccessor();
             services.AddMemoryCache();
             #endregion
