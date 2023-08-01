@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Yoma.Core.Domain.Exceptions;
 using System.ComponentModel.DataAnnotations;
+using Yoma.Core.Domain.Core.Models;
 
 namespace Yoma.Core.Api.Middleware
 {
@@ -29,23 +30,33 @@ namespace Yoma.Core.Api.Middleware
         {
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError; //default
 
-            switch (ex.GetType().Name)
+            List<ErrorResponseItem> errorResponse;
+            switch (ex)
             {
-                case nameof(BusinessException):
-                case nameof(ValidationException):
+                case FluentValidation.ValidationException:
+                    var myEx = (FluentValidation.ValidationException)ex;
+                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+                    errorResponse = myEx.Errors.Select(o => new ErrorResponseItem() { Type = ex.GetType().Name, Message = o.ErrorMessage }).ToList();
+                    return context.Response.WriteAsJsonAsync(errorResponse);
+
+                case BusinessException:
+                case ValidationException:
                     context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                     break;
-                case nameof(SecurityException):
+                case SecurityException:
                     context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                     break;
-                case nameof(DataCollisionException):
-                case nameof(DataInconsistencyException):
+                case DataCollisionException:
+                case DataInconsistencyException:
                     context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                     break;
             }
 
-            var errorResponse = new Dictionary<string, string>()
-            { { ex.GetType().Name, ex.Message} };
+            errorResponse = new List<ErrorResponseItem>()
+            {
+                new ErrorResponseItem { Type = ex.GetType().Name, Message =ex.Message }
+            };
 
             return context.Response.WriteAsJsonAsync(errorResponse);
         }

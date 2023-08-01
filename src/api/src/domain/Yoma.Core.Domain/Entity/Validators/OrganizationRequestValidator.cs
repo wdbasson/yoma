@@ -17,6 +17,8 @@ namespace Yoma.Core.Domain.Entity.Validators
 
             RuleFor(x => x.Name).NotEmpty().Length(1, 255);
             RuleFor(x => x.WebsiteURL).Length(1, 2048).Must(ValidURL).WithMessage("'{PropertyName}' is invalid.");
+            RuleFor(x => x.PrimaryContactName).Length(0, 255);
+            RuleFor(x => x.PrimaryContactName).Length(0, 320).EmailAddress();
 
             //RuleFor(x => x.FirstName).NotEmpty().Length(1, 320);
             //RuleFor(x => x.Surname).NotEmpty().Length(1, 320);

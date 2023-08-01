@@ -63,7 +63,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
             var result = GetByEmailOrNull(email);
             if (result == null)
-                throw new ArgumentOutOfRangeException(nameof(email), $"User with email '{email}' does not exist");
+                throw new ValidationException($"User with email '{email}' does not exist");
 
             result.PhotoURL = GetS3ObjectURL(result.PhotoId);
 
@@ -101,9 +101,9 @@ namespace Yoma.Core.Domain.Entity.Services
 
         public async Task<User> UpdateProfile(string? email, UserProfileRequest request)
         {
-            var result = GetByEmail(email);
-
             await _userProfileRequestValidator.ValidateAndThrowAsync(request);
+
+            var result = GetByEmail(email);
 
             var emailUpdated = !string.Equals(result.Email, request.Email, StringComparison.CurrentCultureIgnoreCase);
             if (emailUpdated)
