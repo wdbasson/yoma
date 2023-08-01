@@ -7,7 +7,7 @@ namespace Yoma.Core.Domain.Entity.Interfaces
     {
         Organization GetById(Guid id);
 
-        Task<Organization> Upsert(Organization request);
+        Task<Organization> Upsert(OrganizationRequest request);
 
         List<OrganizationProviderType> ListProviderTypesById(Guid id);
 

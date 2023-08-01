@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
-using System.Runtime.CompilerServices;
 
 namespace Yoma.Core.Infrastructure.Database.Migrations
 {
@@ -9,6 +8,20 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
         {
             internal static void Seed(MigrationBuilder migrationBuilder)
             {
+                migrationBuilder.InsertData(
+                table: "ProviderType",
+                columns: new[] { "Id", "Name", "DateCreated" },
+                values: new object[,]
+                {
+                    {"A3BCAA03-B31C-4830-AAE8-06BBA701D3F0","Opportunity",DateTimeOffset.Now}
+                    ,
+                    {"6FB02F6F-34FE-4E6E-9094-2E3B54115235","Educational",DateTimeOffset.Now}
+                    ,
+                    {"D2987F9F-8CC8-4576-AF09-C01213A1435E","Marketplace",DateTimeOffset.Now}
+                },
+                schema: "lookup");
+
+
                 migrationBuilder.InsertData(
                 table: "Gender",
                 columns: new[] { "Id", "Name", "DateCreated" },

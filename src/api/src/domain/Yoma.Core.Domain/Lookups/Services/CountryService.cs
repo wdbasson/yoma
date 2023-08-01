@@ -32,7 +32,7 @@ namespace Yoma.Core.Domain.Lookups.Services
             var result = GetByNameOrNull(name);
 
             if (result == null)
-                throw new ArgumentException($"{nameof(Gender)} with name '{name}' does not exists", nameof(name));
+                throw new ArgumentException($"{nameof(ProviderType)} with name '{name}' does not exists", nameof(name));
 
             return result;
         }
@@ -51,7 +51,7 @@ namespace Yoma.Core.Domain.Lookups.Services
             var result = GetByCodeAplha2OrNull(code);
 
             if (result == null)
-                throw new ArgumentException($"{nameof(Gender)} with code '{code}' does not exists", nameof(code));
+                throw new ArgumentException($"{nameof(ProviderType)} with code '{code}' does not exists", nameof(code));
 
             return result;
         }

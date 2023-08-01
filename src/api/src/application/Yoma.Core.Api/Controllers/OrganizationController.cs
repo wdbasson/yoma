@@ -49,7 +49,7 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Insert or update an organization")]
         [HttpPost()]
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
-        public async Task<IActionResult> Upsert([FromBody] Organization request)
+        public async Task<IActionResult> Upsert([FromBody] OrganizationRequest request)
         {
             _logger.LogInformation($"Handling request {nameof(Upsert)}"); //TODO: new or id
 

@@ -27,6 +27,7 @@ namespace Yoma.Core.Domain
             services.AddScoped<IOrganizationService, OrganizationService>();
             services.AddScoped<IGenderService, GenderService>();
             services.AddScoped<ICountryService, CountryService>();
+            services.AddScoped<IProviderTypeService, ProviderTypeService>();
             services.AddScoped<IS3ObjectService, S3ObjectService>();
         }
 
