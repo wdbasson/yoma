@@ -30,6 +30,7 @@
     "zod": "^3.21.4"
   },
   "devDependencies": {
+    "next-pwa": "^5.6.0",
     "@next/bundle-analyzer": "^13.4.12",
     "@types/eslint": "^8.37.0",
     "@types/node": "^18.16.0",

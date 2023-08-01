@@ -3,10 +3,17 @@
  * for Docker builds.
  */
 import withBundleAnalyzer from "@next/bundle-analyzer";
+import withPWA from "next-pwa";
 await import("./src/env.mjs");
 
 const bundleAnalyzer = withBundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
+});
+
+const pwa = withPWA({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
 });
 
 /** @type {import("next").NextConfig} */
@@ -26,4 +33,4 @@ const config = {
   },
 };
 
-export default bundleAnalyzer(config);
+export default bundleAnalyzer(pwa(config));
