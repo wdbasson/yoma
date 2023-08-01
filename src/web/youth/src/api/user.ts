@@ -1,12 +1,12 @@
 import { http } from "~/lib/axios";
-import { User, UserProfileRequest } from "./models/user";
+import type { User, UserProfileRequest } from "./models/user";
 
 export const getUser = async (): Promise<User> => {
-  const { data } = await http.get("/user");
+  const { data } = await http.get<User>("/user");
   return data;
 };
 
 export const patchUser = async (model: UserProfileRequest): Promise<User> => {
-  const { data } = await http.patch("/user", model);
+  const { data } = await http.patch<User>("/user", model);
   return data;
 };

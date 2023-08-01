@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { ReactElement } from "react";
+import type { ReactElement } from "react";
 import { IoMdArrowBack } from "react-icons/io";
 
 export type Props = ({
@@ -11,7 +11,7 @@ export type Props = ({
 export const NavbarBackButton: Props = ({ rightMenuChildren }) => {
   const router = useRouter();
 
-  const handleClick = async () => {
+  const handleClick = () => {
     // if (router.pathname === "/cart/result") {
     //   // return to home after payment
     //   router.replace("/");

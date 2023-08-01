@@ -7,7 +7,7 @@ import {
 } from "next-auth";
 import { type DefaultJWT } from "next-auth/jwt";
 import KeycloakProvider from "next-auth/providers/keycloak";
-import { User as YomaUserProfile } from "~/api/models/user";
+import { type User as YomaUserProfile } from "~/api/models/user";
 import { env } from "~/env.mjs";
 
 /**
@@ -47,14 +47,20 @@ declare module "next-auth/jwt" {
  */
 export const authOptions: NextAuthOptions = {
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
+      // called when user profile is updated (update function from settings.tsx)
+      if (trigger === "update" && session?.name) {
+        console.log("UPDATE session" + JSON.stringify(session));
+        token.user = session;
+      }
+
       // Initial sign in
       if (account && user) {
         // get roles from access_token
         const { realm_access } = decode(account.access_token); // eslint-disable-line
 
         // get user profile from yoma-api
-        var userProfile = await getYomaUserProfile(account.access_token!);
+        const userProfile = await getYomaUserProfile(account.access_token!);
 
         return {
           accessToken: account.accessToken,
