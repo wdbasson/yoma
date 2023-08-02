@@ -55,8 +55,7 @@ export const ApiErrors: Props = ({ error }) => {
               return (
                 <>
                   <div className="mb-4 flex flex-row items-center text-sm font-bold">
-                    <IoMdAlert className="mr-2 text-xl text-red-400" /> Access
-                    Denied
+                    <IoMdAlert className="mr-2 text-xl text-red-400" /> Error
                   </div>
                   <p className="text-sm">
                     An unknown error has occurred. Please contact us or try
@@ -82,7 +81,9 @@ export const ApiErrors: Props = ({ error }) => {
                   </div>
                   <ul className="list-disc">
                     {customErrors?.map((error) => (
-                      <li className="text-sm">{error.message}</li>
+                      <li key={error.message} className="text-sm">
+                        {error.message}
+                      </li>
                     ))}
                   </ul>
                 </>

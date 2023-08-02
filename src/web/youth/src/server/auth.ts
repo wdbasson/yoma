@@ -50,7 +50,6 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account, trigger, session }) {
       // called when user profile is updated (update function from settings.tsx)
       if (trigger === "update" && session?.name) {
-        console.log("UPDATE session" + JSON.stringify(session));
         token.user = session;
       }
 
@@ -88,6 +87,7 @@ export const authOptions: NextAuthOptions = {
         session.user = token.user;
         session.accessToken = token.accessToken;
         session.error = token.error;
+        session.expires = new Date(token.accessTokenExpires).toISOString();
       }
 
       return session;
@@ -144,8 +144,6 @@ async function getYomaUserProfile(access_token: string): Promise<User | null> {
 // eslint-disable-next-line
 async function refreshAccessToken(token: any) {
   try {
-    console.log("Refreshing access token...");
-
     const url = process.env.KEYCLOAK_ISSUER + "/protocol/openid-connect/token?";
 
     const response = await fetch(url, {

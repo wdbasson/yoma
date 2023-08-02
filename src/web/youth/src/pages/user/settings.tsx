@@ -18,10 +18,6 @@ const Settings: NextPageWithLayout = () => {
   const { data: user } = useGetUser();
   const { data: session, update } = useSession();
 
-  // const [submittedValues, setSubmittedValues] =
-  //   useState<UserProfileRequest | null>(null);
-  // usePatchUser(submittedValues);
-
   const schema = zod.object({
     email: zod.string().email().min(1, "Email is required"),
     firstName: zod.string().min(1, "First name is required"),
@@ -71,8 +67,6 @@ const Settings: NextPageWithLayout = () => {
   const onSubmit = useCallback(
     async (data: FieldValues) => {
       // update api
-      // setSubmittedValues(data as UserProfileRequest);
-
       try {
         await patchUser(data as UserProfileRequest);
       } catch (error: any) {
@@ -98,11 +92,7 @@ const Settings: NextPageWithLayout = () => {
         toastId: "patchUserProfile",
       });
     },
-    [
-      //setSubmittedValues,
-      update,
-      session,
-    ]
+    [update, session]
   );
 
   return (
@@ -330,6 +320,14 @@ const Settings: NextPageWithLayout = () => {
                 Submit
               </button>
             </div>
+
+            {/* {error != null && (
+              <label className="label">
+                <span className="label-text-alt italic text-red-500">
+                  {`${JSON.stringify(error)}`}
+                </span>
+              </label>
+            )} */}
           </form>
         </div>
       </div>
