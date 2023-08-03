@@ -6,6 +6,8 @@
 
         public AppSettingsCredentials WebhookAdminKeyCloak { get; set; }
 
+        public string AuthorizationPolicyScope { get; set; }
+
         public string SwaggerScopes { get; set; }
 
         public int CacheSlidingExpirationLookupInHours { get; set; }

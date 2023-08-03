@@ -11,7 +11,7 @@ namespace Yoma.Core.Api.Controllers
 {
     [Route("api/v3/user")]
     [ApiController]
-    [Authorize]
+    [Authorize(Policy = Common.Constants.Authorization_Policy)]
     public class UserController : Controller
     {
         #region Class Variables

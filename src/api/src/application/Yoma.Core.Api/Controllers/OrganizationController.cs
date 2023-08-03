@@ -11,7 +11,8 @@ namespace Yoma.Core.Api.Controllers
 {
     [Route("api/v3/organization")]
     [ApiController]
-    [Authorize(Roles = $"{Constants.Role_Admin},{Constants.Role_OrganizationAdmin}")]
+    [Authorize(Policy = Common.Constants.Authorization_Policy, 
+        Roles = $"{Constants.Role_Admin},{Constants.Role_OrganizationAdmin}")]
     [SwaggerTag("(Admin or Organization Admin roles required)")]
     public class OrganizationController : Controller
     {

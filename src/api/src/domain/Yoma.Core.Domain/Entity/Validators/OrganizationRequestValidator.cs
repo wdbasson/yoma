@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Yoma.Core.Domain.Core.Validators;
 using Yoma.Core.Domain.Entity.Models;
 using Yoma.Core.Domain.Lookups.Interfaces;
 
@@ -18,7 +19,9 @@ namespace Yoma.Core.Domain.Entity.Validators
             RuleFor(x => x.Name).NotEmpty().Length(1, 255);
             RuleFor(x => x.WebsiteURL).Length(1, 2048).Must(ValidURL).WithMessage("'{PropertyName}' is invalid.");
             RuleFor(x => x.PrimaryContactName).Length(0, 255);
-            RuleFor(x => x.PrimaryContactName).Length(0, 320).EmailAddress();
+            RuleFor(x => x.PrimaryContactEmail).Length(0, 320).EmailAddress();
+            RuleFor(x => x.PrimaryContactPhone).Length(0, 50).Matches(RegExValidators.PhoneNumber()).WithMessage("'{PropertyName}' is invalid.").When(x => !string.IsNullOrEmpty(x.PrimaryContactPhone));
+            RuleFor(x => x.VATIN).Length(0, 255);
 
             //TODO: Complete
         }

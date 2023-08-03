@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net;
 using Yoma.Core.Domain.Lookups.Interfaces;
@@ -8,6 +9,7 @@ namespace Yoma.Core.Api.Controllers
 {
     [Route("api/v3/lookup")]
     [ApiController]
+    [AllowAnonymous]
     [SwaggerTag("(Anonymous)")]
     public class LookupController : Controller
     {

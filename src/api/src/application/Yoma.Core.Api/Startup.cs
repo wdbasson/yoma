@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Yoma.Core.Domain.Core.Converters;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Yoma.Core.Api
 {
@@ -168,7 +169,17 @@ namespace Yoma.Core.Api
 
         private void ConfigureAuthorization(IServiceCollection services, KeycloakProtectionClientOptions options)
         {
-            services.AddAuthorization().AddKeycloakAuthorization(options);
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy(Common.Constants.Authorization_Policy, policy =>
+                {
+                    policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
+                    policy.RequireAuthenticatedUser();
+                    policy.Requirements.Add(new RequireClaimAuthorizationRequirement());
+                });
+            })
+            .AddKeycloakAuthorization(options);
+            services.AddSingleton<IAuthorizationHandler, RequiredClaimAuthorizationHandler>();
             services.AddTransient<IClaimsTransformation, KeyCloakClaimsTransformer>();
         }
 

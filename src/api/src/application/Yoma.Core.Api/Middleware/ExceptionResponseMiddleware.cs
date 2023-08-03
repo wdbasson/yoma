@@ -37,6 +37,8 @@ namespace Yoma.Core.Api.Middleware
                     var myEx = (FluentValidation.ValidationException)ex;
                     context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
+                    if (!myEx.Errors.Any()) break;
+                    
                     errorResponse = myEx.Errors.Select(o => new ErrorResponseItem() { Type = ex.GetType().Name, Message = o.ErrorMessage }).ToList();
                     return context.Response.WriteAsJsonAsync(errorResponse);
 

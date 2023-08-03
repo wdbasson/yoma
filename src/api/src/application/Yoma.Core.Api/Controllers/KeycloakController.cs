@@ -15,11 +15,13 @@ using Yoma.Core.Domain.Entity.Models;
 using Yoma.Core.Domain.Core;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Entity.Extensions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Yoma.Core.Api.Controllers
 {
     [Route("api/v1/keycloak")] //TODO: pending new keycloak instance (v3 route)
     [ApiController]
+    [AllowAnonymous]
     [ApiExplorerSettings(IgnoreApi = true)]
     public class KeycloakController : Controller
     {
