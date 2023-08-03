@@ -24,7 +24,7 @@ type AppPropsWithLayout = AppProps & {
 
 const MyApp: AppType<object> = ({
   Component,
-  pageProps: pageProps,
+  pageProps,
 }: AppPropsWithLayout) => {
   // This ensures that data is not shared
   // between different users and requests
@@ -34,8 +34,9 @@ const MyApp: AppType<object> = ({
   const getLayout = Component.getLayout ?? ((page) => page);
 
   return getLayout(
-    <ThemeProvider attribute="class" enableSystem={false} defaultTheme="dark">
+    <ThemeProvider attribute="class" enableSystem={false} forcedTheme="dark">
       <QueryClientProvider client={queryClient}>
+        {/* eslint-disable-next-line */}
         <Hydrate state={pageProps.dehydratedState}>
           <Component {...pageProps} />
           <ToastContainer

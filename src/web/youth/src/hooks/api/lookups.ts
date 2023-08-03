@@ -1,13 +1,12 @@
-//hooks/api/posts.js
-
-import { UseQueryResult, useQuery } from "@tanstack/react-query";
-import * as api from "~/api/lookups";
-import { Country, Gender } from "~/api/models/lookups";
+import type { UseQueryResult } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { getCountries, getGenders } from "~/api/lookups";
+import type { Country, Gender } from "~/api/models/lookups";
 
 export const useGenders = (): UseQueryResult<Gender[]> => {
-  return useQuery(["genders"], () => api.getGenders());
+  return useQuery(["genders"], () => getGenders());
 };
 
 export const useCountries = (): UseQueryResult<Country[]> => {
-  return useQuery(["countries"], () => api.getCountries());
+  return useQuery(["countries"], () => getCountries());
 };

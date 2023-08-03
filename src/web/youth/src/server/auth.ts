@@ -7,7 +7,7 @@ import {
 } from "next-auth";
 import { type DefaultJWT } from "next-auth/jwt";
 import KeycloakProvider from "next-auth/providers/keycloak";
-import { User as YomaUserProfile } from "~/api/models/user";
+import { type User as YomaUserProfile } from "~/api/models/user";
 import { env } from "~/env.mjs";
 
 /**
@@ -47,14 +47,20 @@ declare module "next-auth/jwt" {
  */
 export const authOptions: NextAuthOptions = {
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
+      // called when user profile is updated (update function from settings.tsx)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (trigger === "update" && session?.name) {
+        token.user = session as User;
+      }
+
       // Initial sign in
       if (account && user) {
         // get roles from access_token
         const { realm_access } = decode(account.access_token); // eslint-disable-line
 
         // get user profile from yoma-api
-        var userProfile = await getYomaUserProfile(account.access_token!);
+        const userProfile = await getYomaUserProfile(account.access_token!);
 
         return {
           accessToken: account.accessToken,
@@ -82,6 +88,7 @@ export const authOptions: NextAuthOptions = {
         session.user = token.user;
         session.accessToken = token.accessToken;
         session.error = token.error;
+        session.expires = new Date(token.accessTokenExpires).toISOString();
       }
 
       return session;
@@ -138,8 +145,6 @@ async function getYomaUserProfile(access_token: string): Promise<User | null> {
 // eslint-disable-next-line
 async function refreshAccessToken(token: any) {
   try {
-    console.log("Refreshing access token...");
-
     const url = process.env.KEYCLOAK_ISSUER + "/protocol/openid-connect/token?";
 
     const response = await fetch(url, {
