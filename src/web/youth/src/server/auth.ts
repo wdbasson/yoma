@@ -49,8 +49,9 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, account, trigger, session }) {
       // called when user profile is updated (update function from settings.tsx)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (trigger === "update" && session?.name) {
-        token.user = session;
+        token.user = session as User;
       }
 
       // Initial sign in

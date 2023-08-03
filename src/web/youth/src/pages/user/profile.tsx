@@ -70,7 +70,7 @@ const Settings: NextPageWithLayout = () => {
       type="button"
       aria-label="Close"
       className="btn-hover-grow btn btn-square gap-2 border-none bg-transparent hover:border-none hover:bg-transparent"
-      onClick={handleClick}
+      onClick={handleClick} // eslint-disable-line @typescript-eslint/no-misused-promises
     >
       <IoMdSettings className="h-6 w-6" />
     </button>

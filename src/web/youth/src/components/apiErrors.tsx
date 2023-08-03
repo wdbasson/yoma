@@ -1,5 +1,5 @@
 import { type AxiosError } from "axios";
-import { ReactElement } from "react";
+import { type ReactElement } from "react";
 import { IoMdAlert } from "react-icons/io";
 import { type ErrorResponseItem } from "~/api/models/common";
 
@@ -32,8 +32,8 @@ export const ApiErrors: Props = ({ error }) => {
                   Denied
                 </div>
                 <p className="text-sm">
-                  You don't have access to perform this action. Please contact
-                  us to request access.
+                  You don&apos;t have access to perform this action. Please
+                  contact us to request access.
                 </p>
               </>
             );

@@ -8,7 +8,7 @@ const ApiClient = () => {
     baseURL: env.NEXT_PUBLIC_API_BASE_URL,
   });
 
-  var lastSession: Session | null = null;
+  let lastSession: Session | null = null;
 
   instance.interceptors.request.use(
     async (request) => {

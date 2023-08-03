@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { type AxiosError } from "axios";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, type ReactElement } from "react";
 import { useForm, type FieldValues } from "react-hook-form";
@@ -9,13 +10,11 @@ import { patchUser } from "~/api/user";
 import MainBackButtonLayout from "~/components/Layout/MainBackButton";
 import { ApiErrors } from "~/components/apiErrors";
 import { useCountries, useGenders } from "~/hooks/api/lookups";
-import { useGetUser } from "~/hooks/api/user";
 import { type NextPageWithLayout } from "../_app";
 
 const Settings: NextPageWithLayout = () => {
   const { data: genders } = useGenders();
   const { data: countries } = useCountries();
-  const { data: user } = useGetUser();
   const { data: session, update } = useSession();
 
   const schema = zod.object({
@@ -27,7 +26,7 @@ const Settings: NextPageWithLayout = () => {
       .string()
       .min(1, "Phone number is required")
       .regex(
-        /^((\\+[1-9]{1,4}[ \\-]*)|(\\([0-9]{2,3}\\)[ \\-]*)|([0-9]{2,4})[ \\-]*)*?[0-9]{3,4}?[ \\-]*[0-9]{3,4}?$/,
+        /^[\\+]?[(]?[0-9]{3}[)]?[-\\s\\.]?[0-9]{3}[-\\s\\.]?[0-9]{4,6}$/,
         "Phone number is invalid"
       ),
     countryId: zod.string().min(1, "Country is required"),
@@ -53,15 +52,20 @@ const Settings: NextPageWithLayout = () => {
     resolver: zodResolver(schema),
   });
 
-  // set default values
+  // set default values (from user session)
   useEffect(() => {
     //HACK: ISO 8601 date needs to in the YYYY-MM-DD format for the input(type=date) to display correctly
-    if (user?.dateOfBirth != null) {
-      let date = new Date(user?.dateOfBirth);
-      user.dateOfBirth = date.toISOString().slice(0, 10);
+    if (session?.user.profile.dateOfBirth != null) {
+      const date = new Date(session?.user.profile.dateOfBirth);
+      session.user.profile.dateOfBirth = date.toISOString().slice(0, 10);
     }
-    reset(user);
-  }, [user, reset]);
+
+    // reset form
+    // setTimeout is needed to prevent the form from being reset before the default values are set
+    setTimeout(() => {
+      reset(session?.user.profile);
+    }, 100);
+  }, [session, reset]);
 
   // form submission handler
   const onSubmit = useCallback(
@@ -69,8 +73,8 @@ const Settings: NextPageWithLayout = () => {
       // update api
       try {
         await patchUser(data as UserProfileRequest);
-      } catch (error: any) {
-        toast(<ApiErrors error={error} />, {
+      } catch (error) {
+        toast(<ApiErrors error={error as AxiosError} />, {
           type: "error",
           toastId: "patchUserProfileError",
           autoClose: false,
