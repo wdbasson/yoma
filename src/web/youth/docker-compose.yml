@@ -1,7 +1,8 @@
 version: "3.9"
 services:
   yoma-web-app:
-    platform: "linux/amd64"
+    image: ${REGISTRY:-local}/yoma-web-app:${IMAGE_TAG:-latest}
+    container_name: yoma-web-app
     build:
       context: .
       dockerfile: Dockerfile
@@ -15,7 +16,6 @@ services:
     working_dir: /app
     ports:
       - "3000:3000"
-    image: ${REGISTRY:-local}/yoma-web-app:${IMAGE_TAG:-latest}
     environment:
       # SERVER VARIABLES
       - NEXTAUTH_SECRET=0vpMHSn0ufXwrEr1NKn6u1m+BKryJct5Cj7Jwt9mSSU=
@@ -23,3 +23,6 @@ services:
       - KEYCLOAK_ISSUER=http://host.docker.internal:8080/realms/yoma
       - KEYCLOAK_CLIENT_ID=yoma-web-app
       - KEYCLOAK_CLIENT_SECRET=secret
+      - API_BASE_URL=http://localhost:5000/api/v3
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v3
+      - NEXT_PUBLIC_ENVIRONMENT=development
