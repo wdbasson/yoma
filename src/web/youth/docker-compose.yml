@@ -20,7 +20,7 @@ services:
       # SERVER VARIABLES
       - NEXTAUTH_SECRET=0vpMHSn0ufXwrEr1NKn6u1m+BKryJct5Cj7Jwt9mSSU=
       - NEXTAUTH_URL=http://localhost:3000
-      - KEYCLOAK_ISSUER=http://host.docker.internal:8080/realms/yoma
+      - KEYCLOAK_ISSUER=http://keycloak:8080/realms/yoma
       - KEYCLOAK_CLIENT_ID=yoma-web-app
       - KEYCLOAK_CLIENT_SECRET=secret
       - API_BASE_URL=http://localhost:5000/api/v3
