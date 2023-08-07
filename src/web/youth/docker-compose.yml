@@ -4,7 +4,7 @@ services:
     image: ${REGISTRY:-local}/yoma-web-app:${IMAGE_TAG:-latest}
     container_name: yoma-web-app
     build:
-      context: .
+      context: ./src/web/youth
       dockerfile: Dockerfile
       # args:
       # CLIENT VARIABLES
