@@ -1,6 +1,6 @@
 ##### DEPENDENCIES
 
-FROM --platform=linux/amd64 node:16-alpine AS deps
+FROM node:16-alpine AS deps
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
@@ -16,14 +16,17 @@ RUN \
 
 ##### BUILDER
 
-FROM --platform=linux/amd64 node:16-alpine AS builder
-# ARG DATABASE_URL
-# ARG NEXT_PUBLIC_CLIENTVAR
+FROM node:16-alpine AS builder
+
 ARG NEXTAUTH_SECRET
 ARG NEXTAUTH_URL
 ARG KEYCLOAK_ISSUER
 ARG KEYCLOAK_CLIENT_ID
 ARG KEYCLOAK_CLIENT_SECRET
+ARG API_BASE_URL
+ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_ENVIRONMENT
+
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
