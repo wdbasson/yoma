@@ -212,7 +212,7 @@ services:
       - "0.0.0.0:5000:5000"
     volumes:
       - yoma:/root/.aspnet/DataProtection-Keys
-      - ./YomaApiCore/appsettings.Local.json:/api/appsettings.Local.json
+      - ./src/application/Yoma.Core.Api/appsettings.Local.json:/api/appsettings.Local.json
     depends_on:
       sqlserver:
         condition: service_healthy
