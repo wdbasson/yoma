@@ -181,9 +181,11 @@ namespace Yoma.Core.Api.Controllers
                     userRequest.FirstName = kcUser.FirstName.Trim();
                     userRequest.Surname = kcUser.LastName.Trim();
                     userRequest.EmailConfirmed = kcUser.EmailVerified.HasValue && kcUser.EmailVerified.Value;
-                    userRequest.PhoneNumber = kcUser.Attributes[CustomAttributes.PhoneNumber.ToDescription()].FirstOrDefault()?.Trim();
+                    userRequest.PhoneNumber = kcUser.Attributes.Keys.Contains(CustomAttributes.PhoneNumber.ToDescription())
+                        ? kcUser.Attributes[CustomAttributes.PhoneNumber.ToDescription()].FirstOrDefault()?.Trim() : null;
 
-                    var sGender = kcUser.Attributes[CustomAttributes.Gender.ToDescription()].FirstOrDefault()?.Trim();
+                    var sGender = kcUser.Attributes.Keys.Contains(CustomAttributes.Gender.ToDescription())
+                        ? kcUser.Attributes[CustomAttributes.Gender.ToDescription()].FirstOrDefault()?.Trim() : null;
                     if (!string.IsNullOrEmpty(sGender))
                     {
                         var gender = _genderService.GetByNameOrNull(sGender);
@@ -194,7 +196,8 @@ namespace Yoma.Core.Api.Controllers
                             userRequest.GenderId = gender.Id;
                     }
 
-                    var sCountryOfOrigin = kcUser.Attributes[CustomAttributes.CountryOfOrigin.ToDescription()].FirstOrDefault()?.Trim();
+                    var sCountryOfOrigin = kcUser.Attributes.Keys.Contains(CustomAttributes.CountryOfOrigin.ToDescription())
+                        ? kcUser.Attributes[CustomAttributes.CountryOfOrigin.ToDescription()].FirstOrDefault()?.Trim() : null;
                     if (!string.IsNullOrEmpty(sCountryOfOrigin))
                     {
                         var country = _countryService.GetByNameOrNull(sCountryOfOrigin);
@@ -205,18 +208,20 @@ namespace Yoma.Core.Api.Controllers
                             userRequest.CountryId = country.Id;
                     }
 
-                    var sCountryOfResidence = kcUser.Attributes[CustomAttributes.CountryOfResidence.ToDescription()].FirstOrDefault()?.Trim();
+                    var sCountryOfResidence = kcUser.Attributes.Keys.Contains(CustomAttributes.CountryOfResidence.ToDescription())
+                        ? kcUser.Attributes[CustomAttributes.CountryOfResidence.ToDescription()].FirstOrDefault()?.Trim() : null;
                     if (!string.IsNullOrEmpty(sCountryOfResidence))
                     {
                         var country = _countryService.GetByNameOrNull(sCountryOfResidence);
 
                         if (country == null)
-                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.CountryOfOrigin}' with value '{sCountryOfResidence}'");
+                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.CountryOfResidence}' with value '{sCountryOfResidence}'");
                         else
                             userRequest.CountryOfResidenceId = country.Id;
                     }
 
-                    var sDateOfBirth = kcUser.Attributes[CustomAttributes.DateOfBirth.ToDescription()].FirstOrDefault()?.Trim();
+                    var sDateOfBirth = kcUser.Attributes.Keys.Contains(CustomAttributes.DateOfBirth.ToDescription())
+                        ? kcUser.Attributes[CustomAttributes.DateOfBirth.ToDescription()].FirstOrDefault()?.Trim() : null;
                     if (!string.IsNullOrEmpty(sDateOfBirth))
                     {
                         if (!DateTime.TryParse(sDateOfBirth, out var dateOfBirth))
