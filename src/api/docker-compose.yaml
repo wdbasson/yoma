@@ -1,4 +1,4 @@
-version: "3.3"
+version: "3.8"
 services:
   sqlserver: # Local MSSQL server
     image: ghcr.io/didx-xyz/mssql-server:2022-fts
@@ -48,12 +48,13 @@ services:
         condition: service_completed_successfully
 
   keycloak-init: # Initialise the local Keycloak server by adding the bcrypt & webhook provider
-    image: alpine/curl:3.14
+    image: curlimages/curl
     container_name: keycloak-init
+    user: root
     command: |
-      sh -c 'curl -L https://github.com/vymalo/keycloak-webhook/releases/download/v0.2.0/keycloak-webhook-0.2.0-all.jar \
-      -o /opt/keycloak/providers/keycloak-webhook-0.2.0.jar && \
-      chown 1000:1000 /opt/keycloak/providers/keycloak-webhook-0.2.0.jar'
+      sh -c 'curl -L https://github.com/vymalo/keycloak-webhook/releases/download/v0.3.0/keycloak-webhook-0.3.0-all.jar \
+      -o /opt/keycloak/providers/keycloak-webhook-0.3.0.jar && \
+      chown 1000:1000 /opt/keycloak/providers/keycloak-webhook-0.3.0.jar'
     volumes:
       - keycloak:/opt/keycloak/providers
 
@@ -75,7 +76,7 @@ services:
       retries: 3
 
   keycloak: # Local Keycloak server
-    image: quay.io/keycloak/keycloak:21.1.2
+    image: quay.io/keycloak/keycloak:22.0
     container_name: keycloak
     environment:
       WEBHOOK_EVENTS_TAKEN: "LOGIN,REGISTER,LOGOUT,UPDATE_PROFILE"
@@ -91,7 +92,13 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: password
     ports:
       - 0.0.0.0:8080:8080
-    command: ["start-dev", "--db=postgres", "--features=declarative-user-profile"]
+    command:
+      - "start-dev"
+      - "--db=postgres"
+      - "--features=declarative-user-profile"
+      - "--spi-events-listener-jboss-logging-success-level=info"
+      - "--spi-events-listener-jboss-logging-error-level=warn"
+      # - "--log-level=DEBUG"
     depends_on:
       keycloak-init:
         condition: service_completed_successfully
@@ -111,7 +118,8 @@ services:
         condition: service_started
 
   keycloak-config: # Import Keycloak configuration
-    image: adorsys/keycloak-config-cli:5.6.1-21.0.1
+    image: adorsys/keycloak-config-cli:5.8.0-22.0.0
+    container_name: keycloak-config
     environment:
       KEYCLOAK_URL: "http://keycloak:8080/"
       KEYCLOAK_USER: admin
@@ -122,13 +130,61 @@ services:
       IMPORT_VALIDATE: "true"
       LOGGING_LEVEL_ROOT: "INFO"
       IMPORT_VAR_SUBSTITUTION_ENABLED: "true"
+      IMPORT_CACHE_ENABLED: "false"
+      # SPRING_CONFIG_IMPORT: /secrets/.decrypted~secret.yaml
       # Templating variables
-      WEBAPP_URL: "http://localhost:3000"
-      API_URL: "http://localhost:5000"
+      CLIENT_YOMA_API_URL: "http://localhost:5000"
+      CLIENT_YOMA_YOUTH_URL: "http://localhost:3000"
+      CLIENT_YOMA_OP_URL: "http://localhost:3001"
+      CLIENT_YOMA_ADMIN_URL: "http://localhost:3002"
+      CLIENT_ATINGI_URL: "http://localhost:3002"
+      CLIENT_GOODWALL_URL: "https://www.goodwall.io"
+      CLIENT_GOODWALL_URL_REDIRECT: "goodwallauth://yomaredirect"
+      REALM_YOMA_ADMIN_CLI_SECRET: &KCAdminSecret "superSecretYomaAdminCliSecret"
+      CLIENT_YOMA_API_SECRET: superSecretYomaApiClientSecret
+      CLIENT_ATINGI_SECRET: superSecretAtingiClientSecret
+      CLIENT_GOODWALL_SECRET: superSecretAtingiClientSecret
+      SA_YOMA_API_PASSWORD: superSecretYomaApiServiceAccountPassword
+      SMTP_PASSWORD: superSecretSmtpPassword
     volumes:
       - ./cicd/scripts/keycloak:/config
+      - ./cicd/secrets:/secrets
     depends_on:
       keycloak-health:
+        condition: service_completed_successfully
+  #     sops:
+  #       condition: service_completed_successfully
+
+  # sops: # Decrypt secrets
+  #   container_name: sops
+  #   image: mozilla/sops:latest
+  #   command:
+  #     [
+  #       "/bin/sh",
+  #       "-c",
+  #       "sops --config /secrets/.sops.yaml -d /secrets/secret.yaml > /secrets/.decrypted~secret.yaml",
+  #     ]
+  #   volumes:
+  #     - ./cicd/secrets:/secrets
+  #     - ~/.aws:/root/.aws
+
+  keycloak-users:
+    image: curlimages/curl
+    container_name: keycloak-users
+    environment:
+      KC_BASE_URL: http://keycloak:8080
+      KC_REALM: yoma
+      KC_CLIENT_ID: admin-cli
+      KC_CLIENT_SECRET: *KCAdminSecret
+    user: 0:0 # because we need to install jq
+    command:
+      - /bin/sh
+      - -c
+      - /sbin/apk add jq && /bin/sh /scripts/users.sh
+    volumes:
+      - ./cicd/scripts/kc-users.sh:/scripts/users.sh
+    depends_on:
+      keycloak-config:
         condition: service_completed_successfully
 
   yoma-api-core: # Local Yoma API Core server
@@ -137,23 +193,31 @@ services:
     build:
       context: .
       dockerfile: ./cicd/dockerfiles/Dockerfile.yoma-api-core
+    restart: always
     environment:
       ASPNETCORE_ENVIRONMENT: Local
       ASPNETCORE_URLS: "http://+:5000"
-      ConnectionStrings__SQLConnection: "Data Source=sqlserver,1433;Initial Catalog=yoma-dev;MultipleActiveResultSets=true;User ID=sa;Password=Password1;;TrustServerCertificate=True;Encrypt=False"
+      ConnectionStrings__CoreApplicationContext: "Data Source=sqlserver,1433;Initial Catalog=yoma-dev;MultipleActiveResultSets=true;User ID=sa;Password=Password1;;TrustServerCertificate=True;Encrypt=False"
+      ConnectionStrings__BaseAPIURL: "http://localhost:5000"
+      ConnectionStrings__BaseAPPURL: "http://localhost:3000"
+      ConnectionStrings__OldBaseAPPURL: "http://localhost:3000"
       Logging__LogLevel__Default: "Debug"
       Logging__LogLevel__Microsoft: "Debug"
       Logging__LogLevel__Microsoft.Hosting.Lifetime: "Information"
       Logging__LogLevel__Microsoft.EntityFrameworkCore: "Error"
-      AllowedOrigins: "http://localhost:5000;http://localhost:3000" # can be set to wildcard * to allow all hosts
+      Hosts__Api: "http://localhost:5000"
+      Hosts__Auth: "http://localhost:5000"
+      AllowedHosts__0: "http://localhost:3000" # can be set to wildcard * to allow all hosts
     ports:
       - "0.0.0.0:5000:5000"
     volumes:
       - yoma:/root/.aspnet/DataProtection-Keys
-      # - ./YomaApiCore/appsettings.Local.json:/api/appsettings.Local.json
+      - ./YomaApiCore/appsettings.Local.json:/api/appsettings.Local.json
     depends_on:
       sqlserver:
         condition: service_healthy
+      keycloak-users:
+        condition: service_completed_successfully
 
   yoma-api-core-health: # Wait for Yoma API Core to be ready. Dependency for sqlserver-init.
     image: curlimages/curl
