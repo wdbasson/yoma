@@ -4,21 +4,22 @@ enabled: true
 attributes:
   userProfileEnabled: "true"
 userProfile:
+  attributes:
   - name: username
-    displayName: ${username}
+    displayName: '${username}'
     validations:
       length:
         min: 3
         max: 255
       username-prohibited-characters: {}
   - name: email
-    displayName: ${email}
+    displayName: '${email}'
     validations:
       email: {}
       length:
         max: 255
   - name: firstName
-    displayName: ${firstName}
+    displayName: '${firstName}'
     required:
       roles:
         - user
@@ -37,7 +38,7 @@ userProfile:
     selector:
       scopes: []
   - name: lastName
-    displayName: ${lastName}
+    displayName: '${lastName}'
     required:
       roles:
         - user
@@ -56,7 +57,7 @@ userProfile:
     selector:
       scopes: []
   - name: phoneNumber
-    displayName: ${phoneNumber}
+    displayName: '${phoneNumber}'
     permissions:
       view:
         - user
@@ -73,7 +74,7 @@ userProfile:
       scopes: []
     validations:
       pattern:
-        pattern: ^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$
+        pattern: "^[\\+]?[(]?[0-9]{3}[)]?[-\\s\\.]?[0-9]{3}[-\\s\\.]?[0-9]{4,6}$"
         error-message: Phone number is not valid
   - name: gender
     displayName: Gender
@@ -296,7 +297,7 @@ userProfile:
           - Russia
           - Rwanda
           - Saint Barthélemy
-          - Saint Helena, Ascension and Tristan da Cunha
+          - 'Saint Helena, Ascension and Tristan da Cunha'
           - Saint Kitts and Nevis
           - Saint Lucia
           - Saint Martin
@@ -564,7 +565,7 @@ userProfile:
           - Russia
           - Rwanda
           - Saint Barthélemy
-          - Saint Helena, Ascension and Tristan da Cunha
+          - 'Saint Helena, Ascension and Tristan da Cunha'
           - Saint Kitts and Nevis
           - Saint Lucia
           - Saint Martin
@@ -648,7 +649,7 @@ userProfile:
     annotations:
       inputType: date
   - name: terms_and_conditions
-    displayName: Terms & conditions accepted
+    displayName: 'Terms & conditions accepted'
     required:
       roles:
         - admin
