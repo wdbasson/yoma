@@ -1,3 +1,4 @@
+using Yoma.Core.Domain.Core.Helpers;
 
 namespace Yoma.Core.Api
 {
@@ -13,7 +14,13 @@ namespace Yoma.Core.Api
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseSentry();
+                    webBuilder.ConfigureAppConfiguration((hostingContext, config) =>
+                    {
+                        IWebHostEnvironment webHostEnvironment = hostingContext.HostingEnvironment;
+                        var environment = EnvironmentHelper.FromString(webHostEnvironment.EnvironmentName);
+
+                        if (environment != Domain.Core.Environment.Local) webBuilder.UseSentry();
+                    });
                     webBuilder.UseStartup<Startup>();
                 });
         #endregion
