@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type AxiosError } from "axios";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useCallback, useEffect, type ReactElement } from "react";
 import { useForm, type FieldValues } from "react-hook-form";
 import { toast } from "react-toastify";
@@ -9,13 +9,20 @@ import { type UserProfileRequest } from "~/api/models/user";
 import { patchUser } from "~/api/user";
 import MainBackButtonLayout from "~/components/Layout/MainBackButton";
 import { ApiErrors } from "~/components/apiErrors";
+import { env } from "~/env.mjs";
 import { useCountries, useGenders } from "~/hooks/api/lookups";
 import { type NextPageWithLayout } from "../_app";
 
 const Settings: NextPageWithLayout = () => {
   const { data: genders } = useGenders();
   const { data: countries } = useCountries();
-  const { data: session, update } = useSession();
+  const { data: session, update } = useSession({
+    required: true,
+    onUnauthenticated() {
+      // user is not authenticated, redirect to sign-in page
+      signIn(env.NEXT_PUBLIC_KEYCLOAK_DEFAULT_PROVIDER);
+    },
+  });
 
   const schema = zod.object({
     email: zod.string().email().min(1, "Email is required"),

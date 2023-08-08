@@ -1,6 +1,7 @@
 import { signIn } from "next-auth/react";
 import React, { useState } from "react";
 import { IoMdFingerPrint } from "react-icons/io";
+import { env } from "~/env.mjs";
 
 export const SignInButton: React.FC = () => {
   const [isButtonLoading, setIsButtonLoading] = useState(false);
@@ -8,7 +9,8 @@ export const SignInButton: React.FC = () => {
   const handleLogin = () => {
     setIsButtonLoading(true);
 
-    signIn("keycloak"); // eslint-disable-line @typescript-eslint/no-floating-promises
+    // redirect to sign-in page
+    signIn(env.NEXT_PUBLIC_KEYCLOAK_DEFAULT_PROVIDER); // eslint-disable-line @typescript-eslint/no-floating-promises
   };
 
   return (

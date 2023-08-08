@@ -32,6 +32,7 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
+    NEXT_PUBLIC_KEYCLOAK_DEFAULT_PROVIDER: z.string(),
     NEXT_PUBLIC_API_BASE_URL: z.string().url(),
     NEXT_PUBLIC_ENVIRONMENT: z.string(),
   },
@@ -47,6 +48,8 @@ export const env = createEnv({
     KEYCLOAK_ISSUER: process.env.KEYCLOAK_ISSUER,
     KEYCLOAK_CLIENT_ID: process.env.KEYCLOAK_CLIENT_ID,
     KEYCLOAK_CLIENT_SECRET: process.env.KEYCLOAK_CLIENT_SECRET,
+    NEXT_PUBLIC_KEYCLOAK_DEFAULT_PROVIDER:
+      process.env.NEXT_PUBLIC_KEYCLOAK_DEFAULT_PROVIDER,
     API_BASE_URL: process.env.API_BASE_URL,
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
     NEXT_PUBLIC_ENVIRONMENT: process.env.NEXT_PUBLIC_ENVIRONMENT,

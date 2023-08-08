@@ -28,5 +28,7 @@ Sentry.init({
       maskAllText: true,
       blockAllMedia: true,
     }),
+    // automatic instrumentation for errors and transactions
+    new Sentry.BrowserTracing(),
   ],
 });
