@@ -119,6 +119,7 @@ namespace Yoma.Core.Api
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
+            app.UseSentryTracing();
 
             app.UseAuthentication();
             app.UseAuthorization();
