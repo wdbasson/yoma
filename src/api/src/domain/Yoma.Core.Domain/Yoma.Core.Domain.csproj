@@ -14,9 +14,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Keycloak.AuthServices.Authentication" Version="1.5.2" />
-	<PackageReference Include="Keycloak.AuthServices.Authorization" Version="1.5.2" />
-	<PackageReference Include="Schick.Keycloak.RestApiClient" Version="21.0.0" />
 	<PackageReference Include="Sentry.AspNetCore" Version="3.34.0" />
   </ItemGroup>
 

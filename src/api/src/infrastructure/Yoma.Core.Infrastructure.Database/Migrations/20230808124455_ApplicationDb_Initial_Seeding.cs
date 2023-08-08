@@ -2,31 +2,29 @@
 
 namespace Yoma.Core.Infrastructure.Database.Migrations
 {
-    internal class _20230728053910_ApplicationDb_Initial_Seeding
+    internal class ApplicationDb_Initial_Seeding
     {
-        internal class ApplicationDb_Initial_Seeding
+        internal static void Seed(MigrationBuilder migrationBuilder)
         {
-            internal static void Seed(MigrationBuilder migrationBuilder)
+            migrationBuilder.InsertData(
+            table: "ProviderType",
+            columns: new[] { "Id", "Name", "DateCreated" },
+            values: new object[,]
             {
-                migrationBuilder.InsertData(
-                table: "ProviderType",
-                columns: new[] { "Id", "Name", "DateCreated" },
-                values: new object[,]
-                {
                     {"A3BCAA03-B31C-4830-AAE8-06BBA701D3F0","Opportunity",DateTimeOffset.Now}
                     ,
                     {"6FB02F6F-34FE-4E6E-9094-2E3B54115235","Educational",DateTimeOffset.Now}
                     ,
                     {"D2987F9F-8CC8-4576-AF09-C01213A1435E","Marketplace",DateTimeOffset.Now}
-                },
-                schema: "lookup");
+            },
+            schema: "lookup");
 
 
-                migrationBuilder.InsertData(
-                table: "Gender",
-                columns: new[] { "Id", "Name", "DateCreated" },
-                values: new object[,]
-                {
+            migrationBuilder.InsertData(
+            table: "Gender",
+            columns: new[] { "Id", "Name", "DateCreated" },
+            values: new object[,]
+            {
                     {"6DBD31E9-5196-49CA-8D3B-8354A9BFF996","Male",DateTimeOffset.Now}
                     ,
                     {"6342C98A-0572-4E6A-A4FB-A1AEAFD3C053","Female",DateTimeOffset.Now}
@@ -36,14 +34,14 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     {"0BE24DF8-D4C5-453C-AADF-EEDF673E1FE3","Transgender Female",DateTimeOffset.Now}
                     ,
                     {"26BA24A5-9209-48B2-A885-95C43EF142B5","Unknown",DateTimeOffset.Now}
-                },
-                schema: "lookup");
+            },
+            schema: "lookup");
 
-                migrationBuilder.InsertData(
-                table: "Country",
-                columns: new[] { "Id", "Name", "CodeAlpha2", "CodeAlpha3", "CodeNumeric", "DateCreated" },
-                values: new object[,]
-                {
+            migrationBuilder.InsertData(
+            table: "Country",
+            columns: new[] { "Id", "Name", "CodeAlpha2", "CodeAlpha3", "CodeNumeric", "DateCreated" },
+            values: new object[,]
+            {
                     {"a0d029b2-49ca-4e89-81aa-8d06be5d2241","Afghanistan","AF","AFG","4",DateTimeOffset.Now}
                     ,
                     {"fb8c57b0-255a-4528-ae87-4b324f47a4d5","Åland Islands","AX","ALA","248",DateTimeOffset.Now}
@@ -544,9 +542,8 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     ,
                     {"0EFB07E6-6634-46DE-A98D-A85BF331C20E","Worldwide","WW","WWE","000",DateTimeOffset.Now}
 
-                },
-                schema: "lookup");
-            }
+            },
+            schema: "lookup");
         }
     }
 }

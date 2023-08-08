@@ -2,30 +2,22 @@
 using Yoma.Core.Domain.Entity.Extensions;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Models;
-using FS.Keycloak.RestApiClient.Api;
-using FS.Keycloak.RestApiClient.Client;
-using FS.Keycloak.RestApiClient.Model;
-using Keycloak.AuthServices.Authentication;
-using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.Core.Models;
-using Yoma.Core.Domain.Keycloak;
-using Yoma.Core.Domain.Core.Extensions;
 using Yoma.Core.Domain.Lookups.Interfaces;
-using Yoma.Core.Domain.Exceptions;
 using Yoma.Core.Domain.Entity.Validators;
 using FluentValidation;
 using System.Transactions;
 using Microsoft.AspNetCore.Http;
 using Yoma.Core.Domain.Core;
 using User = Yoma.Core.Domain.Entity.Models.User;
+using Yoma.Core.Domain.Keycloak.Interfaces;
 
 namespace Yoma.Core.Domain.Entity.Services
 {
     public class UserService : IUserService
     {
         #region Class Variables
-        private readonly AppSettings _appSettings;
-        private readonly KeycloakAuthenticationOptions _keycloakAuthenticationOptions;
+        private readonly IKeycloakClient _keycloakClient;
         private readonly IS3ObjectService _s3ObjectService;
         private readonly IGenderService _genderService;
         private readonly ICountryService _countryService;
@@ -35,8 +27,8 @@ namespace Yoma.Core.Domain.Entity.Services
         #endregion
 
         #region Constructor
-        public UserService(IOptions<AppSettings> appSettings,
-            IOptions<KeycloakAuthenticationOptions> keycloakAuthenticationOptions,
+        public UserService(
+            IKeycloakClientFactory keycloakClientFactory,
             IS3ObjectService s3ObjectService,
             IGenderService genderService,
             ICountryService countryService,
@@ -44,8 +36,7 @@ namespace Yoma.Core.Domain.Entity.Services
             UserProfileRequestValidator userProfileRequestValidator,
             IRepository<User> userRepository)
         {
-            _appSettings = appSettings.Value;
-            _keycloakAuthenticationOptions = keycloakAuthenticationOptions.Value;
+            _keycloakClient = keycloakClientFactory.CreateClient();
             _s3ObjectService = s3ObjectService;
             _genderService = genderService;
             _countryService = countryService;
@@ -108,6 +99,9 @@ namespace Yoma.Core.Domain.Entity.Services
 
             var result = GetByEmail(email);
 
+            if (!result.ExternalId.HasValue)
+                throw new InvalidOperationException($"External id expected for user with id '{result.Id}'");
+
             var emailUpdated = !string.Equals(result.Email, request.Email, StringComparison.CurrentCultureIgnoreCase);
             if (emailUpdated)
                 if (GetByEmailOrNull(request.Email) != null)
@@ -130,7 +124,22 @@ namespace Yoma.Core.Domain.Entity.Services
                 await _userRepository.Update(result);
                 result.DateModified = DateTimeOffset.Now;
 
-                await updateKeycloak(result, request.ResetPassword);
+                var user = new Keycloak.Models.User
+                {
+                    Id = result.ExternalId.Value,
+                    FirstName = result.FirstName,
+                    LastName = result.Surname,
+                    Username = result.Email,
+                    Email = result.Email,
+                    EmailVerified = result.EmailConfirmed,
+                    PhoneNumber = result.PhoneNumber,
+                    Gender = result.GenderId.HasValue ? _genderService.GetById(result.GenderId.Value).Name : null,
+                    CountryOfOrigin = result.CountryId.HasValue ? _countryService.GetById(result.CountryId.Value).Name : null,
+                    CountryOfResidence = result.CountryOfResidenceId.HasValue ? _countryService.GetById(result.CountryOfResidenceId.Value).Name : null,
+                    DateOfBirth = result.DateOfBirth.HasValue ? result.DateOfBirth.Value.ToString("yyyy/MM/dd") : null
+                };
+
+                await _keycloakClient.UpdateUser(user, request.ResetPassword);
 
                 scope.Complete();
             }
@@ -156,11 +165,7 @@ namespace Yoma.Core.Domain.Entity.Services
             //profile fields updatable via UpdateProfile; Keycloak is source of truth
             if (isNew)
             {
-                //ensure user exists in keycloak
-                using var httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl,
-                    _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);
-                using var usersApi = ApiClientFactory.Create<UsersApi>(httpClient);
-                var kcUser = (await usersApi.GetUsersAsync(_keycloakAuthenticationOptions.Realm, username: result.Email, exact: true)).SingleOrDefault();
+                var kcUser = await _keycloakClient.GetUser(result.Email);
                 if (kcUser == null)
                     throw new InvalidOperationException($"{nameof(User)} with email '{result.Email}' does not exist in Keycloak");
 
@@ -226,53 +231,6 @@ namespace Yoma.Core.Domain.Entity.Services
 
             return result;
         }
-
-        public async Task EnsureKeycloakRoles(Guid? externalId, List<string> roles)
-        {
-            if (!externalId.HasValue || externalId == Guid.Empty)
-                throw new ArgumentNullException(nameof(externalId));
-
-            if (roles == null || !roles.Any())
-                throw new ArgumentNullException(nameof(roles));
-
-            var rolesInvalid = roles.Except(Constants.Roles_Supported);
-            if (rolesInvalid.Any())
-                throw new ArgumentOutOfRangeException(nameof(roles), $"Invalid role(s) specified: {string.Join(';', rolesInvalid)}");
-
-            using var httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl,
-                _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);
-            using var rolesApi = ApiClientFactory.Create<RoleContainerApi>(httpClient);
-            using var rolesMapperApi = ApiClientFactory.Create<RoleMapperApi>(httpClient);
-
-            var kcRoles = await rolesApi.GetRolesAsync(_keycloakAuthenticationOptions.Realm);
-
-            var roleRepresentations = kcRoles.IntersectBy(roles.Select(o => o.ToLower()), o => o.Name.ToLower()).ToList();
-            await rolesMapperApi.PostUsersRoleMappingsRealmByIdAsync(_keycloakAuthenticationOptions.Realm, externalId.Value.ToString(), roleRepresentations);
-        }
-
-        public async Task RemoveKeycloakRoles(Guid? externalId, List<string> roles)
-        {
-            if (!externalId.HasValue || externalId == Guid.Empty)
-                throw new ArgumentNullException(nameof(externalId));
-
-            if (roles == null || !roles.Any())
-                throw new ArgumentNullException(nameof(roles));
-
-            var rolesInvalid = roles.Except(Constants.Roles_Supported);
-            if (rolesInvalid.Any())
-                throw new ArgumentOutOfRangeException(nameof(roles), $"Invalid role(s) specified: {string.Join(';', rolesInvalid)}");
-
-            using var httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl,
-                _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);
-            using var rolesApi = ApiClientFactory.Create<RoleContainerApi>(httpClient);
-            using var rolesMapperApi = ApiClientFactory.Create<RoleMapperApi>(httpClient);
-
-            var roleRepresentationsExisting = await rolesMapperApi.GetUsersRoleMappingsByIdAsync(_keycloakAuthenticationOptions.Realm, externalId.Value.ToString());
-
-            var roleRepresentations = roleRepresentationsExisting.RealmMappings.Where(o => roles.Contains(o.Name, StringComparer.InvariantCultureIgnoreCase)).ToList();
-
-            await rolesMapperApi.PostUsersRoleMappingsRealmByIdAsync(_keycloakAuthenticationOptions.Realm, externalId.Value.ToString(), roleRepresentations);
-        }
         #endregion
 
         #region Private Members
@@ -280,57 +238,6 @@ namespace Yoma.Core.Domain.Entity.Services
         {
             if (!id.HasValue) return null;
             return _s3ObjectService.GetURL(id.Value);
-        }
-
-        private async Task updateKeycloak(User user, bool resetPassword)
-        {
-            using var httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl, _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);
-            using var userApi = ApiClientFactory.Create<UserApi>(httpClient);
-
-            var request = new UserRepresentation
-            {
-                Id = user.ExternalId.ToString(),
-                FirstName = user.FirstName,
-                LastName = user.Surname,
-                Attributes = new Dictionary<string, List<string>>(),
-                Username = user.Email,
-                Email = user.Email,
-                EmailVerified = user.EmailConfirmed
-            };
-
-            if (!string.IsNullOrEmpty(user.PhoneNumber))
-                request.Attributes.Add(CustomAttributes.PhoneNumber.ToDescription(), new List<string> { { user.PhoneNumber } });
-
-            if (user.GenderId.HasValue)
-                request.Attributes.Add(CustomAttributes.Gender.ToDescription(), new List<string> { { _genderService.GetById(user.GenderId.Value).Name } });
-
-            if (user.CountryId.HasValue)
-                request.Attributes.Add(CustomAttributes.CountryOfOrigin.ToDescription(), new List<string> { { _countryService.GetById(user.CountryId.Value).Name } });
-
-            if (user.CountryOfResidenceId.HasValue)
-                request.Attributes.Add(CustomAttributes.CountryOfResidence.ToDescription(), new List<string> { { _countryService.GetById(user.CountryOfResidenceId.Value).Name } });
-
-            var dateOfBirth = user.DateOfBirth?.ToString("yyyy/MM/dd");
-            if (!string.IsNullOrEmpty(dateOfBirth))
-                request.Attributes.Add(CustomAttributes.DateOfBirth.ToDescription(), new List<string> { { dateOfBirth } });
-
-            try
-            {
-                // update user details
-                await userApi.PutUsersByIdAsync(_keycloakAuthenticationOptions.Realm, user.ExternalId.ToString(), request);
-
-                // send verify email 
-                if (!user.EmailConfirmed)
-                    await userApi.PutUsersSendVerifyEmailByIdAsync(_keycloakAuthenticationOptions.Realm, user.ExternalId.ToString());
-
-                // send forgot password email
-                if (resetPassword)
-                    await userApi.PutUsersExecuteActionsEmailByIdAsync(_keycloakAuthenticationOptions.Realm, user.ExternalId.ToString(), requestBody: new List<string> { "UPDATE_PASSWORD" });
-            }
-            catch (Exception ex)
-            {
-                throw new TechnicalException($"Error updating user {user.Id} in Keycloak", ex);
-            }
         }
         #endregion
     }

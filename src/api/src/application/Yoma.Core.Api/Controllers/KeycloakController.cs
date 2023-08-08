@@ -1,21 +1,13 @@
-﻿using Keycloak.AuthServices.Authentication;
-using Microsoft.AspNetCore.Mvc;
-using FS.Keycloak.RestApiClient.Api;
-using FS.Keycloak.RestApiClient.Client;
-using FS.Keycloak.RestApiClient.Model;
-using Microsoft.Extensions.Options;
-using Yoma.Core.Domain.Core.Extensions;
-using System.Net.Http.Headers;
-using System.Text;
-using Yoma.Core.Domain.Core.Models;
+﻿using Microsoft.AspNetCore.Mvc;
 using Yoma.Core.Domain.Entity.Interfaces;
-using Yoma.Core.Domain.Keycloak;
-using Yoma.Core.Domain.Keycloak.Models;
 using Yoma.Core.Domain.Entity.Models;
 using Yoma.Core.Domain.Core;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Entity.Extensions;
 using Microsoft.AspNetCore.Authorization;
+using Yoma.Core.Domain.Keycloak.Models;
+using Yoma.Core.Infrastructure.Keycloak;
+using Yoma.Core.Domain.Keycloak.Interfaces;
 
 namespace Yoma.Core.Api.Controllers
 {
@@ -27,8 +19,7 @@ namespace Yoma.Core.Api.Controllers
     {
         #region Class Variables
         private readonly ILogger _logger;
-        private readonly AppSettings _appSettings;
-        private readonly KeycloakAuthenticationOptions _keycloakAuthenticationOptions;
+        private readonly IKeycloakClient _keycloakClient;
         private readonly IUserService _userService;
         private readonly IGenderService _genderService;
         private readonly ICountryService _countryService;
@@ -36,15 +27,13 @@ namespace Yoma.Core.Api.Controllers
 
         #region Constructors
         public KeycloakController(ILogger<KeycloakController> logger,
-          IOptions<AppSettings> appSettings,
-          IOptions<KeycloakAuthenticationOptions> keycloakAuthenticationOptions,
+          IKeycloakClientFactory keycloakClientFactory,
           IUserService userService,
           IGenderService genderService,
           ICountryService countryService)
         {
             _logger = logger;
-            _appSettings = appSettings.Value;
-            _keycloakAuthenticationOptions = keycloakAuthenticationOptions.Value;
+            _keycloakClient = keycloakClientFactory.CreateClient();
             _userService = userService;
             _genderService = genderService;
             _countryService = countryService;
@@ -53,7 +42,7 @@ namespace Yoma.Core.Api.Controllers
 
         #region Public Members
         [HttpPost("webhook")]
-        public IActionResult ReceiveKeyCloakEvent([FromBody] WebhookRequest payload)
+        public IActionResult ReceiveKeyCloakEvent([FromBody] KeycloakWebhookRequest payload)
         {
             var authorized = false;
 
@@ -62,25 +51,9 @@ namespace Yoma.Core.Api.Controllers
                 if (payload == null)
                     throw new ArgumentNullException(nameof(payload));
 
-                if (HttpContext == null)
-                    throw new ArgumentNullException(nameof(HttpContext), $"{nameof(HttpContext)} is null");
+                authorized = _keycloakClient.AuthenticateWebhook(HttpContext);
 
-                // basic authentication
-                var authHeader = AuthenticationHeaderValue.Parse(HttpContext.Request.Headers["Authorization"]);
-
-                if (authHeader.Parameter == null)
-                    throw new ArgumentNullException(nameof(HttpContext), $"{nameof(HttpContext.Request.Headers)}.Authorization is null");
-
-                var credentialBytes = Convert.FromBase64String(authHeader.Parameter);
-                var credentials = Encoding.UTF8.GetString(credentialBytes).Split(':', 2);
-                var username = credentials[0];
-                var password = credentials[1];
-
-                if (username != _appSettings.WebhookAdminKeyCloak.Username || password != _appSettings.WebhookAdminKeyCloak.Password)
-                    return StatusCode(StatusCodes.Status403Forbidden);
-
-                authorized = true;
-                return StatusCode(StatusCodes.Status200OK);
+                return authorized ? StatusCode(StatusCodes.Status200OK) : StatusCode(StatusCodes.Status403Forbidden);
             }
             finally
             {
@@ -122,7 +95,7 @@ namespace Yoma.Core.Api.Controllers
         #endregion
 
         #region Private Members
-        private async Task UpdateUserProfile(WebhookRequestEventType type, WebhookRequest payload)
+        private async Task UpdateUserProfile(WebhookRequestEventType type, KeycloakWebhookRequest payload)
         {
             if (string.IsNullOrEmpty(payload?.details?.username))
             {
@@ -130,31 +103,8 @@ namespace Yoma.Core.Api.Controllers
                 return;
             }
 
-            var timeout = 15000;
-            var startTime = DateTime.Now;
-            UserRepresentation? kcUser = null;
-
-            using var httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl,
-                _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);
-            using (var usersApi = ApiClientFactory.Create<UsersApi>(httpClient))
-            {
-                while (true)
-                {
-                    _logger.LogInformation($"Trying to find the Keycloak user with username '{payload?.details?.username}'");
-                    kcUser = (await usersApi.GetUsersAsync(_keycloakAuthenticationOptions.Realm, username: payload?.details?.username, exact: true)).SingleOrDefault();
-                    if (kcUser != null)
-                    {
-                        _logger.LogInformation($"KeyCloak user with username '{payload?.details?.username}' found");
-                        break;
-                    }
-
-                    if ((DateTime.Now - startTime).TotalMilliseconds >= timeout) break;
-
-                    _logger.LogInformation($"KeyCloak user with username '{payload?.details?.username}' not found, sleep for 1000ms and try again");
-                    Thread.Sleep(1000);
-                }
-            }
-
+            _logger.LogInformation($"Trying to find the Keycloak user with username '{payload?.details?.username}'");
+            var kcUser = await _keycloakClient.GetUser(payload?.details?.username);
             if (kcUser == null)
             {
                 _logger.LogError($"Failed to retrieve the Keycloak user with username '{payload?.details.username}'");
@@ -180,52 +130,43 @@ namespace Yoma.Core.Api.Controllers
                     userRequest.Email = kcUser.Email.Trim();
                     userRequest.FirstName = kcUser.FirstName.Trim();
                     userRequest.Surname = kcUser.LastName.Trim();
-                    userRequest.EmailConfirmed = kcUser.EmailVerified.HasValue && kcUser.EmailVerified.Value;
-                    userRequest.PhoneNumber = kcUser.Attributes.Keys.Contains(CustomAttributes.PhoneNumber.ToDescription())
-                        ? kcUser.Attributes[CustomAttributes.PhoneNumber.ToDescription()].FirstOrDefault()?.Trim() : null;
+                    userRequest.EmailConfirmed = kcUser.EmailVerified;
+                    userRequest.PhoneNumber = kcUser.PhoneNumber;
 
-                    var sGender = kcUser.Attributes.Keys.Contains(CustomAttributes.Gender.ToDescription())
-                        ? kcUser.Attributes[CustomAttributes.Gender.ToDescription()].FirstOrDefault()?.Trim() : null;
-                    if (!string.IsNullOrEmpty(sGender))
+                    if (!string.IsNullOrEmpty(kcUser.Gender))
                     {
-                        var gender = _genderService.GetByNameOrNull(sGender);
+                        var gender = _genderService.GetByNameOrNull(kcUser.Gender);
 
                         if (gender == null)
-                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.Gender}' with value '{sGender}'");
+                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.Gender}' with value '{kcUser.Gender}'");
                         else
                             userRequest.GenderId = gender.Id;
                     }
 
-                    var sCountryOfOrigin = kcUser.Attributes.Keys.Contains(CustomAttributes.CountryOfOrigin.ToDescription())
-                        ? kcUser.Attributes[CustomAttributes.CountryOfOrigin.ToDescription()].FirstOrDefault()?.Trim() : null;
-                    if (!string.IsNullOrEmpty(sCountryOfOrigin))
+                       if (!string.IsNullOrEmpty(kcUser.CountryOfOrigin))
                     {
-                        var country = _countryService.GetByNameOrNull(sCountryOfOrigin);
+                        var country = _countryService.GetByNameOrNull(kcUser.CountryOfOrigin);
 
                         if (country == null)
-                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.CountryOfOrigin}' with value '{sCountryOfOrigin}'");
+                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.CountryOfOrigin}' with value '{kcUser.CountryOfOrigin}'");
                         else
                             userRequest.CountryId = country.Id;
                     }
 
-                    var sCountryOfResidence = kcUser.Attributes.Keys.Contains(CustomAttributes.CountryOfResidence.ToDescription())
-                        ? kcUser.Attributes[CustomAttributes.CountryOfResidence.ToDescription()].FirstOrDefault()?.Trim() : null;
-                    if (!string.IsNullOrEmpty(sCountryOfResidence))
+                    if (!string.IsNullOrEmpty(kcUser.CountryOfResidence))
                     {
-                        var country = _countryService.GetByNameOrNull(sCountryOfResidence);
+                        var country = _countryService.GetByNameOrNull(kcUser.CountryOfResidence);
 
                         if (country == null)
-                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.CountryOfResidence}' with value '{sCountryOfResidence}'");
+                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.CountryOfResidence}' with value '{kcUser.CountryOfResidence}'");
                         else
                             userRequest.CountryOfResidenceId = country.Id;
                     }
 
-                    var sDateOfBirth = kcUser.Attributes.Keys.Contains(CustomAttributes.DateOfBirth.ToDescription())
-                        ? kcUser.Attributes[CustomAttributes.DateOfBirth.ToDescription()].FirstOrDefault()?.Trim() : null;
-                    if (!string.IsNullOrEmpty(sDateOfBirth))
+                    if (!string.IsNullOrEmpty(kcUser.DateOfBirth))
                     {
-                        if (!DateTime.TryParse(sDateOfBirth, out var dateOfBirth))
-                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.DateOfBirth}' with value '{sDateOfBirth}'");
+                        if (!DateTime.TryParse(kcUser.DateOfBirth, out var dateOfBirth))
+                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.DateOfBirth}' with value '{kcUser.DateOfBirth}'");
                         else
                             userRequest.DateOfBirth = dateOfBirth;
                     }
@@ -233,17 +174,7 @@ namespace Yoma.Core.Api.Controllers
                     if (type == WebhookRequestEventType.UpdateProfile) break;
 
                     //add newly registered user to the default "User" role
-                    List<RoleRepresentation>? kcRoles = null;
-                    using (var rolesApi = ApiClientFactory.Create<RoleContainerApi>(httpClient))
-                    {
-                        kcRoles = rolesApi.GetRoles(_keycloakAuthenticationOptions.Realm);
-                    }
-
-                    using (var rolesMapperApi = ApiClientFactory.Create<RoleMapperApi>(httpClient))
-                    {
-                        rolesMapperApi.PostUsersRoleMappingsRealmById(_keycloakAuthenticationOptions.Realm, kcUser.Id,
-                          kcRoles.Where(o => string.Equals(o.Name, Constants.Role_User, StringComparison.InvariantCultureIgnoreCase)).ToList());
-                    }
+                    await _keycloakClient.EnsureRoles(kcUser.Id, new List<string> { Constants.Role_User });
 
                     //TODO: AriesCloudApi tenant / wallet creation
                     break;
@@ -256,7 +187,7 @@ namespace Yoma.Core.Api.Controllers
                     }
 
                     //updated here after email verification a login event is raised
-                    userRequest.EmailConfirmed = kcUser.EmailVerified.HasValue && kcUser.EmailVerified.Value;
+                    userRequest.EmailConfirmed = kcUser.EmailVerified;
                     userRequest.DateLastLogin = DateTime.Now;
 
                     break;
@@ -266,7 +197,7 @@ namespace Yoma.Core.Api.Controllers
                     return;
             }
 
-            userRequest.ExternalId = Guid.Parse(kcUser.Id);
+            userRequest.ExternalId = kcUser.Id;
 
             await _userService.Upsert(userRequest);
         }

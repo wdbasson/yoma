@@ -52,7 +52,7 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> Upsert([FromBody] OrganizationRequest request)
         {
-            _logger.LogInformation($"Handling request {nameof(Upsert)} ({nameof(request)}: {(request == null || !request.Id.HasValue ? "insert" : $"update: {request.Id.Value}")}"); 
+            _logger.LogInformation($"Handling request {nameof(Upsert)} ({nameof(request)}: {(!request.Id.HasValue ? "insert" : $"update: {request.Id.Value}")}"); 
 
             var result = await _organizationService.Upsert(request);
 

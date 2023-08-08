@@ -8,7 +8,7 @@ namespace Yoma.Core.Domain.Entity.Validators
     public class OrganizationRequestValidator : AbstractValidator<OrganizationRequest>
     {
         #region Class Variables
-        private ICountryService _countryService;
+        private readonly ICountryService _countryService;
         #endregion
 
         #region Constructor
@@ -36,12 +36,6 @@ namespace Yoma.Core.Domain.Entity.Validators
         {
             if (url == null) return true;
             return Uri.IsWellFormedUriString(url, UriKind.Absolute);
-        }
-
-        private bool BeNotInFuture(DateTimeOffset? date)
-        {
-            if (!date.HasValue) return true;
-            return date <= DateTimeOffset.Now;
         }
 
         private bool CountryExists(Guid? countryId)
