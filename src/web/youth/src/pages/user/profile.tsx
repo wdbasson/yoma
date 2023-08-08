@@ -1,10 +1,20 @@
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useCallback, type ReactElement } from "react";
 import { IoMdPerson, IoMdSettings } from "react-icons/io";
 import MainBackButton from "~/components/Layout/MainBackButton";
+import { env } from "~/env.mjs";
 import type { NextPageWithLayout } from "../_app";
 
 const UserProfile: NextPageWithLayout = () => {
+  const { data: session } = useSession({
+    required: true,
+    onUnauthenticated() {
+      // user is not authenticated, redirect to sign-in page
+      signIn(env.NEXT_PUBLIC_KEYCLOAK_DEFAULT_PROVIDER);
+    },
+  });
+
   return (
     <>
       <div className="container-centered">

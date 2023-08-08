@@ -1,21 +1,50 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import * as Sentry from "@sentry/nextjs";
+import { QueryClient, dehydrate, useQuery } from "@tanstack/react-query";
 import { type AxiosError } from "axios";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
+import { env } from "process";
 import { useCallback, useEffect, type ReactElement } from "react";
 import { useForm, type FieldValues } from "react-hook-form";
 import { toast } from "react-toastify";
 import zod from "zod";
+import { getCountries, getGenders } from "~/api/lookups";
 import { type UserProfileRequest } from "~/api/models/user";
 import { patchUser } from "~/api/user";
 import MainBackButtonLayout from "~/components/Layout/MainBackButton";
 import { ApiErrors } from "~/components/apiErrors";
-import { useCountries, useGenders } from "~/hooks/api/lookups";
 import { type NextPageWithLayout } from "../_app";
 
+export async function getServerSideProps(context: any) {
+  const queryClient = new QueryClient();
+
+  await queryClient.prefetchQuery(["genders"], getGenders);
+  await queryClient.prefetchQuery(["countries"], getCountries);
+
+  return {
+    props: {
+      dehydratedState: dehydrate(queryClient),
+    },
+  };
+}
+
 const Settings: NextPageWithLayout = () => {
-  const { data: genders } = useGenders();
-  const { data: countries } = useCountries();
-  const { data: session, update } = useSession();
+  const { data: genders } = useQuery({
+    queryKey: ["genders"],
+    queryFn: getGenders,
+  });
+  const { data: countries } = useQuery({
+    queryKey: ["countries"],
+    queryFn: getCountries,
+  });
+
+  const { data: session, update } = useSession({
+    required: true,
+    onUnauthenticated() {
+      // user is not authenticated, redirect to sign-in page
+      signIn(env.NEXT_PUBLIC_KEYCLOAK_DEFAULT_PROVIDER);
+    },
+  });
 
   const schema = zod.object({
     email: zod.string().email().min(1, "Email is required"),
@@ -70,6 +99,15 @@ const Settings: NextPageWithLayout = () => {
   // form submission handler
   const onSubmit = useCallback(
     async (data: FieldValues) => {
+      // start sentry transaction
+      const transaction = Sentry.startTransaction({
+        name: "Update Profile",
+      });
+
+      Sentry.configureScope((scope) => {
+        scope.setSpan(transaction);
+      });
+
       // update api
       try {
         await patchUser(data as UserProfileRequest);
@@ -80,12 +118,17 @@ const Settings: NextPageWithLayout = () => {
           autoClose: false,
           icon: false,
         });
+
+        Sentry.captureException(error);
+
         return;
+      } finally {
+        transaction.finish();
       }
 
       // update session
       await update({
-        ...session?.user,
+        ...data.session?.user,
         name: data.displayName, // eslint-disable-line @typescript-eslint/no-unsafe-assignment
         email: data.email, // eslint-disable-line @typescript-eslint/no-unsafe-assignment
         profile: data,
