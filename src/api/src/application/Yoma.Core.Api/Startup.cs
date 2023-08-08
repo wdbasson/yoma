@@ -120,6 +120,8 @@ namespace Yoma.Core.Api
             app.UseStaticFiles();
             app.UseRouting();
 
+            if(_environment != Domain.Core.Environment.Local) app.UseSentryTracing();
+
             app.UseAuthentication();
             app.UseAuthorization();
 
