@@ -8,7 +8,6 @@ using Yoma.Core.Infrastructure.Keycloak.Middleware;
 using Yoma.Core.Infrastructure.Keycloak.Models;
 using Flurl;
 using Yoma.Core.Domain.Keycloak.Interfaces;
-using FS.Keycloak.RestApiClient.Client;
 
 namespace Yoma.Core.Infrastructure.Keycloak
 {

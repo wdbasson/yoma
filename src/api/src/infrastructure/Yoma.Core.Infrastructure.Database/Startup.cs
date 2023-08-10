@@ -25,7 +25,7 @@ namespace Yoma.Core.Infrastructure.Database
             // repositories
             services.AddScoped<IRepository<S3Object>, S3ObjectRepository>();
 
-            services.AddScoped<IRepository<OrganizationProviderType>, OrganizationProviderTypesRepository>();
+            services.AddScoped<IRepository<OrganizationProviderType>, OrganizationProviderTypeRepository>();
             services.AddScoped<IRepository<Organization>, OrganizationRepository>();
             services.AddScoped<IRepository<OrganizationUser>, OrganizationUserRepository>();
             services.AddScoped<IRepository<User>, UserRepository>();
