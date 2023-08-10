@@ -1,20 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Yoma.Core.Infrastructure.Database.Core.Entities;
 
-namespace Yoma.Core.Infrastructure.Database.Lookups.Entities
+namespace Yoma.Core.Infrastructure.Database.Entity.Entities.Lookups
 {
-    [Table("OpportunityCategory", Schema = "lookup")]
+    [Table("OrganizationProviderType", Schema = "entity")]
     [Index(nameof(Name), IsUnique = true)]
-    public class OpportunityCategory : BaseEntity<Guid>
+    public class OrganizationProviderType : BaseEntity<Guid>
     {
-        [Column(TypeName = "varchar(125)")]
+        [Required]
+        [Column(TypeName = "varchar(255)")]
         public string Name { get; set; }
 
         [Required]

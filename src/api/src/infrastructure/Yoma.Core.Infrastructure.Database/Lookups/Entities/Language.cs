@@ -4,7 +4,7 @@ using Yoma.Core.Infrastructure.Database.Core.Entities;
 
 namespace Yoma.Core.Infrastructure.Database.Lookups.Entities
 {
-    [Table("Country", Schema = "lookup")]
+    [Table("Language", Schema = "lookup")]
     [Index(nameof(Name), IsUnique = true)]
     public class Language : BaseEntity<Guid>
     {

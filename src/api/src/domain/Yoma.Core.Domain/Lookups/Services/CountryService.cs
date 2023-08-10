@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
+using Yoma.Core.Domain.Entity.Models.Lookups;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Lookups.Models;
 
@@ -32,7 +33,7 @@ namespace Yoma.Core.Domain.Lookups.Services
             var result = GetByNameOrNull(name);
 
             if (result == null)
-                throw new ArgumentException($"{nameof(ProviderType)} with name '{name}' does not exists", nameof(name));
+                throw new ArgumentException($"{nameof(OrganizationProviderType)} with name '{name}' does not exists", nameof(name));
 
             return result;
         }
@@ -51,7 +52,7 @@ namespace Yoma.Core.Domain.Lookups.Services
             var result = GetByCodeAplha2OrNull(code);
 
             if (result == null)
-                throw new ArgumentException($"{nameof(ProviderType)} with code '{code}' does not exists", nameof(code));
+                throw new ArgumentException($"{nameof(OrganizationProviderType)} with code '{code}' does not exists", nameof(code));
 
             return result;
         }

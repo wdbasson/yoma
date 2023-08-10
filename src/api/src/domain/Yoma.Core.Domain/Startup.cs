@@ -9,7 +9,9 @@ using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Core.Services;
 using Yoma.Core.Domain.Entity.Interfaces;
+using Yoma.Core.Domain.Entity.Interfaces.Lookups;
 using Yoma.Core.Domain.Entity.Services;
+using Yoma.Core.Domain.Entity.Services.Lookups;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Lookups.Services;
 
@@ -30,7 +32,7 @@ namespace Yoma.Core.Domain
 
             services.AddScoped<ICountryService, CountryService>();
             services.AddScoped<IGenderService, GenderService>();
-            services.AddScoped<IProviderTypeService, ProviderTypeService>();
+            services.AddScoped<IOrganizationProviderTypeService, OrganizationProviderTypeService>();
         }
 
         public static void ConfigureServices_RecurringJobs(this IServiceProvider serviceProvider, IConfiguration configuration)

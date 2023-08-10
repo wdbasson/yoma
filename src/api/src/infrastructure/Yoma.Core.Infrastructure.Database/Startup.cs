@@ -25,7 +25,7 @@ namespace Yoma.Core.Infrastructure.Database
             // repositories
             services.AddScoped<IRepository<S3Object>, S3ObjectRepository>();
 
-            services.AddScoped<IRepository<OrganizationProviderType>, OrganizationProviderTypeRepository>();
+            services.AddScoped<IRepository<Domain.Entity.Models.OrganizationProviderType>, Entity.Repositories.OrganizationProviderTypeRepository>();
             services.AddScoped<IRepository<Organization>, OrganizationRepository>();
             services.AddScoped<IRepository<OrganizationUser>, OrganizationUserRepository>();
             services.AddScoped<IRepository<User>, UserRepository>();
@@ -33,7 +33,7 @@ namespace Yoma.Core.Infrastructure.Database
 
             services.AddScoped<IRepository<Country>, CountryRepository>();
             services.AddScoped<IRepository<Gender>, GenderRepository>();
-            services.AddScoped<IRepository<ProviderType>, ProviderTypeRepository>();
+            services.AddScoped<IRepository<Domain.Entity.Models.Lookups.OrganizationProviderType>, Entity.Repositories.Lookups.OrganizationProviderTypeRepository>();
             services.AddScoped<IRepository<Skill>, SkillRepository>();
         }
 

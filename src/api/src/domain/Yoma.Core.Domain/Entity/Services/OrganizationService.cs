@@ -5,10 +5,11 @@ using Yoma.Core.Domain.Core;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Entity.Interfaces;
+using Yoma.Core.Domain.Entity.Interfaces.Lookups;
 using Yoma.Core.Domain.Entity.Models;
+using Yoma.Core.Domain.Entity.Models.Lookups;
 using Yoma.Core.Domain.Entity.Validators;
 using Yoma.Core.Domain.Keycloak.Interfaces;
-using Yoma.Core.Domain.Lookups.Interfaces;
 
 namespace Yoma.Core.Domain.Entity.Services
 {
@@ -17,23 +18,23 @@ namespace Yoma.Core.Domain.Entity.Services
         #region Class Variables
         private readonly IUserService _userService;
         private readonly IKeycloakClient _keycloakClient;
-        private readonly IProviderTypeService _providerTypeService;
+        private readonly IOrganizationProviderTypeService _providerTypeService;
         private readonly IS3ObjectService _s3ObjectService;
         private readonly OrganizationRequestValidator _organizationRequestValidator;
         private readonly IRepository<Organization> _organizationRepository;
         private readonly IRepository<OrganizationUser> _organizationUserRepository;
-        private readonly IRepository<OrganizationProviderType> _organizationProviderTypeRepository;
+        private readonly IRepository<Models.OrganizationProviderType> _organizationProviderTypeRepository;
         #endregion
 
         #region Constructor
         public OrganizationService(IUserService userService,
             IKeycloakClientFactory keycloakClientFactory,
-            IProviderTypeService providerTypeService,
+            IOrganizationProviderTypeService providerTypeService,
             IS3ObjectService s3ObjectService,
             OrganizationRequestValidator organizationRequestValidator,
             IRepository<Organization> organizationRepository,
             IRepository<OrganizationUser> organizationUserRepository,
-            IRepository<OrganizationProviderType> organizationProviderTypeRepository)
+            IRepository<Models.OrganizationProviderType> organizationProviderTypeRepository)
         {
             _userService = userService;
             _keycloakClient = keycloakClientFactory.CreateClient();
@@ -122,13 +123,13 @@ namespace Yoma.Core.Domain.Entity.Services
             return result;
         }
 
-        public List<OrganizationProviderType> ListProviderTypesById(Guid id)
+        public List<Models.Lookups.OrganizationProviderType> ListProviderTypesById(Guid id)
         {
             var org = GetById(id);
 
-            var result = _organizationProviderTypeRepository.Query().Where(o => o.OrganizationId == id).ToList();
+            var mappings = _organizationProviderTypeRepository.Query().Where(o => o.OrganizationId == id).ToList();
 
-            return result;
+            return mappings.Select(o => new Models.Lookups.OrganizationProviderType { Id = o.ProviderTypeId, Name = o.ProviderType }).ToList();
         }
 
         public async Task AssignProviderTypes(Guid id, List<Guid> providerTypeIds)
@@ -146,7 +147,7 @@ namespace Yoma.Core.Domain.Entity.Services
                 var item = _organizationProviderTypeRepository.Query().SingleOrDefault(o => o.OrganizationId == org.Id && o.ProviderTypeId == type.Id);
                 if (item != null) return;
 
-                item = new OrganizationProviderType
+                item = new Models.OrganizationProviderType
                 {
                     OrganizationId = org.Id,
                     ProviderTypeId = type.Id

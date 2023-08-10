@@ -9,7 +9,7 @@ namespace Yoma.Core.Domain.Entity.Interfaces
 
         Task<Organization> Upsert(OrganizationRequest request);
 
-        List<OrganizationProviderType> ListProviderTypesById(Guid id);
+        List<Models.Lookups.OrganizationProviderType> ListProviderTypesById(Guid id);
 
         Task AssignProviderTypes(Guid id, List<Guid> providerTypeIds);
 

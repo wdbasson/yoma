@@ -5,34 +5,51 @@ using System.ComponentModel.DataAnnotations;
 using System.Net;
 using Yoma.Core.Domain.Core;
 using Yoma.Core.Domain.Entity.Interfaces;
+using Yoma.Core.Domain.Entity.Interfaces.Lookups;
 using Yoma.Core.Domain.Entity.Models;
 
 namespace Yoma.Core.Api.Controllers
 {
     [Route("api/v3/organization")]
     [ApiController]
-    [Authorize(Policy = Common.Constants.Authorization_Policy, 
-        Roles = $"{Constants.Role_Admin},{Constants.Role_OrganizationAdmin}")]
+    [Authorize(Policy = Common.Constants.Authorization_Policy, Roles = $"{Constants.Role_Admin},{Constants.Role_OrganizationAdmin}")]
     [SwaggerTag("(Admin or Organization Admin roles required)")]
     public class OrganizationController : Controller
     {
         #region Class Variables
         private readonly ILogger<OrganizationController> _logger;
         private readonly IOrganizationService _organizationService;
+        private readonly IOrganizationProviderTypeService _providerTypeService;
         #endregion
 
         #region Constructor
         public OrganizationController(
             ILogger<OrganizationController> logger,
-            IOrganizationService organizationService)
+            IOrganizationService organizationService,
+            IOrganizationProviderTypeService providerTypeService)
         {
             _logger = logger;
             _organizationService = organizationService;
+            _providerTypeService = providerTypeService;
         }
         #endregion
 
         #region Public Members
         #region Administrative Actions
+        [SwaggerOperation(Summary = "Return a list of provider types")]
+        [HttpGet("lookup/providerType")]
+        [ProducesResponseType(typeof(List<Domain.Entity.Models.Lookups.OrganizationProviderType>), (int)HttpStatusCode.OK)]
+        public IActionResult ListProviderTypes()
+        {
+            _logger.LogInformation($"Handling request {nameof(ListProviderTypes)}");
+
+            var result = _providerTypeService.List();
+
+            _logger.LogInformation($"Request {nameof(ListProviderTypes)} handled");
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
         [SwaggerOperation(Summary = "Get the specified organization by id")]
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
@@ -63,7 +80,7 @@ namespace Yoma.Core.Api.Controllers
 
         [SwaggerOperation(Summary = "List the provider types for specified organization")]
         [HttpGet("{id}/providerType")]
-        [ProducesResponseType(typeof(List<OrganizationProviderType>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(List<Domain.Entity.Models.Lookups.OrganizationProviderType>), (int)HttpStatusCode.OK)]
         public IActionResult ListProviderTypesById([FromRoute] Guid id)
         {
             _logger.LogInformation($"Handling request {nameof(ListProviderTypesById)} ({nameof(id)}: {id})");

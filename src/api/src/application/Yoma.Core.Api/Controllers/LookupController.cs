@@ -17,20 +17,18 @@ namespace Yoma.Core.Api.Controllers
         private readonly ILogger<UserController> _logger;
         private readonly IGenderService _genderService;
         private readonly ICountryService _countryService;
-        private readonly IProviderTypeService _providerTypeService; 
+        
         #endregion
 
         #region Constructor
         public LookupController(
             ILogger<UserController> logger,
             IGenderService genderService,
-            ICountryService countryService,
-            IProviderTypeService providerTypeService)
+            ICountryService countryService)
         {
             _logger = logger;
             _genderService = genderService;
             _countryService = countryService;
-            _providerTypeService = providerTypeService;
         }
         #endregion
 
@@ -63,21 +61,6 @@ namespace Yoma.Core.Api.Controllers
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
-
-        [SwaggerOperation(Summary = "Return a list of provider types")]
-        [HttpGet("providerType")]
-        [ProducesResponseType(typeof(List<ProviderType>), (int)HttpStatusCode.OK)]
-        public IActionResult ListProviderTypes()
-        {
-            _logger.LogInformation($"Handling request {nameof(ListProviderTypes)}");
-
-            var result = _providerTypeService.List();
-
-            _logger.LogInformation($"Request {nameof(ListProviderTypes)} handled");
-
-            return StatusCode((int)HttpStatusCode.OK, result);
-        }
-
         #endregion Anonymous Actions
         #endregion 
     }
