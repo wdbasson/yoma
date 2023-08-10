@@ -6,7 +6,7 @@
 # KC_CLIENT_ID="admin-cli"
 # KC_ADMIN_USER="xxxxx@example.com"
 # KC_ADMIN_PASSWORD="xxxxx"
-KC_JWT=$(curl -s -X POST "${KC_BASE_URL}/realms/${KC_REALM}/protocol/openid-connect/token" \
+KC_JWT=$(curl -s -X POST "${KC_BASE_URL}/realms/${KC_ADMIN_REALM}/protocol/openid-connect/token" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -d 'grant_type=password' \
   -d "client_id=${KC_CLIENT_ID}" \
