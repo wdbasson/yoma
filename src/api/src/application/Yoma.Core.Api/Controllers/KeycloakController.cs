@@ -44,13 +44,13 @@ namespace Yoma.Core.Api.Controllers
         [HttpPost("webhook")]
         public IActionResult ReceiveKeyCloakEvent([FromBody] KeycloakWebhookRequest payload)
         {
+            if (payload == null)
+                throw new ArgumentNullException(nameof(payload));
+
             var authorized = false;
 
             try
             {
-                if (payload == null)
-                    throw new ArgumentNullException(nameof(payload));
-
                 authorized = _keycloakClient.AuthenticateWebhook(HttpContext);
 
                 return authorized ? StatusCode(StatusCodes.Status200OK) : StatusCode(StatusCodes.Status403Forbidden);
