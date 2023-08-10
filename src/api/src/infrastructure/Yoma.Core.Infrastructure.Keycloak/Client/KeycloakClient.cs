@@ -29,8 +29,8 @@ namespace Yoma.Core.Infrastructure.Keycloak.Client
             _appSettings = appSettings;
             _keycloakAuthenticationOptions = keycloakAuthenticationOptions;
 
-            _httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl,
-                _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);
+            _httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl, _keycloakAuthenticationOptions.Realm,
+                _appSettings.AdminKeycloak.Username, _appSettings.AdminKeycloak.Password);
         }
         #endregion
 
@@ -51,7 +51,7 @@ namespace Yoma.Core.Infrastructure.Keycloak.Client
             var username = credentials[0];
             var password = credentials[1];
 
-            return username == _appSettings.WebhookAdminKeyCloak.Username && password == _appSettings.WebhookAdminKeyCloak.Password;
+            return username == _appSettings.WebhookAdminKeycloak.Username && password == _appSettings.WebhookAdminKeycloak.Password;
         }
 
         public async Task<User?> GetUser(string? username)
@@ -100,8 +100,7 @@ namespace Yoma.Core.Infrastructure.Keycloak.Client
 
         public async Task UpdateUser(User user, bool resetPassword)
         {
-            using var httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl, _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);
-            using var userApi = ApiClientFactory.Create<UserApi>(httpClient);
+            using var userApi = ApiClientFactory.Create<UserApi>(_httpClient);
 
             var request = new UserRepresentation
             {
@@ -160,10 +159,8 @@ namespace Yoma.Core.Infrastructure.Keycloak.Client
             if (rolesInvalid.Any())
                 throw new ArgumentOutOfRangeException(nameof(roles), $"Invalid role(s) specified: {string.Join(';', rolesInvalid)}");
 
-            using var httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl,
-                _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);
-            using var rolesApi = ApiClientFactory.Create<RoleContainerApi>(httpClient);
-            using var rolesMapperApi = ApiClientFactory.Create<RoleMapperApi>(httpClient);
+            using var rolesApi = ApiClientFactory.Create<RoleContainerApi>(_httpClient);
+            using var rolesMapperApi = ApiClientFactory.Create<RoleMapperApi>(_httpClient);
 
             var kcRoles = await rolesApi.GetRolesAsync(_keycloakAuthenticationOptions.Realm);
 
@@ -183,10 +180,8 @@ namespace Yoma.Core.Infrastructure.Keycloak.Client
             if (rolesInvalid.Any())
                 throw new ArgumentOutOfRangeException(nameof(roles), $"Invalid role(s) specified: {string.Join(';', rolesInvalid)}");
 
-            using var httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl,
-                _appSettings.AdminKeyCloak.Username, _appSettings.AdminKeyCloak.Password);
-            using var rolesApi = ApiClientFactory.Create<RoleContainerApi>(httpClient);
-            using var rolesMapperApi = ApiClientFactory.Create<RoleMapperApi>(httpClient);
+            using var rolesApi = ApiClientFactory.Create<RoleContainerApi>(_httpClient);
+            using var rolesMapperApi = ApiClientFactory.Create<RoleMapperApi>(_httpClient);
 
             var roleRepresentationsExisting = await rolesMapperApi.GetUsersRoleMappingsByIdAsync(_keycloakAuthenticationOptions.Realm, id.ToString());
 

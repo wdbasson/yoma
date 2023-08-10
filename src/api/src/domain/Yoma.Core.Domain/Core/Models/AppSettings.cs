@@ -2,9 +2,9 @@
 {
     public class AppSettings
     {
-        public AppSettingsCredentials AdminKeyCloak { get; set; }
+        public AppSettingsCredentials AdminKeycloak { get; set; }
 
-        public AppSettingsCredentials WebhookAdminKeyCloak { get; set; }
+        public AppSettingsCredentials WebhookAdminKeycloak { get; set; }
 
         public string AuthorizationPolicyScope { get; set; }
 

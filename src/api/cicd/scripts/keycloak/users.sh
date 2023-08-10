@@ -4,12 +4,14 @@
 # KC_REALM="yoma"
 
 # KC_CLIENT_ID="admin-cli"
-# KC_CLIENT_SECRET="XXXXX"
+# KC_ADMIN_USER="xxxxx@example.com"
+# KC_ADMIN_PASSWORD="xxxxx"
 KC_JWT=$(curl -s -X POST "${KC_BASE_URL}/realms/${KC_REALM}/protocol/openid-connect/token" \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'grant_type=client_credentials' \
+  -d 'grant_type=password' \
   -d "client_id=${KC_CLIENT_ID}" \
-  -d "client_secret=${KC_CLIENT_SECRET}" | jq .access_token -r)
+  -d "username=${KC_ADMIN_USER}" \
+  -d "password=${KC_ADMIN_PASSWORD}" | jq .access_token -r)
 
 # Get Realm roles
 roleIDs=$(curl -s -X GET "${KC_BASE_URL}/admin/realms/${KC_REALM}/roles" \
