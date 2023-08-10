@@ -1,6 +1,6 @@
-﻿namespace Yoma.Core.Domain.Lookups.Models
+﻿namespace Yoma.Core.Domain.Entity.Models.Lookups
 {
-    public class ProviderType
+    public class OrganizationProviderType
     {
         public Guid Id { get; set; }
 

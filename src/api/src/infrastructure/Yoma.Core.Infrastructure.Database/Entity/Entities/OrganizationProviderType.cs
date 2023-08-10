@@ -2,7 +2,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Yoma.Core.Infrastructure.Database.Core.Entities;
-using Yoma.Core.Infrastructure.Database.Lookups.Entities;
 
 namespace Yoma.Core.Infrastructure.Database.Entity.Entities
 {
@@ -18,7 +17,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Entities
         [Required]
         [ForeignKey("ProviderTypeId")]
         public Guid ProviderTypeId { get; set; }
-        public ProviderType ProviderType { get; set; }
+        public Lookups.OrganizationProviderType ProviderType { get; set; }
 
         [Required]
         public DateTimeOffset DateCreated { get; set; }

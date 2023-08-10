@@ -5,10 +5,10 @@ using Yoma.Core.Infrastructure.Database.Entity.Entities;
 
 namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
 {
-    public class OrganizationProviderTypesRepository : BaseRepository<OrganizationProviderType>, IRepository<Domain.Entity.Models.OrganizationProviderType>
+    public class OrganizationProviderTypeRepository : BaseRepository<OrganizationProviderType>, IRepository<Domain.Entity.Models.OrganizationProviderType>
     {
         #region Constructor
-        public OrganizationProviderTypesRepository(ApplicationDbContext context) : base(context) { }
+        public OrganizationProviderTypeRepository(ApplicationDbContext context) : base(context) { }
         #endregion
 
         #region Public Members

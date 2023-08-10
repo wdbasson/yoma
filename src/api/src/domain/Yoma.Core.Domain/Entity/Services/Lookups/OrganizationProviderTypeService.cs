@@ -2,23 +2,23 @@
 using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
-using Yoma.Core.Domain.Lookups.Interfaces;
-using Yoma.Core.Domain.Lookups.Models;
+using Yoma.Core.Domain.Entity.Interfaces.Lookups;
+using Yoma.Core.Domain.Entity.Models.Lookups;
 
-namespace Yoma.Core.Domain.Lookups.Services
+namespace Yoma.Core.Domain.Entity.Services.Lookups
 {
-    public class ProviderTypeService : IProviderTypeService
+    public class OrganizationProviderTypeService : IOrganizationProviderTypeService
     {
         #region Class Variables
         private readonly AppSettings _appSettings;
         private readonly IMemoryCache _memoryCache;
-        private readonly IRepository<ProviderType> _providerTypeRepository;
+        private readonly IRepository<OrganizationProviderType> _providerTypeRepository;
         #endregion
 
         #region Constructor
-        public ProviderTypeService(IOptions<AppSettings> appSettings,
+        public OrganizationProviderTypeService(IOptions<AppSettings> appSettings,
             IMemoryCache memoryCache,
-            IRepository<ProviderType> providerTypeRepository)
+            IRepository<OrganizationProviderType> providerTypeRepository)
         {
             _appSettings = appSettings.Value;
             _memoryCache = memoryCache;
@@ -27,17 +27,17 @@ namespace Yoma.Core.Domain.Lookups.Services
         #endregion
 
         #region Public Members
-        public ProviderType GetById(Guid id)
+        public OrganizationProviderType GetById(Guid id)
         {
             var result = GetByIdOrNull(id);
 
             if (result == null)
-                throw new ArgumentException($"{nameof(ProviderType)} for '{id}' does not exists", nameof(id));
+                throw new ArgumentException($"{nameof(OrganizationProviderType)} for '{id}' does not exists", nameof(id));
 
             return result;
         }
 
-        public ProviderType? GetByIdOrNull(Guid id)
+        public OrganizationProviderType? GetByIdOrNull(Guid id)
         {
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
@@ -45,12 +45,12 @@ namespace Yoma.Core.Domain.Lookups.Services
             return List().SingleOrDefault(o => o.Id == id);
         }
 
-        public List<ProviderType> List()
+        public List<OrganizationProviderType> List()
         {
             if (!_appSettings.CacheEnabledByReferenceDataTypes.HasFlag(Core.ReferenceDataType.Lookups))
                 return _providerTypeRepository.Query().ToList();
 
-            var result = _memoryCache.GetOrCreate(nameof(ProviderType), entry =>
+            var result = _memoryCache.GetOrCreate(nameof(OrganizationProviderType), entry =>
             {
                 entry.SlidingExpiration = TimeSpan.FromHours(_appSettings.CacheSlidingExpirationLookupInHours);
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(_appSettings.CacheAbsoluteExpirationRelativeToNowLookupInDays);
@@ -58,7 +58,7 @@ namespace Yoma.Core.Domain.Lookups.Services
             });
 
             if (result == null)
-                throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(ProviderType)}'s");
+                throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(OrganizationProviderType)}'s");
 
             return result;
         }

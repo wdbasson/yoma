@@ -5,12 +5,11 @@ using Yoma.Core.Infrastructure.Database.Core.Entities;
 
 namespace Yoma.Core.Infrastructure.Database.Lookups.Entities
 {
-    [Table("ProviderType", Schema = "lookup")]
+    [Table("TimeInterval", Schema = "lookup")]
     [Index(nameof(Name), IsUnique = true)]
-    public class ProviderType : BaseEntity<Guid>
+    public class TimeInterval : BaseEntity<Guid>
     {
-        [Required]
-        [Column(TypeName = "varchar(255)")]
+        [Column(TypeName = "varchar(20)")]
         public string Name { get; set; }
 
         [Required]

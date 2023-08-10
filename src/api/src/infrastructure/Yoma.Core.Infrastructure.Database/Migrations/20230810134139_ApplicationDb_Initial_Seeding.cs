@@ -7,7 +7,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
         internal static void Seed(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.InsertData(
-            table: "ProviderType",
+            table: "OrganizationProviderType",
             columns: new[] { "Id", "Name", "DateCreated" },
             values: new object[,]
             {
@@ -17,25 +17,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     ,
                     {"D2987F9F-8CC8-4576-AF09-C01213A1435E","Marketplace",DateTimeOffset.Now}
             },
-            schema: "lookup");
-
-
-            migrationBuilder.InsertData(
-            table: "Gender",
-            columns: new[] { "Id", "Name", "DateCreated" },
-            values: new object[,]
-            {
-                    {"6DBD31E9-5196-49CA-8D3B-8354A9BFF996","Male",DateTimeOffset.Now}
-                    ,
-                    {"6342C98A-0572-4E6A-A4FB-A1AEAFD3C053","Female",DateTimeOffset.Now}
-                    ,
-                    {"1BDCBFAD-67AA-4556-A326-5D263761F920","Transgender Male",DateTimeOffset.Now}
-                    ,
-                    {"0BE24DF8-D4C5-453C-AADF-EEDF673E1FE3","Transgender Female",DateTimeOffset.Now}
-                    ,
-                    {"26BA24A5-9209-48B2-A885-95C43EF142B5","Unknown",DateTimeOffset.Now}
-            },
-            schema: "lookup");
+            schema: "entity");
 
             migrationBuilder.InsertData(
             table: "Country",
@@ -544,6 +526,65 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
 
             },
             schema: "lookup");
+
+            migrationBuilder.InsertData(
+            table: "Gender",
+            columns: new[] { "Id", "Name", "DateCreated" },
+            values: new object[,]
+            {
+                    {"6DBD31E9-5196-49CA-8D3B-8354A9BFF996","Male",DateTimeOffset.Now}
+                    ,
+                    {"6342C98A-0572-4E6A-A4FB-A1AEAFD3C053","Female",DateTimeOffset.Now}
+                    ,
+                    {"1BDCBFAD-67AA-4556-A326-5D263761F920","Transgender Male",DateTimeOffset.Now}
+                    ,
+                    {"0BE24DF8-D4C5-453C-AADF-EEDF673E1FE3","Transgender Female",DateTimeOffset.Now}
+                    ,
+                    {"26BA24A5-9209-48B2-A885-95C43EF142B5","Unknown",DateTimeOffset.Now}
+            },
+            schema: "lookup");
+
+            //Language
+
+            migrationBuilder.InsertData(
+            table: "TimeInterval",
+            columns: new[] { "Id", "Name", "DateCreated" },
+            values: new object[,]
+            {
+                    {"82AE49D5-26E0-4B58-BE48-A8ECBC3E01BD","Hour",DateTimeOffset.Now}
+                    ,
+                    {"DAF8310E-B864-451E-8D48-E3F12D15D957","Day",DateTimeOffset.Now}
+                    ,
+                    {"D31608F3-971B-413A-BFC4-CA61C14C0D50","Week",DateTimeOffset.Now}
+                    ,
+                    {"0EFC48B5-E04E-4BA5-A2F1-305E965BC7CB","Month",DateTimeOffset.Now}
+            },
+            schema: "lookup");
+
+            migrationBuilder.InsertData(
+            table: "OpportunityCategory",
+            columns: new[] { "Id", "Name", "DateCreated" },
+            values: new object[,]
+            {
+                    {"2CCBACF7-1ED9-4E20-BB7C-43EDFDB3F950","Agriculture",DateTimeOffset.Now}
+                    ,
+                    {"89F4AB46-0767-494F-A18C-3037F698133A","Career and Personal Development",DateTimeOffset.Now}
+                    ,
+                    {"C76786FD-FCA9-4633-85B3-11E53486D708","Business and Entrepreneurship",DateTimeOffset.Now}
+                    ,
+                    {"D0D322AB-D1D7-44B6-94E8-7B85246AA42E","Environment and Climate",DateTimeOffset.Now}
+                    ,
+                    {"FA564C1C-591A-4A6D-8294-20165DA8866B","Technology and Digitization",DateTimeOffset.Now}
+                    ,
+                    {"F36051C9-9057-4765-BC2F-9DEE82EF60D6","Tourism and Hospitality",DateTimeOffset.Now}
+            },
+            schema: "opportunity");
+
+            //OpportunityDifficulty
+
+            //OpportunityStatus
+
+            //OpportunityType
         }
     }
 }
