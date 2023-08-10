@@ -7,6 +7,7 @@ using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Models;
 using Yoma.Core.Domain.Entity.Validators;
+using Yoma.Core.Domain.Keycloak.Interfaces;
 using Yoma.Core.Domain.Lookups.Interfaces;
 
 namespace Yoma.Core.Domain.Entity.Services
@@ -15,6 +16,7 @@ namespace Yoma.Core.Domain.Entity.Services
     {
         #region Class Variables
         private readonly IUserService _userService;
+        private readonly IKeycloakClient _keycloakClient;
         private readonly IProviderTypeService _providerTypeService;
         private readonly IS3ObjectService _s3ObjectService;
         private readonly OrganizationRequestValidator _organizationRequestValidator;
@@ -25,6 +27,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
         #region Constructor
         public OrganizationService(IUserService userService,
+            IKeycloakClientFactory keycloakClientFactory,
             IProviderTypeService providerTypeService,
             IS3ObjectService s3ObjectService,
             OrganizationRequestValidator organizationRequestValidator,
@@ -33,6 +36,7 @@ namespace Yoma.Core.Domain.Entity.Services
             IRepository<OrganizationProviderType> organizationProviderTypeRepository)
         {
             _userService = userService;
+            _keycloakClient = keycloakClientFactory.CreateClient();
             _providerTypeService = providerTypeService;
             _s3ObjectService = s3ObjectService;
             _organizationRequestValidator = organizationRequestValidator;
@@ -134,26 +138,24 @@ namespace Yoma.Core.Domain.Entity.Services
             if (providerTypeIds == null || !providerTypeIds.Any())
                 throw new ArgumentNullException(nameof(providerTypeIds));
 
-            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
+            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+            foreach (var typeId in providerTypeIds)
             {
-                foreach (var typeId in providerTypeIds)
+                var type = _providerTypeService.GetById(typeId);
+
+                var item = _organizationProviderTypeRepository.Query().SingleOrDefault(o => o.OrganizationId == org.Id && o.ProviderTypeId == type.Id);
+                if (item != null) return;
+
+                item = new OrganizationProviderType
                 {
-                    var type = _providerTypeService.GetById(typeId);
+                    OrganizationId = org.Id,
+                    ProviderTypeId = type.Id
+                };
 
-                    var item = _organizationProviderTypeRepository.Query().SingleOrDefault(o => o.OrganizationId == org.Id && o.ProviderTypeId == type.Id);
-                    if (item != null) return;
-
-                    item = new OrganizationProviderType
-                    {
-                        OrganizationId = org.Id,
-                        ProviderTypeId = type.Id
-                    };
-
-                    await _organizationProviderTypeRepository.Create(item);
-                }
-
-                scope.Complete();
+                await _organizationProviderTypeRepository.Create(item);
             }
+
+            scope.Complete();
         }
 
         public async Task DeleteProviderTypes(Guid id, List<Guid> providerTypeIds)
@@ -163,17 +165,15 @@ namespace Yoma.Core.Domain.Entity.Services
             if (providerTypeIds == null || !providerTypeIds.Any())
                 throw new ArgumentNullException(nameof(providerTypeIds));
 
-            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
+            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+            foreach (var typeId in providerTypeIds)
             {
-                foreach (var typeId in providerTypeIds)
-                {
-                    var type = _providerTypeService.GetById(typeId);
+                var type = _providerTypeService.GetById(typeId);
 
-                    var item = _organizationProviderTypeRepository.Query().SingleOrDefault(o => o.OrganizationId == org.Id && o.ProviderTypeId == type.Id);
-                    if (item == null) return;
+                var item = _organizationProviderTypeRepository.Query().SingleOrDefault(o => o.OrganizationId == org.Id && o.ProviderTypeId == type.Id);
+                if (item == null) return;
 
-                    await _organizationProviderTypeRepository.Delete(item);
-                }
+                await _organizationProviderTypeRepository.Delete(item);
             }
         }
 
@@ -247,6 +247,8 @@ namespace Yoma.Core.Domain.Entity.Services
         {
             var org = GetById(id);
             var user = _userService.GetById(userId);
+            if (!user.ExternalId.HasValue)
+                throw new InvalidOperationException($"External id expected for user with id '{user.Id}'");
 
             var item = _organizationUserRepository.Query().SingleOrDefault(o => o.OrganizationId == id && o.UserId == userId);
             if (item != null) return;
@@ -257,14 +259,12 @@ namespace Yoma.Core.Domain.Entity.Services
                 UserId = user.Id
             };
 
-            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
-            {
-                await _organizationUserRepository.Create(item);
+            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+            await _organizationUserRepository.Create(item);
 
-                await _userService.EnsureKeycloakRoles(user.ExternalId, new List<string> { Constants.Role_OrganizationAdmin });
+            await _keycloakClient.EnsureRoles(user.ExternalId.Value, new List<string> { Constants.Role_OrganizationAdmin });
 
-                scope.Complete();
-            }
+            scope.Complete();
         }
 
         public async Task RemoveAdmin(Guid id, Guid userId)
@@ -272,17 +272,18 @@ namespace Yoma.Core.Domain.Entity.Services
             var org = GetById(id);
 
             var user = _userService.GetById(userId);
+            if (!user.ExternalId.HasValue)
+                throw new InvalidOperationException($"External id expected for user with id '{user.Id}'");
+
             var item = _organizationUserRepository.Query().SingleOrDefault(o => o.OrganizationId == id && o.UserId == userId);
             if (item == null) return;
 
-            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
-            {
-                await _organizationUserRepository.Delete(item);
+            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+            await _organizationUserRepository.Delete(item);
 
-                await _userService.RemoveKeycloakRoles(user.ExternalId, new List<string> { Constants.Role_OrganizationAdmin });
+            await _keycloakClient.RemoveRoles(user.ExternalId.Value, new List<string> { Constants.Role_OrganizationAdmin });
 
-                scope.Complete();
-            }
+            scope.Complete();
         }
         #endregion
 

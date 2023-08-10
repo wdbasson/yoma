@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Yoma.Core.Domain.Keycloak
+namespace Yoma.Core.Infrastructure.Keycloak
 {
     public enum CustomAttributes
     {
@@ -29,4 +29,3 @@ namespace Yoma.Core.Domain.Keycloak
         Login
     }
 }
-

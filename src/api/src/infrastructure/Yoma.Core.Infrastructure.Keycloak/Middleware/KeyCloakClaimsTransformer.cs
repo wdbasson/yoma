@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using System.Security.Claims;
 
-namespace Yoma.Core.Api.Middleware
+namespace Yoma.Core.Infrastructure.Keycloak.Middleware
 {
     public class KeyCloakClaimsTransformer : IClaimsTransformation
     {

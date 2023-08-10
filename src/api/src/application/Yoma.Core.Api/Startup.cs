@@ -2,29 +2,27 @@
 using Yoma.Core.Infrastructure.Database;
 using Yoma.Core.Domain;
 using Yoma.Core.Domain.Core.Models;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.OpenApi.Models;
-using Keycloak.AuthServices.Authentication;
-using Keycloak.AuthServices.Authorization;
 using Yoma.Core.Api.Middleware;
 using Yoma.Core.Domain.Core.Extensions;
-using Flurl;
 using Newtonsoft.Json.Converters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Yoma.Core.Domain.Core.Converters;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Services;
 using Microsoft.AspNetCore.Authorization;
+using Yoma.Core.Infrastructure.Keycloak;
+using Yoma.Core.Infrastructure.Keycloak.Models;
 
 namespace Yoma.Core.Api
 {
     public class Startup
     {
         #region Class Variables
-        private IWebHostEnvironment _webHostEnvironment { get; }
-        private IConfiguration _configuration { get; }
-        private Domain.Core.Environment _environment { get; }
-        private KeycloakAuthenticationOptions _keycloakAuthenticationOptions;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IConfiguration _configuration;
+        private readonly Domain.Core.Environment _environment;
+        private readonly KeycloakAuthOptions _keycloakAuthOptions;
         private const string _oAuth_Scope_Separator = " ";
         #endregion
 
@@ -34,15 +32,7 @@ namespace Yoma.Core.Api
             _configuration = configuration;
             _webHostEnvironment = env;
             _environment = EnvironmentHelper.FromString(_webHostEnvironment.EnvironmentName);
-
-            var keycloakAuthenticationOptions = _configuration
-               .GetSection(KeycloakAuthenticationOptions.Section)
-               .Get<KeycloakAuthenticationOptions>();
-
-            if (keycloakAuthenticationOptions == null)
-                throw new InvalidOperationException($"Failed to retrieve configuration section '{KeycloakAuthenticationOptions.Section}'");
-
-            _keycloakAuthenticationOptions = keycloakAuthenticationOptions;
+            _keycloakAuthOptions = configuration.Configuration_AuthenticationOptions();
         }
         #endregion
 
@@ -52,9 +42,7 @@ namespace Yoma.Core.Api
             #region Configuration
             services.Configure<AppSettings>(options => 
                 _configuration.GetSection(nameof(AppSettings)).Bind(options));
-            services.Configure<KeycloakAuthenticationOptions>(options =>
-            _configuration.GetSection(KeycloakAuthenticationOptions.Section).Bind(options));
-
+            services.ConfigureServices_Keycloak(_configuration);
             services.AddSingleton<IEnvironmentProvider>(p => ActivatorUtilities.CreateInstance<EnvironmentProvider>(p, _webHostEnvironment.EnvironmentName));
             #endregion Configuration
 
@@ -73,41 +61,30 @@ namespace Yoma.Core.Api
             #endregion
 
             #region 3rd Party
-            var keycloakProtectionClientOptions = _configuration
-                .GetSection(KeycloakProtectionClientOptions.Section).Get<KeycloakProtectionClientOptions>();
-
-            if (keycloakProtectionClientOptions == null)
-                throw new InvalidOperationException($"Failed to retrieve config section '{KeycloakProtectionClientOptions.Section}.{nameof(KeycloakProtectionClientOptions)}'");
-
             ConfigureCORS(services);
-            ConfigureAuthentication(services);
-            ConfigureAuthorization(services, keycloakProtectionClientOptions);
+            services.ConfigureServices_AuthenticationKeycloak(_configuration);
+            ConfigureAuthorization(services, _configuration);
             ConfigureSwagger(services);
             #endregion 3rd Party
 
             #region Services & Infrastructure
             services.ConfigureServices_DomainServices(_configuration);
             services.ConfigureServices_AWSClients(_configuration);
+            services.ConfigureService_InfrastructuresKeycloak();
             services.ConfigureServices_InfrastructureDatabase(_configuration);
             #endregion Services & Infrastructure
         }
 
         public void Configure(IApplicationBuilder app, IServiceProvider serviceProvider)
         {
-            var keycloakAuthenticationOptions = _configuration
-                .GetSection(KeycloakAuthenticationOptions.Section).Get<KeycloakAuthenticationOptions>();
-
-            if (keycloakAuthenticationOptions == null)
-                throw new InvalidOperationException($"Failed to retrieve configuration section '{KeycloakAuthenticationOptions.Section}'");
-
             #region 3rd Party
             app.UseSwagger();
             app.UseSwaggerUI(s =>
             {
                 s.SwaggerEndpoint("/swagger/v3/swagger.json", $"Yoma Core Api ({_environment.ToDescription()} v3)");
                 s.RoutePrefix = string.Empty;
-                s.OAuthClientId(keycloakAuthenticationOptions.Resource);
-                s.OAuthClientSecret(keycloakAuthenticationOptions.Credentials.Secret);
+                s.OAuthClientId(_keycloakAuthOptions.ClientId);
+                s.OAuthClientSecret(_keycloakAuthOptions.ClientSecret);
                 s.OAuthScopeSeparator(_oAuth_Scope_Separator);
             });
             #endregion 3rd Party
@@ -164,12 +141,7 @@ namespace Yoma.Core.Api
             });
         }
 
-        private void ConfigureAuthentication(IServiceCollection services)
-        {
-            services.AddKeycloakAuthentication(_keycloakAuthenticationOptions);
-        }
-
-        private void ConfigureAuthorization(IServiceCollection services, KeycloakProtectionClientOptions options)
+        private void ConfigureAuthorization(IServiceCollection services, IConfiguration configuration)
         {
             services.AddAuthorization(options =>
             {
@@ -179,10 +151,9 @@ namespace Yoma.Core.Api
                     policy.RequireAuthenticatedUser();
                     policy.Requirements.Add(new RequireClaimAuthorizationRequirement());
                 });
-            })
-            .AddKeycloakAuthorization(options);
+            });
             services.AddSingleton<IAuthorizationHandler, RequiredClaimAuthorizationHandler>();
-            services.AddTransient<IClaimsTransformation, KeyCloakClaimsTransformer>();
+            services.ConfigureServices_AuthorizationKeycloak(configuration);
         }
 
         private void ConfigureSwagger(IServiceCollection services)
@@ -194,20 +165,6 @@ namespace Yoma.Core.Api
             var scopes = appSettings.SwaggerScopes.Split(_oAuth_Scope_Separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToArray();
             if (!scopes.Any())
                 throw new InvalidOperationException($"Configuration section '{nameof(AppSettings)}' contains no configured swagger scopes");
-
-            var tokenUri = _keycloakAuthenticationOptions.AuthServerUrl
-                .AppendPathSegment("realms")
-                .AppendPathSegment(_keycloakAuthenticationOptions.Realm)
-                .AppendPathSegment("protocol")
-                .AppendPathSegment("openid-connect")
-                .AppendPathSegment("token").ToUri();
-
-            var authUri = _keycloakAuthenticationOptions.AuthServerUrl
-                .AppendPathSegment("realms")
-                .AppendPathSegment(_keycloakAuthenticationOptions.Realm)
-                .AppendPathSegment("protocol")
-                .AppendPathSegment("openid-connect")
-                .AppendPathSegment("auth").ToUri();
 
             services.AddSwaggerGen(c =>
             {
@@ -223,8 +180,8 @@ namespace Yoma.Core.Api
                         AuthorizationCode = new OpenApiOAuthFlow()
                         {
                             Scopes = scopes.ToDictionary(item => item, item => item),
-                            TokenUrl = tokenUri,
-                            AuthorizationUrl = authUri
+                            TokenUrl = _keycloakAuthOptions.TokenUrl,
+                            AuthorizationUrl = _keycloakAuthOptions.AuthorizationUrl
                         }
                     }
                 });

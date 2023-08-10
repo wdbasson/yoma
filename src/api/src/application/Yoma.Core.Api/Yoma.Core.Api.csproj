@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\infrastructure\Yoma.Core.Infrastructure.Database\Yoma.Core.Infrastructure.Database.csproj" />
+    <ProjectReference Include="..\..\infrastructure\Yoma.Core.Infrastructure.Keycloak\Yoma.Core.Infrastructure.Keycloak.csproj" />
   </ItemGroup>
 
 </Project>

@@ -113,9 +113,6 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     b.Property<string>("TaxNumber")
                         .HasColumnType("varchar(255)");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("VATIN")
                         .HasColumnType("varchar(255)");
 
@@ -133,7 +130,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.HasIndex("UserId", "Approved", "Active", "DateModified", "DateCreated");
+                    b.HasIndex("Approved", "Active", "DateModified", "DateCreated");
 
                     b.ToTable("Organization", "entity");
                 });
@@ -161,6 +158,31 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                         .IsUnique();
 
                     b.ToTable("OrganizationProviderTypes", "entity");
+                });
+
+            modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Entity.Entities.OrganizationUser", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("DateCreated")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("OrganizationId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("OrganizationUsers", "entity");
                 });
 
             modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Entity.Entities.User", b =>
@@ -381,17 +403,11 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                         .WithMany()
                         .HasForeignKey("LogoId");
 
-                    b.HasOne("Yoma.Core.Infrastructure.Database.Entity.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId");
-
                     b.Navigation("CompanyRegistrationDocument");
 
                     b.Navigation("Country");
 
                     b.Navigation("Logo");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Entity.Entities.OrganizationProviderType", b =>
@@ -411,6 +427,25 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     b.Navigation("Organization");
 
                     b.Navigation("ProviderType");
+                });
+
+            modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Entity.Entities.OrganizationUser", b =>
+                {
+                    b.HasOne("Yoma.Core.Infrastructure.Database.Entity.Entities.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Yoma.Core.Infrastructure.Database.Entity.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Entity.Entities.User", b =>

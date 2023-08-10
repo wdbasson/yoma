@@ -1,6 +1,6 @@
 ﻿namespace Yoma.Core.Domain.Keycloak.Models
 {
-    public class WebhookRequest
+    public class KeycloakWebhookRequest
     {
         public string type { get; set; }
         public string realmId { get; set; }
