@@ -29,7 +29,7 @@ namespace Yoma.Core.Infrastructure.Keycloak.Client
             _appSettings = appSettings;
             _keycloakAuthenticationOptions = keycloakAuthenticationOptions;
 
-            _httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl, _keycloakAuthenticationOptions.Realm,
+            _httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl, appSettings.AdminKeycloak.Realm,
                 _appSettings.AdminKeycloak.Username, _appSettings.AdminKeycloak.Password);
         }
         #endregion

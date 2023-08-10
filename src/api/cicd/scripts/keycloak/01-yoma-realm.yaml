@@ -384,27 +384,6 @@ webAuthnPolicyPasswordlessUserVerificationRequirement: not specified
 webAuthnPolicyPasswordlessCreateTimeout: 0
 webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister: false
 webAuthnPolicyPasswordlessAcceptableAaguids: []
-users:
-  - username: admin@yoma.world
-    enabled: true
-    totp: false
-    emailVerified: true
-    email: admin@yoma.world
-    firstName: ""
-    lastName: ""
-    credentials:
-      - type: password
-        value: $(env:SA_YOMA_API_PASSWORD)
-    disableableCredentialTypes: []
-    requiredActions: []
-    realmRoles:
-      - default-roles-yoma
-    clientRoles:
-      realm-management:
-        - view-users
-        - manage-users
-    notBefore: 0
-    groups: []
 scopeMappings:
   - clientScope: offline_access
     roles:
