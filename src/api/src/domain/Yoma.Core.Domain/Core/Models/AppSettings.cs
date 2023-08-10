@@ -19,6 +19,8 @@
 
     public class AppSettingsCredentials
     {
+        public string? Realm { get; set; }
+
         public string Username { get; set; }
 
         public string Password { get; set; }

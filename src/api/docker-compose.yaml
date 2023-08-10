@@ -174,8 +174,9 @@ services:
       KC_BASE_URL: http://keycloak:8080
       KC_REALM: yoma
       KC_CLIENT_ID: admin-cli
-      KC_ADMIN_USER: admin@yoma.world
+      KC_ADMIN_USER: sa-yoma-api
       KC_ADMIN_PASSWORD: *KCAdminPassword
+      KC_ADMIN_REALM: master
     user: 0:0 # because we need to install jq
     command:
       - /bin/sh
