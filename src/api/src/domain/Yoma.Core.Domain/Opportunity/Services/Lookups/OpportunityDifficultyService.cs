@@ -2,42 +2,42 @@
 using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
-using Yoma.Core.Domain.Lookups.Interfaces;
-using Yoma.Core.Domain.Lookups.Models;
+using Yoma.Core.Domain.Opportunity.Interfaces.Lookups;
+using Yoma.Core.Domain.Opportunity.Models.Lookups;
 
-namespace Yoma.Core.Domain.Lookups.Services
+namespace Yoma.Core.Domain.Opportunity.Services.Lookups
 {
-    public class GenderService : IGenderService
+    public class OpportunityDifficultyService : IOpportunityDifficultyService
     {
         #region Class Variables
         private readonly AppSettings _appSettings;
         private readonly IMemoryCache _memoryCache;
-        private readonly IRepository<Gender> _genderRepository;
+        private readonly IRepository<OpportunityDifficulty> _opportunityDifficultyRepository;
         #endregion
 
         #region Constructor
-        public GenderService(IOptions<AppSettings> appSettings, 
+        public OpportunityDifficultyService(IOptions<AppSettings> appSettings,
             IMemoryCache memoryCache,
-            IRepository<Gender> genderRepository)
+            IRepository<OpportunityDifficulty> opportunityDifficultyRepository)
         {
             _appSettings = appSettings.Value;
             _memoryCache = memoryCache;
-            _genderRepository = genderRepository;
+            _opportunityDifficultyRepository = opportunityDifficultyRepository;
         }
         #endregion
 
         #region Public Members
-        public Gender GetByName(string name)
+        public OpportunityDifficulty GetByName(string name)
         {
             var result = GetByNameOrNull(name);
 
             if (result == null)
-                throw new ArgumentException($"{nameof(Gender)} with name '{name}' does not exists", nameof(name));
+                throw new ArgumentException($"{nameof(OpportunityDifficulty)} with name '{name}' does not exists", nameof(name));
 
             return result;
         }
 
-        public Gender? GetByNameOrNull(string name)
+        public OpportunityDifficulty? GetByNameOrNull(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentNullException(nameof(name));
@@ -46,17 +46,17 @@ namespace Yoma.Core.Domain.Lookups.Services
             return List().SingleOrDefault(o => o.Name == name);
         }
 
-        public Gender GetById(Guid id)
+        public OpportunityDifficulty GetById(Guid id)
         {
             var result = GetByIdOrNull(id);
 
             if (result == null)
-                throw new ArgumentException($"{nameof(Gender)} for '{id}' does not exists", nameof(id));
+                throw new ArgumentException($"{nameof(OpportunityDifficulty)} for '{id}' does not exists", nameof(id));
 
             return result;
         }
 
-        public Gender? GetByIdOrNull(Guid id)
+        public OpportunityDifficulty? GetByIdOrNull(Guid id)
         {
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
@@ -64,20 +64,20 @@ namespace Yoma.Core.Domain.Lookups.Services
             return List().SingleOrDefault(o => o.Id == id);
         }
 
-        public List<Gender> List()
+        public List<OpportunityDifficulty> List()
         {
             if (!_appSettings.CacheEnabledByReferenceDataTypes.HasFlag(Core.ReferenceDataType.Lookups))
-                return _genderRepository.Query().ToList();
+                return _opportunityDifficultyRepository.Query().ToList();
 
-            var result = _memoryCache.GetOrCreate(nameof(Gender), entry =>
+            var result = _memoryCache.GetOrCreate(nameof(OpportunityDifficulty), entry =>
             {
                 entry.SlidingExpiration = TimeSpan.FromHours(_appSettings.CacheSlidingExpirationLookupInHours);
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(_appSettings.CacheAbsoluteExpirationRelativeToNowLookupInDays);
-                return _genderRepository.Query().OrderBy(o => o.Name).ToList();
+                return _opportunityDifficultyRepository.Query().OrderBy(o => o.Name).ToList();
             });
 
             if (result == null)
-                throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(Gender)}s'");
+                throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(OpportunityDifficulty)}s'");
 
             return result;
         }

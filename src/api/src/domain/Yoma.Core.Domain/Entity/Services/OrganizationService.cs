@@ -7,7 +7,6 @@ using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Interfaces.Lookups;
 using Yoma.Core.Domain.Entity.Models;
-using Yoma.Core.Domain.Entity.Models.Lookups;
 using Yoma.Core.Domain.Entity.Validators;
 using Yoma.Core.Domain.Keycloak.Interfaces;
 
@@ -23,7 +22,7 @@ namespace Yoma.Core.Domain.Entity.Services
         private readonly OrganizationRequestValidator _organizationRequestValidator;
         private readonly IRepository<Organization> _organizationRepository;
         private readonly IRepository<OrganizationUser> _organizationUserRepository;
-        private readonly IRepository<Models.OrganizationProviderType> _organizationProviderTypeRepository;
+        private readonly IRepository<OrganizationProviderType> _organizationProviderTypeRepository;
         #endregion
 
         #region Constructor
@@ -34,7 +33,7 @@ namespace Yoma.Core.Domain.Entity.Services
             OrganizationRequestValidator organizationRequestValidator,
             IRepository<Organization> organizationRepository,
             IRepository<OrganizationUser> organizationUserRepository,
-            IRepository<Models.OrganizationProviderType> organizationProviderTypeRepository)
+            IRepository<OrganizationProviderType> organizationProviderTypeRepository)
         {
             _userService = userService;
             _keycloakClient = keycloakClientFactory.CreateClient();
@@ -147,7 +146,7 @@ namespace Yoma.Core.Domain.Entity.Services
                 var item = _organizationProviderTypeRepository.Query().SingleOrDefault(o => o.OrganizationId == org.Id && o.ProviderTypeId == type.Id);
                 if (item != null) return;
 
-                item = new Models.OrganizationProviderType
+                item = new OrganizationProviderType
                 {
                     OrganizationId = org.Id,
                     ProviderTypeId = type.Id

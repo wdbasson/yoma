@@ -6,10 +6,12 @@ using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Entity.Models;
 using Yoma.Core.Domain.Lookups.Models;
+using Yoma.Core.Domain.Opportunity.Models;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;
 using Yoma.Core.Infrastructure.Database.Entity.Repositories;
 using Yoma.Core.Infrastructure.Database.Lookups.Repositories;
+using Yoma.Core.Infrastructure.Database.Opportunity.Repositories;
 
 namespace Yoma.Core.Infrastructure.Database
 {
@@ -23,18 +25,43 @@ namespace Yoma.Core.Infrastructure.Database
                 options.UseSqlServer(configuration.GetConnectionString("SQLConnection")), ServiceLifetime.Scoped, ServiceLifetime.Scoped);
 
             // repositories
+            #region Core
             services.AddScoped<IRepository<S3Object>, S3ObjectRepository>();
+            #endregion Core
 
-            services.AddScoped<IRepository<Domain.Entity.Models.OrganizationProviderType>, Entity.Repositories.OrganizationProviderTypeRepository>();
+            #region Entity
+            #region Lookups
+            services.AddScoped<IRepository<Domain.Entity.Models.Lookups.OrganizationProviderType>, Entity.Repositories.Lookups.OrganizationProviderTypeRepository>();
+            #endregion Lookups
             services.AddScoped<IRepository<Organization>, OrganizationRepository>();
+            services.AddScoped<IRepository<OrganizationProviderType>, OrganizationProviderTypeRepository>();
             services.AddScoped<IRepository<OrganizationUser>, OrganizationUserRepository>();
             services.AddScoped<IRepository<User>, UserRepository>();
             services.AddScoped<IRepository<UserSkill>, UserSkillRepository>();
+            #endregion Entity
 
+            #region Lookups
             services.AddScoped<IRepository<Country>, CountryRepository>();
             services.AddScoped<IRepository<Gender>, GenderRepository>();
-            services.AddScoped<IRepository<Domain.Entity.Models.Lookups.OrganizationProviderType>, Entity.Repositories.Lookups.OrganizationProviderTypeRepository>();
+            services.AddScoped<IRepository<Language>, LanguageRepository>();
             services.AddScoped<IRepository<Skill>, SkillRepository>();
+            services.AddScoped<IRepository<TimeInterval>, TimeIntervalRepository>();
+            #endregion Lookups
+
+            #region Opportunity
+            #region Lookups
+            services.AddScoped<IRepository<Domain.Opportunity.Models.Lookups.OpportunityCategory>, Opportunity.Repositories.Lookups.OpportunityCategoryRepository>();
+            services.AddScoped<IRepository<Domain.Opportunity.Models.Lookups.OpportunityDifficulty>, Opportunity.Repositories.Lookups.OpportunityDifficultyRepository>();
+            services.AddScoped<IRepository<Domain.Opportunity.Models.Lookups.OpportunityStatus>, Opportunity.Repositories.Lookups.OpportunityStatusRepository>();
+            services.AddScoped<IRepository<Domain.Opportunity.Models.Lookups.OpportunityType>, Opportunity.Repositories.Lookups.OpportunityTypeRepository>();
+            #endregion
+
+            services.AddScoped<IRepository<Domain.Opportunity.Models.Opportunity>, OpportunityRepository>();
+            services.AddScoped<IRepository<OpportunityCategory>, OpportunityCategoryRepository>();
+            services.AddScoped<IRepository<OpportunityCountry>, OpportunityCountryRepository>();
+            services.AddScoped<IRepository<OpportunityLanguage>, OpportunityLanguageRepository>();
+            services.AddScoped<IRepository<OpportunitySkill>, OpportunitySkillRepository>();
+            #endregion
         }
 
         public static void Configure_InfrastructureDatabase(this IServiceProvider serviceProvider)

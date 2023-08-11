@@ -53,7 +53,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
             var entity = _context.OrganizationProviderTypes.Where(o => o.Id == item.Id).SingleOrDefault();
 
             if (entity == null)
-                throw new ArgumentOutOfRangeException(nameof(item), $"OrganizationProviderType with id '{item.Id}' does not exist");
+                throw new ArgumentOutOfRangeException(nameof(item), $"{nameof(OrganizationProviderType)} with id '{item.Id}' does not exist");
 
             _context.OrganizationProviderTypes.Remove(entity);
             await _context.SaveChangesAsync();

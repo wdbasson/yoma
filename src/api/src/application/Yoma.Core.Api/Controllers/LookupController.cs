@@ -15,25 +15,48 @@ namespace Yoma.Core.Api.Controllers
     {
         #region Class Variables
         private readonly ILogger<UserController> _logger;
-        private readonly IGenderService _genderService;
         private readonly ICountryService _countryService;
-        
+        private readonly IGenderService _genderService;
+        private readonly ILanguageService _languageService;
+        private readonly ISkillService _skillService;
+        private readonly ITimeIntervalService _timeIntervalService;
         #endregion
 
         #region Constructor
         public LookupController(
             ILogger<UserController> logger,
+            ICountryService countryService,
             IGenderService genderService,
-            ICountryService countryService)
+            ILanguageService languageService,
+            ISkillService skillService,
+            ITimeIntervalService timeIntervalService
+            )
         {
             _logger = logger;
-            _genderService = genderService;
             _countryService = countryService;
+            _genderService = genderService;
+            _languageService = languageService;
+            _skillService = skillService;
+            _timeIntervalService = timeIntervalService;
         }
         #endregion
 
         #region Public Members
         #region Anonymous Actions
+        [SwaggerOperation(Summary = "Return a list of countries")]
+        [HttpGet("country")]
+        [ProducesResponseType(typeof(List<Country>), (int)HttpStatusCode.OK)]
+        public IActionResult ListCountries()
+        {
+            _logger.LogInformation($"Handling request {nameof(ListCountries)}");
+
+            var result = _countryService.List();
+
+            _logger.LogInformation($"Request {nameof(ListCountries)} handled");
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
         [SwaggerOperation(Summary = "Return a list of genders")]
         [HttpGet("gender")]
         [ProducesResponseType(typeof(List<Gender>), (int)HttpStatusCode.OK)]
@@ -48,16 +71,44 @@ namespace Yoma.Core.Api.Controllers
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Return a list of countries")]
-        [HttpGet("country")]
-        [ProducesResponseType(typeof(List<Country>), (int)HttpStatusCode.OK)]
-        public IActionResult ListCountries()
+        [SwaggerOperation(Summary = "Return a list of languages")]
+        [HttpGet("language")]
+        [ProducesResponseType(typeof(List<Gender>), (int)HttpStatusCode.OK)]
+        public IActionResult ListLanguages()
         {
-            _logger.LogInformation($"Handling request {nameof(ListCountries)}");
+            _logger.LogInformation($"Handling request {nameof(ListLanguages)}");
 
-            var result = _countryService.List();
+            var result = _languageService.List();
 
-            _logger.LogInformation($"Request {nameof(ListCountries)} handled");
+            _logger.LogInformation($"Request {nameof(ListLanguages)} handled");
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
+        [SwaggerOperation(Summary = "Return a list of skills")]
+        [HttpGet("skill")]
+        [ProducesResponseType(typeof(List<Gender>), (int)HttpStatusCode.OK)]
+        public IActionResult ListSkills()
+        {
+            _logger.LogInformation($"Handling request {nameof(ListSkills)}");
+
+            var result = _skillService.List();
+
+            _logger.LogInformation($"Request {nameof(ListSkills)} handled");
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
+        [SwaggerOperation(Summary = "Return a list of time intervals")]
+        [HttpGet("timeInterval")]
+        [ProducesResponseType(typeof(List<Gender>), (int)HttpStatusCode.OK)]
+        public IActionResult ListTimeIntervals()
+        {
+            _logger.LogInformation($"Handling request {nameof(ListTimeIntervals)}");
+
+            var result = _timeIntervalService.List();
+
+            _logger.LogInformation($"Request {nameof(ListTimeIntervals)} handled");
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }

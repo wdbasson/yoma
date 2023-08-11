@@ -89,7 +89,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
             var entity = _context.Organization.Where(o => o.Id == item.Id).SingleOrDefault();
 
             if (entity == null)
-                throw new ArgumentOutOfRangeException(nameof(item), $"Organization with id '{item.Id}' does not exist");
+                throw new ArgumentOutOfRangeException(nameof(item), $"{nameof(Organization)} with id '{item.Id}' does not exist");
 
             item.DateModified = DateTimeOffset.Now;
 

@@ -341,6 +341,15 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CodeAlpha2")
+                        .IsUnique();
+
+                    b.HasIndex("CodeAlpha3")
+                        .IsUnique();
+
+                    b.HasIndex("CodeNumeric")
+                        .IsUnique();
+
                     b.HasIndex("Name")
                         .IsUnique();
 
@@ -378,11 +387,17 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(2)");
 
+                    b.Property<DateTimeOffset>("DateCreated")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("varchar(125)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CodeAlpha2")
+                        .IsUnique();
 
                     b.HasIndex("Name")
                         .IsUnique();
@@ -528,6 +543,10 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     b.Property<Guid>("CommitmentIntervalId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("varchar(320)");
+
                     b.Property<DateTimeOffset>("DateCreated")
                         .HasColumnType("datetimeoffset");
 
@@ -552,6 +571,10 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
 
                     b.Property<string>("Keywords")
                         .HasColumnType("varchar(500)");
+
+                    b.Property<string>("ModifiedBy")
+                        .IsRequired()
+                        .HasColumnType("varchar(320)");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uniqueidentifier");

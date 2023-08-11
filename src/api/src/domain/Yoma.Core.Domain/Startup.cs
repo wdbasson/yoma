@@ -14,6 +14,10 @@ using Yoma.Core.Domain.Entity.Services;
 using Yoma.Core.Domain.Entity.Services.Lookups;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Lookups.Services;
+using Yoma.Core.Domain.Opportunity.Interfaces;
+using Yoma.Core.Domain.Opportunity.Interfaces.Lookups;
+using Yoma.Core.Domain.Opportunity.Services;
+using Yoma.Core.Domain.Opportunity.Services.Lookups;
 
 namespace Yoma.Core.Domain
 {
@@ -25,14 +29,35 @@ namespace Yoma.Core.Domain
             //register all validators in Yoma.Core.Domain assembly
             services.AddValidatorsFromAssemblyContaining<UserService>();
 
+            #region Core
             services.AddScoped<IS3ObjectService, S3ObjectService>();
+            #endregion Core
 
+            #region Entity
+            #region Lookups
+            services.AddScoped<IOrganizationProviderTypeService, OrganizationProviderTypeService>();
+            #endregion Lookups
             services.AddScoped<IOrganizationService, OrganizationService>();
             services.AddScoped<IUserService, UserService>();
+            #endregion Entity
 
+            #region Lookups
             services.AddScoped<ICountryService, CountryService>();
             services.AddScoped<IGenderService, GenderService>();
-            services.AddScoped<IOrganizationProviderTypeService, OrganizationProviderTypeService>();
+            services.AddScoped<ILanguageService, LanguageService>();
+            services.AddScoped<ISkillService, SkillService>();
+            services.AddScoped<ITimeIntervalService, TimeIntervalService>();
+            #endregion Lookups
+
+            #region Opportunity
+            #region Lookups
+            services.AddScoped<IOpportunityCategoryService, OpportunityCategoryService>();
+            services.AddScoped<IOpportunityDifficultyService, OpportunityDifficultyService>();
+            services.AddScoped<IOpportunityStatusService, OpportunityStatusService>();
+            services.AddScoped<IOpportunityTypeService, OpportunityTypeService>();
+            #endregion Lookups
+            services.AddScoped<IOpportunityService, OpportunityService>();
+            #endregion Opportunity
         }
 
         public static void ConfigureServices_RecurringJobs(this IServiceProvider serviceProvider, IConfiguration configuration)

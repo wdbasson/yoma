@@ -86,6 +86,14 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Entities
         public DateTimeOffset DateCreated { get; set; }
 
         [Required]
+        [Column(TypeName = "varchar(320)")]
+        public string CreatedBy { get; set; }
+
+        [Required]
         public DateTimeOffset DateModified { get; set; }
+
+        [Required]
+        [Column(TypeName = "varchar(320)")]
+        public string ModifiedBy { get; set; }
     }
 }

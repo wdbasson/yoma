@@ -58,7 +58,7 @@ namespace Yoma.Core.Domain.Entity.Services.Lookups
             });
 
             if (result == null)
-                throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(OrganizationProviderType)}'s");
+                throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(OrganizationProviderType)}s'");
 
             return result;
         }

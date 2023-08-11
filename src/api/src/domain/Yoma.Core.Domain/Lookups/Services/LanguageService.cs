@@ -7,37 +7,37 @@ using Yoma.Core.Domain.Lookups.Models;
 
 namespace Yoma.Core.Domain.Lookups.Services
 {
-    public class CountryService : ICountryService
+    public class LanguageService : ILanguageService
     {
         #region Class Variables
         private readonly AppSettings _appSettings;
         private readonly IMemoryCache _memoryCache;
-        private readonly IRepository<Country> _countryRepository;
+        private readonly IRepository<Language> _languageRepository;
         #endregion
 
         #region Constructor
-        public CountryService(IOptions<AppSettings> appSettings,
+        public LanguageService(IOptions<AppSettings> appSettings, 
             IMemoryCache memoryCache,
-            IRepository<Country> countryRepository)
+            IRepository<Language> languageRepository)
         {
             _appSettings = appSettings.Value;
             _memoryCache = memoryCache;
-            _countryRepository = countryRepository;
+            _languageRepository = languageRepository;
         }
         #endregion
 
         #region Public Members
-        public Country GetByName(string name)
+        public Language GetByName(string name)
         {
             var result = GetByNameOrNull(name);
 
             if (result == null)
-                throw new ArgumentException($"{nameof(Country)} with name '{name}' does not exists", nameof(name));
+                throw new ArgumentException($"{nameof(Language)} with name '{name}' does not exists", nameof(name));
 
             return result;
         }
 
-        public Country? GetByNameOrNull(string name)
+        public Language? GetByNameOrNull(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentNullException(nameof(name));
@@ -46,17 +46,27 @@ namespace Yoma.Core.Domain.Lookups.Services
             return List().SingleOrDefault(o => o.Name == name);
         }
 
-        public Country GetByCodeAplha2(string code)
+        public Language GetById(Guid id)
         {
-            var result = GetByCodeAplha2OrNull(code);
+            var result = GetByIdOrNull(id);
 
             if (result == null)
-                throw new ArgumentException($"{nameof(Country)} with code '{code}' does not exists", nameof(code));
+                throw new ArgumentException($"{nameof(Language)} for '{id}' does not exists", nameof(id));
 
             return result;
         }
 
-        public Country? GetByCodeAplha2OrNull(string code)
+        public Language GetByCodeAplha2(string code)
+        {
+            var result = GetByCodeAplha2OrNull(code);
+
+            if (result == null)
+                throw new ArgumentException($"{nameof(Language)} with code '{code}' does not exists", nameof(code));
+
+            return result;
+        }
+
+        public Language? GetByCodeAplha2OrNull(string code)
         {
             if (string.IsNullOrWhiteSpace(code))
                 throw new ArgumentNullException(nameof(code));
@@ -65,17 +75,7 @@ namespace Yoma.Core.Domain.Lookups.Services
             return List().SingleOrDefault(o => o.Name == code);
         }
 
-        public Country GetById(Guid id)
-        {
-            var result = GetByIdOrNull(id);
-            
-            if (result == null)
-                throw new ArgumentException($"{nameof(Country)} for '{id}' does not exists", nameof(id));
-
-            return result;
-        }
-
-        public Country? GetByIdOrNull(Guid id)
+        public Language? GetByIdOrNull(Guid id)
         {
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
@@ -83,20 +83,20 @@ namespace Yoma.Core.Domain.Lookups.Services
             return List().SingleOrDefault(o => o.Id == id);
         }
 
-        public List<Country> List()
+        public List<Language> List()
         {
             if (!_appSettings.CacheEnabledByReferenceDataTypes.HasFlag(Core.ReferenceDataType.Lookups))
-                return _countryRepository.Query().ToList();
+                return _languageRepository.Query().ToList();
 
-            var result = _memoryCache.GetOrCreate(nameof(Country), entry =>
+            var result = _memoryCache.GetOrCreate(nameof(Language), entry =>
             {
                 entry.SlidingExpiration = TimeSpan.FromHours(_appSettings.CacheSlidingExpirationLookupInHours);
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(_appSettings.CacheAbsoluteExpirationRelativeToNowLookupInDays);
-                return _countryRepository.Query().OrderBy(o => o.Name).ToList();
+                return _languageRepository.Query().OrderBy(o => o.Name).ToList();
             });
 
             if (result == null)
-                throw new InvalidOperationException($"Failed to retrieve cached list of 'Countries'");
+                throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(Language)}s'");
 
             return result;
         }

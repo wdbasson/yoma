@@ -1,14 +1,12 @@
 ﻿using Yoma.Core.Domain.Core.Interfaces;
+using Yoma.Core.Domain.Entity.Models.Lookups;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;
 
 namespace Yoma.Core.Infrastructure.Database.Entity.Repositories.Lookups
 {
-    public class OrganizationProviderTypeRepository : BaseRepository<Entities.Lookups.OrganizationProviderType>, IRepository<Domain.Entity.Models.Lookups.OrganizationProviderType>
+    public class OrganizationProviderTypeRepository : BaseRepository<Entities.Lookups.OrganizationProviderType>, IRepository<OrganizationProviderType>
     {
-        #region Class Variables
-        #endregion
-
         #region Constructor
         public OrganizationProviderTypeRepository(ApplicationDbContext context) : base(context)
         {
@@ -16,26 +14,26 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories.Lookups
         #endregion
 
         #region Public Members
-        public IQueryable<Domain.Entity.Models.Lookups.OrganizationProviderType> Query()
+        public IQueryable<OrganizationProviderType> Query()
         {
-            return _context.OrganizationProviderType.Select(entity => new Domain.Entity.Models.Lookups.OrganizationProviderType 
+            return _context.OrganizationProviderType.Select(entity => new OrganizationProviderType
             {
                 Id = entity.Id,
                 Name = entity.Name
             });
         }
 
-        public Task<Domain.Entity.Models.Lookups.OrganizationProviderType> Create(Domain.Entity.Models.Lookups.OrganizationProviderType item)
+        public Task<OrganizationProviderType> Create(OrganizationProviderType item)
         {
             throw new NotImplementedException();
         }
 
-        public Task Update(Domain.Entity.Models.Lookups.OrganizationProviderType item)
+        public Task Update(OrganizationProviderType item)
         {
             throw new NotImplementedException();
         }
 
-        public Task Delete(Domain.Entity.Models.Lookups.OrganizationProviderType item)
+        public Task Delete(OrganizationProviderType item)
         {
             throw new NotImplementedException();
         }

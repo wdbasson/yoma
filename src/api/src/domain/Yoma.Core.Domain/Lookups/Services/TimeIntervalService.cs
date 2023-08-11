@@ -7,37 +7,37 @@ using Yoma.Core.Domain.Lookups.Models;
 
 namespace Yoma.Core.Domain.Lookups.Services
 {
-    public class CountryService : ICountryService
+    public class TimeIntervalService : ITimeIntervalService
     {
         #region Class Variables
         private readonly AppSettings _appSettings;
         private readonly IMemoryCache _memoryCache;
-        private readonly IRepository<Country> _countryRepository;
+        private readonly IRepository<TimeInterval> _timeIntervalRepository;
         #endregion
 
         #region Constructor
-        public CountryService(IOptions<AppSettings> appSettings,
+        public TimeIntervalService(IOptions<AppSettings> appSettings, 
             IMemoryCache memoryCache,
-            IRepository<Country> countryRepository)
+            IRepository<TimeInterval> timeIntervalRepository)
         {
             _appSettings = appSettings.Value;
             _memoryCache = memoryCache;
-            _countryRepository = countryRepository;
+            _timeIntervalRepository = timeIntervalRepository;
         }
         #endregion
 
         #region Public Members
-        public Country GetByName(string name)
+        public TimeInterval GetByName(string name)
         {
             var result = GetByNameOrNull(name);
 
             if (result == null)
-                throw new ArgumentException($"{nameof(Country)} with name '{name}' does not exists", nameof(name));
+                throw new ArgumentException($"{nameof(TimeInterval)} with name '{name}' does not exists", nameof(name));
 
             return result;
         }
 
-        public Country? GetByNameOrNull(string name)
+        public TimeInterval? GetByNameOrNull(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentNullException(nameof(name));
@@ -46,36 +46,17 @@ namespace Yoma.Core.Domain.Lookups.Services
             return List().SingleOrDefault(o => o.Name == name);
         }
 
-        public Country GetByCodeAplha2(string code)
-        {
-            var result = GetByCodeAplha2OrNull(code);
-
-            if (result == null)
-                throw new ArgumentException($"{nameof(Country)} with code '{code}' does not exists", nameof(code));
-
-            return result;
-        }
-
-        public Country? GetByCodeAplha2OrNull(string code)
-        {
-            if (string.IsNullOrWhiteSpace(code))
-                throw new ArgumentNullException(nameof(code));
-            code = code.Trim();
-
-            return List().SingleOrDefault(o => o.Name == code);
-        }
-
-        public Country GetById(Guid id)
+        public TimeInterval GetById(Guid id)
         {
             var result = GetByIdOrNull(id);
-            
+
             if (result == null)
-                throw new ArgumentException($"{nameof(Country)} for '{id}' does not exists", nameof(id));
+                throw new ArgumentException($"{nameof(TimeInterval)} for '{id}' does not exists", nameof(id));
 
             return result;
         }
 
-        public Country? GetByIdOrNull(Guid id)
+        public TimeInterval? GetByIdOrNull(Guid id)
         {
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
@@ -83,20 +64,20 @@ namespace Yoma.Core.Domain.Lookups.Services
             return List().SingleOrDefault(o => o.Id == id);
         }
 
-        public List<Country> List()
+        public List<TimeInterval> List()
         {
             if (!_appSettings.CacheEnabledByReferenceDataTypes.HasFlag(Core.ReferenceDataType.Lookups))
-                return _countryRepository.Query().ToList();
+                return _timeIntervalRepository.Query().ToList();
 
-            var result = _memoryCache.GetOrCreate(nameof(Country), entry =>
+            var result = _memoryCache.GetOrCreate(nameof(TimeInterval), entry =>
             {
                 entry.SlidingExpiration = TimeSpan.FromHours(_appSettings.CacheSlidingExpirationLookupInHours);
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(_appSettings.CacheAbsoluteExpirationRelativeToNowLookupInDays);
-                return _countryRepository.Query().OrderBy(o => o.Name).ToList();
+                return _timeIntervalRepository.Query().OrderBy(o => o.Name).ToList();
             });
 
             if (result == null)
-                throw new InvalidOperationException($"Failed to retrieve cached list of 'Countries'");
+                throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(TimeInterval)}s'");
 
             return result;
         }

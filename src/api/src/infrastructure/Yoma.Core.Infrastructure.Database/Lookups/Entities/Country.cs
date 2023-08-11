@@ -7,6 +7,9 @@ namespace Yoma.Core.Infrastructure.Database.Lookups.Entities
 {
     [Table("Country", Schema = "lookup")]
     [Index(nameof(Name), IsUnique = true)]
+    [Index(nameof(CodeAlpha2), IsUnique = true)]
+    [Index(nameof(CodeAlpha3), IsUnique = true)]
+    [Index(nameof(CodeNumeric), IsUnique = true)]
     public class Country : BaseEntity<Guid>
     {
         [Column(TypeName = "varchar(125)")]

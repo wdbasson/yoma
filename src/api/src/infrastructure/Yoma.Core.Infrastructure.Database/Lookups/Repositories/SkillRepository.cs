@@ -7,9 +7,6 @@ namespace Yoma.Core.Infrastructure.Database.Lookups.Repositories
 {
     public class SkillRepository : BaseRepository<Skill>, IRepository<Domain.Lookups.Models.Skill>
     {
-        #region Class Variables
-        #endregion
-
         #region Constructor
         public SkillRepository(ApplicationDbContext context) : base(context)
         {
