@@ -1,14 +1,19 @@
-﻿namespace Yoma.Core.Infrastructure.Emsi.Models
+﻿using Newtonsoft.Json;
+
+namespace Yoma.Core.Infrastructure.Emsi.Models
 {
     public class TitleResponse
     {
-        public Title[] data { get; set; }
+        [JsonProperty("data")]
+        public Title[] Data { get; set; }
     }
 
     public class Title
     {
-        public string id { get; set; }
-        public string name { get; set; }
+        [JsonProperty("id")]
+        public string Id { get; set; }
+        [JsonProperty("name")]
+        public string Name { get; set; }
     }
 
 }

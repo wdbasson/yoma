@@ -1,29 +1,41 @@
-﻿namespace Yoma.Core.Infrastructure.Emsi.Models
+﻿using Newtonsoft.Json;
+
+namespace Yoma.Core.Infrastructure.Emsi.Models
 {
     public class SkillResponse
     {
-        public Attribution[] attributions { get; set; }
-        public Skill[] data { get; set; }
+        [JsonProperty("attributions")]
+        public Attribution[] Attributions { get; set; }
+        [JsonProperty("data")]
+        public Skill[] Data { get; set; }
     }
 
     public class Attribution
     {
-        public string name { get; set; }
-        public string text { get; set; }
+        [JsonProperty("name")]
+        public string Name { get; set; }
+        [JsonProperty("text")]
+        public string Text { get; set; }
     }
 
     public class Skill
     {
-        public string id { get; set; }
-        public string name { get; set; }
-        public SkillType type { get; set; }
-        public string infoUrl { get; set; }
+        [JsonProperty("id")]
+        public string Id { get; set; }
+        [JsonProperty("name")]
+        public string Name { get; set; }
+        [JsonProperty("type")]
+        public SkillType Type { get; set; }
+        [JsonProperty("infoUrl")]
+        public string InfoUrl { get; set; }
     }
 
     public class SkillType
     {
-        public string id { get; set; }
-        public string name { get; set; }
+        [JsonProperty("id")]
+        public string Id { get; set; }
+        [JsonProperty("name")]
+        public string Name { get; set; }
     }
 
 }

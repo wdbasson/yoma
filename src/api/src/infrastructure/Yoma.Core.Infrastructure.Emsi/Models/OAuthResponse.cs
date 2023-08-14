@@ -4,11 +4,14 @@ namespace Yoma.Core.Infrastructure.Emsi.Models
 {
     public class OAuthResponse
     {
-        public string access_token { get; set; }
+        [JsonProperty("access_token")]
+        public string Access_token { get; set; }
 
-        public int expires_in { get; set; }
+        [JsonProperty("expires_in")]
+        public int Expires_in { get; set; }
 
-        public string token_type { get; set; }
+        [JsonProperty("token_type")]
+        public string Token_type { get; set; }
 
         [JsonIgnore]
         public DateTimeOffset Date { get; } = DateTimeOffset.Now;
@@ -16,7 +19,7 @@ namespace Yoma.Core.Infrastructure.Emsi.Models
         [JsonIgnore]
         public DateTimeOffset DateExpire 
         {
-            get { return Date.AddSeconds(expires_in - 5); }
+            get { return Date.AddSeconds(Expires_in - 5); }
         } 
     }
 }
