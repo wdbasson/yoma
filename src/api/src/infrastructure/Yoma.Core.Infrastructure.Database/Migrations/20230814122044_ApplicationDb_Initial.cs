@@ -160,7 +160,10 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "varchar(255)", nullable: false),
-                    DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    InfoURL = table.Column<string>(type: "varchar(2048)", nullable: true),
+                    ExternalId = table.Column<string>(type: "varchar(100)", nullable: false),
+                    DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    DateModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -804,6 +807,13 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 schema: "entity",
                 table: "OrganizationUsers",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Skill_ExternalId",
+                schema: "lookup",
+                table: "Skill",
+                column: "ExternalId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Skill_Name",

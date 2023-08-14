@@ -13,6 +13,11 @@ using Yoma.Core.Domain.Core.Services;
 using Microsoft.AspNetCore.Authorization;
 using Yoma.Core.Infrastructure.Keycloak;
 using Yoma.Core.Infrastructure.Keycloak.Models;
+using Yoma.Core.Infrastructure.Emsi;
+using Hangfire;
+using Hangfire.SqlServer;
+using Hangfire.Dashboard;
+using Hangfire.Dashboard.BasicAuthorization;
 
 namespace Yoma.Core.Api
 {
@@ -22,6 +27,7 @@ namespace Yoma.Core.Api
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IConfiguration _configuration;
         private readonly Domain.Core.Environment _environment;
+        private readonly AppSettings _appSettings;
         private readonly KeycloakAuthOptions _keycloakAuthOptions;
         private const string _oAuth_Scope_Separator = " ";
         #endregion
@@ -32,6 +38,10 @@ namespace Yoma.Core.Api
             _configuration = configuration;
             _webHostEnvironment = env;
             _environment = EnvironmentHelper.FromString(_webHostEnvironment.EnvironmentName);
+
+            var appSettings = _configuration.GetSection(nameof(AppSettings)).Get<AppSettings>() ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{nameof(AppSettings)}'");
+            _appSettings = appSettings;
+
             _keycloakAuthOptions = configuration.Configuration_AuthenticationOptions();
         }
         #endregion
@@ -40,9 +50,10 @@ namespace Yoma.Core.Api
         public void ConfigureServices(IServiceCollection services)
         {
             #region Configuration
-            services.Configure<AppSettings>(options => 
+            services.Configure<AppSettings>(options =>
                 _configuration.GetSection(nameof(AppSettings)).Bind(options));
             services.ConfigureServices_Keycloak(_configuration);
+            services.ConfigureServices_Emsi(_configuration);
             services.AddSingleton<IEnvironmentProvider>(p => ActivatorUtilities.CreateInstance<EnvironmentProvider>(p, _webHostEnvironment.EnvironmentName));
             #endregion Configuration
 
@@ -65,12 +76,14 @@ namespace Yoma.Core.Api
             services.ConfigureServices_AuthenticationKeycloak(_configuration);
             ConfigureAuthorization(services, _configuration);
             ConfigureSwagger(services);
+            ConfigureHangfire(services, _configuration);
             #endregion 3rd Party
 
             #region Services & Infrastructure
-            services.ConfigureServices_DomainServices(_configuration);
+            services.ConfigureServices_DomainServices();
             services.ConfigureServices_AWSClients(_configuration);
             services.ConfigureService_InfrastructuresKeycloak();
+            services.ConfigureService_InfrastructuresEmsi();
             services.ConfigureServices_InfrastructureDatabase(_configuration);
             #endregion Services & Infrastructure
         }
@@ -82,7 +95,7 @@ namespace Yoma.Core.Api
             app.UseSwaggerUI(s =>
             {
                 s.SwaggerEndpoint("/swagger/v3/swagger.json", $"Yoma Core Api ({_environment.ToDescription()} v3)");
-                s.RoutePrefix = string.Empty;
+                s.RoutePrefix = "";
                 s.OAuthClientId(_keycloakAuthOptions.ClientId);
                 s.OAuthClientSecret(_keycloakAuthOptions.ClientSecret);
                 s.OAuthScopeSeparator(_oAuth_Scope_Separator);
@@ -93,24 +106,48 @@ namespace Yoma.Core.Api
             app.UseMiddleware<ExceptionResponseMiddleware>();
             app.UseMiddleware<ExceptionLogMiddleware>();
             app.UseCors();
-            app.UseHttpsRedirection();
+            if (_environment != Domain.Core.Environment.Local) app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
 
-            if(_environment != Domain.Core.Environment.Local) app.UseSentryTracing();
+            if (_environment != Domain.Core.Environment.Local) app.UseSentryTracing();
 
             app.UseAuthentication();
             app.UseAuthorization();
 
+            app.UseHangfireDashboard(options: new DashboardOptions
+            {
+                DarkModeEnabled = true,
+                Authorization = new IDashboardAuthorizationFilter[]
+                {
+                    new BasicAuthAuthorizationFilter(
+                        new BasicAuthAuthorizationFilterOptions
+                        {
+                            RequireSsl = _environment != Domain.Core.Environment.Local,
+                            SslRedirect = _environment != Domain.Core.Environment.Local,
+                            LoginCaseSensitive = true,
+                            Users = new[]
+                            {
+                                new BasicAuthAuthorizationUser
+                                {
+                                    Login = _appSettings.Hangfire.Username,
+                                    PasswordClear = _appSettings.Hangfire.Password
+                                }
+                            }
+                        })
+                }
+            });
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHangfireDashboard();
             });
             #endregion System
 
             #region Services & Infrastructure
-            // ef migrations
             serviceProvider.Configure_InfrastructureDatabase();
+            serviceProvider.ConfigureServices_RecurringJobs(_configuration);
             #endregion Services & Infrastructure
         }
         #endregion
@@ -120,9 +157,7 @@ namespace Yoma.Core.Api
         {
             const string _config_Section = "AllowedOrigins";
 
-            var origins = _configuration.GetSection(_config_Section).Get<string>();
-            if (origins == null)
-                throw new InvalidOperationException($"Failed to retrieve configuration section 'Config_Section'");
+            var origins = _configuration.GetSection(_config_Section).Get<string>() ?? throw new InvalidOperationException($"Failed to retrieve configuration section 'Config_Section'");
             var values = origins.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToArray();
             if (!values.Any())
                 throw new InvalidOperationException($"Configuration section '{_config_Section}' contains no configured hosts");
@@ -141,7 +176,7 @@ namespace Yoma.Core.Api
             });
         }
 
-        private void ConfigureAuthorization(IServiceCollection services, IConfiguration configuration)
+        private static void ConfigureAuthorization(IServiceCollection services, IConfiguration configuration)
         {
             services.AddAuthorization(options =>
             {
@@ -156,13 +191,27 @@ namespace Yoma.Core.Api
             services.ConfigureServices_AuthorizationKeycloak(configuration);
         }
 
+        private static void ConfigureHangfire(IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(configuration.Configuration_ConnectionString(), new SqlServerStorageOptions
+                {
+                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                    QueuePollInterval = TimeSpan.Zero,
+                    UseRecommendedIsolationLevel = true,
+                    DisableGlobalLocks = true
+                }));
+
+            services.AddHangfireServer();
+        }
+
         private void ConfigureSwagger(IServiceCollection services)
         {
-            var appSettings = _configuration.GetSection(nameof(AppSettings)).Get<AppSettings>();
-            if (appSettings == null)
-                throw new InvalidOperationException($"Failed to retrieve configuration section '{nameof(AppSettings)}'");
-
-            var scopes = appSettings.SwaggerScopes.Split(_oAuth_Scope_Separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToArray();
+            var scopes = _appSettings.SwaggerScopes.Split(_oAuth_Scope_Separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToArray();
             if (!scopes.Any())
                 throw new InvalidOperationException($"Configuration section '{nameof(AppSettings)}' contains no configured swagger scopes");
 

@@ -11,8 +11,7 @@ namespace Yoma.Core.Api.Middleware
         {
             if (context.Result is BadRequestObjectResult badRequestObjectResult)
             {
-                var validationProblemDetails = badRequestObjectResult.Value as ValidationProblemDetails;
-                if (validationProblemDetails != null && validationProblemDetails.Errors.Any())
+                if (badRequestObjectResult.Value is ValidationProblemDetails validationProblemDetails && validationProblemDetails.Errors.Any())
                 {
                     var errorResponse = new List<ErrorResponseItem>();
                     foreach (var error in validationProblemDetails.Errors.Values)

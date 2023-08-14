@@ -76,11 +76,7 @@ namespace Yoma.Core.Infrastructure.Keycloak
         private static KeycloakProtectionClientOptions ProtectionClientOptions(IConfiguration configuration)
         {
             var protectionClientOptions = configuration
-              .GetSection(KeycloakProtectionClientOptions.Section).Get<KeycloakProtectionClientOptions>();
-
-            if (protectionClientOptions == null)
-                throw new InvalidOperationException($"Failed to retrieve config section '{KeycloakProtectionClientOptions.Section}.{nameof(KeycloakProtectionClientOptions)}'");
-
+              .GetSection(KeycloakProtectionClientOptions.Section).Get<KeycloakProtectionClientOptions>() ?? throw new InvalidOperationException($"Failed to retrieve config section '{KeycloakProtectionClientOptions.Section}.{nameof(KeycloakProtectionClientOptions)}'");
             return protectionClientOptions;
         }
         #endregion

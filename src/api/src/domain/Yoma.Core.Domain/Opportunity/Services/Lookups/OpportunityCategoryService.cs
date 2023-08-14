@@ -29,11 +29,7 @@ namespace Yoma.Core.Domain.Opportunity.Services.Lookups
         #region Public Members
         public OpportunityCategory GetByName(string name)
         {
-            var result = GetByNameOrNull(name);
-
-            if (result == null)
-                throw new ArgumentException($"{nameof(OpportunityCategory)} with name '{name}' does not exists", nameof(name));
-
+            var result = GetByNameOrNull(name) ?? throw new ArgumentException($"{nameof(OpportunityCategory)} with name '{name}' does not exists", nameof(name));
             return result;
         }
 
@@ -48,11 +44,7 @@ namespace Yoma.Core.Domain.Opportunity.Services.Lookups
 
         public OpportunityCategory GetById(Guid id)
         {
-            var result = GetByIdOrNull(id);
-
-            if (result == null)
-                throw new ArgumentException($"{nameof(OpportunityCategory)} for '{id}' does not exists", nameof(id));
-
+            var result = GetByIdOrNull(id) ?? throw new ArgumentException($"{nameof(OpportunityCategory)} for '{id}' does not exists", nameof(id));
             return result;
         }
 
@@ -74,11 +66,7 @@ namespace Yoma.Core.Domain.Opportunity.Services.Lookups
                 entry.SlidingExpiration = TimeSpan.FromHours(_appSettings.CacheSlidingExpirationLookupInHours);
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(_appSettings.CacheAbsoluteExpirationRelativeToNowLookupInDays);
                 return _opportunityCategoryRepository.Query().OrderBy(o => o.Name).ToList();
-            });
-
-            if (result == null)
-                throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(OpportunityCategory)}s'");
-
+            }) ?? throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(OpportunityCategory)}s'");
             return result;
         }
         #endregion

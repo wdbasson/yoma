@@ -86,13 +86,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
 
         public async Task Update(Domain.Entity.Models.Organization item)
         {
-            var entity = _context.Organization.Where(o => o.Id == item.Id).SingleOrDefault();
-
-            if (entity == null)
-                throw new ArgumentOutOfRangeException(nameof(item), $"{nameof(Organization)} with id '{item.Id}' does not exist");
-
-            item.DateModified = DateTimeOffset.Now;
-
+            var entity = _context.Organization.Where(o => o.Id == item.Id).SingleOrDefault() ?? throw new ArgumentOutOfRangeException(nameof(item), $"{nameof(Organization)} with id '{item.Id}' does not exist");
             entity.Name = item.Name;
             entity.WebsiteURL = item.WebsiteURL;
             entity.PrimaryContactName = item.PrimaryContactName;
@@ -114,6 +108,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
             entity.DateDeactivated = item.DateDeactivated;
             entity.LogoId = item.LogoId;
             entity.CompanyRegistrationDocumentId = item.CompanyRegistrationDocumentId;
+            entity.DateModified = DateTimeOffset.Now;
 
             await _context.SaveChangesAsync();
         }

@@ -15,9 +15,9 @@ namespace Yoma.Core.Domain.Entity.Interfaces
 
         Task DeleteProviderTypes(Guid id, List<Guid> providerTypeIds);
 
-        Task<Organization> UpsertLogo(Guid id, IFormFile file);
+        Task<Organization> UpsertLogo(Guid id, IFormFile? file);
 
-        Task<Organization> UpsertRegistrationDocument(Guid id, IFormFile file);
+        Task<Organization> UpsertRegistrationDocument(Guid id, IFormFile? file);
 
         Task AssignAdmin(Guid organizationId, Guid userId);
 

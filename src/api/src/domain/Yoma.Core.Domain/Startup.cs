@@ -1,8 +1,8 @@
 ﻿using Amazon;
-using Amazon.Extensions.NETCore.Setup;
 using Amazon.Runtime;
 using Amazon.S3;
 using FluentValidation;
+using Hangfire;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Yoma.Core.Domain.Core.Interfaces;
@@ -24,7 +24,7 @@ namespace Yoma.Core.Domain
     public static class Startup
     {
         #region Public Members
-        public static void ConfigureServices_DomainServices(this IServiceCollection services, IConfiguration configuration)
+        public static void ConfigureServices_DomainServices(this IServiceCollection services)
         {
             //register all validators in Yoma.Core.Domain assembly
             services.AddValidatorsFromAssemblyContaining<UserService>();
@@ -62,17 +62,18 @@ namespace Yoma.Core.Domain
 
         public static void ConfigureServices_RecurringJobs(this IServiceProvider serviceProvider, IConfiguration configuration)
         {
+            var options = configuration.GetSection(ScheduleJobOptions.Section).Get<ScheduleJobOptions>() ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{ScheduleJobOptions.Section}'");
+            using var scope = serviceProvider.CreateScope();
+            var skillService = scope.ServiceProvider.GetRequiredService<ISkillService>();
+            RecurringJob.AddOrUpdate("Skill Reference Seeding", () => skillService.SeedSkills(), options.ScheduleSeedSkills, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
         }
 
         public static void ConfigureServices_AWSClients(this IServiceCollection services, IConfiguration configuration)
         {
-            var aWSSettings = configuration.GetSection(nameof(AWSSettings)).Get<AWSSettings>();
-            if (aWSSettings == null)
-                throw new InvalidOperationException($"Failed to retrieve configuration section '{nameof(AWSSettings)}'");
+            var aWSSettings = configuration.GetSection(AWSOptions.Section).Get<AWSOptions>() ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{nameof(AWSOptions)}'");
+            services.Configure<AWSOptions>(options => configuration.GetSection(nameof(AWSOptions)).Bind(options));
 
-            services.Configure<AWSSettings>(options => configuration.GetSection(nameof(AWSSettings)).Bind(options));
-
-            var aWSS3Options = new AWSOptions
+            var aWSS3Options = new Amazon.Extensions.NETCore.Setup.AWSOptions
             {
                 Region = RegionEndpoint.GetBySystemName(aWSSettings.S3Region),
                 Credentials = new BasicAWSCredentials(aWSSettings.S3AccessKey, aWSSettings.S3SecretKey)

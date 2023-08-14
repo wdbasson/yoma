@@ -17,12 +17,23 @@ namespace Yoma.Core.Infrastructure.Database
 {
     public static class Startup
     {
+        private const string ConnectionStrings_SQLConnection = "SQLConnection";
+
         #region Public Members
+        public static string Configuration_ConnectionString(this IConfiguration configuration)
+        {
+            var result = configuration.GetConnectionString(ConnectionStrings_SQLConnection);
+            if(string.IsNullOrEmpty(result))
+                throw new InvalidOperationException($"Failed to retrieve configuration section 'ConnectionStrings.{ConnectionStrings_SQLConnection}'");
+
+            return result;
+        }
+
         public static void ConfigureServices_InfrastructureDatabase(this IServiceCollection services, IConfiguration configuration)
         {
             // infrastructure
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("SQLConnection")), ServiceLifetime.Scoped, ServiceLifetime.Scoped);
+                options.UseSqlServer(configuration.GetConnectionString(ConnectionStrings_SQLConnection)), ServiceLifetime.Scoped, ServiceLifetime.Scoped);
 
             // repositories
             #region Core
@@ -44,7 +55,7 @@ namespace Yoma.Core.Infrastructure.Database
             services.AddScoped<IRepository<Country>, CountryRepository>();
             services.AddScoped<IRepository<Gender>, GenderRepository>();
             services.AddScoped<IRepository<Language>, LanguageRepository>();
-            services.AddScoped<IRepository<Skill>, SkillRepository>();
+            services.AddScoped<IRepositoryBatched<Skill>, SkillRepository>();
             services.AddScoped<IRepository<TimeInterval>, TimeIntervalRepository>();
             #endregion Lookups
 
@@ -66,21 +77,14 @@ namespace Yoma.Core.Infrastructure.Database
 
         public static void Configure_InfrastructureDatabase(this IServiceProvider serviceProvider)
         {
-            using (var scope = serviceProvider.CreateScope())
-            {
-                var logger = scope.ServiceProvider.GetService<ILogger<ApplicationDbContext>>();
-                if (logger == null)
-                    throw new InvalidOperationException($"Failed to get an instance of the service '{nameof(ILogger<ApplicationDbContext>)}'");
+            using var scope = serviceProvider.CreateScope();
+            var logger = scope.ServiceProvider.GetService<ILogger<ApplicationDbContext>>() ?? throw new InvalidOperationException($"Failed to get an instance of the service '{nameof(ILogger<ApplicationDbContext>)}'");
+            logger.LogDebug("Applying database migrations...");
 
-                logger.LogDebug("Applying database migrations...");
+            var context = scope.ServiceProvider.GetService<ApplicationDbContext>() ?? throw new InvalidOperationException($"Failed to get an instance of the service '{nameof(ILogger<ApplicationDbContext>)}'");
 
-                var context = scope.ServiceProvider.GetService<ApplicationDbContext>();
-                if(context == null)
-                    throw new InvalidOperationException($"Failed to get an instance of the service '{nameof(ILogger<ApplicationDbContext>)}'");
-
-                // migrate db
-                context.Database.Migrate();
-            }
+            // migrate db
+            context.Database.Migrate();
         }
         #endregion
     }

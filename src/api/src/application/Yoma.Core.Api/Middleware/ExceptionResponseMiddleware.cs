@@ -2,6 +2,7 @@
 using Yoma.Core.Domain.Exceptions;
 using System.ComponentModel.DataAnnotations;
 using Yoma.Core.Domain.Core.Models;
+using Yoma.Core.Domain.Core.Exceptions;
 
 namespace Yoma.Core.Api.Middleware
 {
@@ -34,12 +35,12 @@ namespace Yoma.Core.Api.Middleware
             switch (ex)
             {
                 case FluentValidation.ValidationException:
-                    var myEx = (FluentValidation.ValidationException)ex;
+                    var validationException = (FluentValidation.ValidationException)ex;
                     context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
-                    if (!myEx.Errors.Any()) break;
+                    if (!validationException.Errors.Any()) break;
                     
-                    errorResponse = myEx.Errors.Select(o => new ErrorResponseItem() { Type = ex.GetType().Name, Message = o.ErrorMessage }).ToList();
+                    errorResponse = validationException.Errors.Select(o => new ErrorResponseItem() { Type = ex.GetType().Name, Message = o.ErrorMessage }).ToList();
                     return context.Response.WriteAsJsonAsync(errorResponse);
 
                 case BusinessException:
@@ -52,6 +53,11 @@ namespace Yoma.Core.Api.Middleware
                 case DataCollisionException:
                 case DataInconsistencyException:
                     context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    break;
+
+                case HttpClientException:
+                    var httpClientException = (HttpClientException)ex;
+                    context.Response.StatusCode = (int)httpClientException.StatusCode;
                     break;
             }
 

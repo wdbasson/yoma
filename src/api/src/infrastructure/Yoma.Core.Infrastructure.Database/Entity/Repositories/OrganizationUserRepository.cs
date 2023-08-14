@@ -50,11 +50,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
 
         public async Task Delete(Domain.Entity.Models.OrganizationUser item)
         {
-            var entity = _context.OrganizationUsers.Where(o => o.Id == item.Id).SingleOrDefault();
-
-            if (entity == null)
-                throw new ArgumentOutOfRangeException(nameof(item), $"{nameof(OrganizationUser)} with id '{item.Id}' does not exist");
-
+            var entity = _context.OrganizationUsers.Where(o => o.Id == item.Id).SingleOrDefault() ?? throw new ArgumentOutOfRangeException(nameof(item), $"{nameof(OrganizationUser)} with id '{item.Id}' does not exist");
             _context.OrganizationUsers.Remove(entity);
             await _context.SaveChangesAsync();
         }

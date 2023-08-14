@@ -52,11 +52,7 @@ namespace Yoma.Core.Domain.Entity.Services
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
 
-            var result = _organizationRepository.Query().SingleOrDefault(o => o.Id == id);
-
-            if (result == null)
-                throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(Organization)} with id '{id}' does not exist");
-
+            var result = _organizationRepository.Query().SingleOrDefault(o => o.Id == id) ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(Organization)} with id '{id}' does not exist");
             result.LogoURL = GetS3ObjectURL(result.LogoId);
             result.CompanyRegistrationDocumentURL = GetS3ObjectURL(result.CompanyRegistrationDocumentId);
 
@@ -177,9 +173,13 @@ namespace Yoma.Core.Domain.Entity.Services
             }
         }
 
-        public async Task<Organization> UpsertLogo(Guid id, IFormFile file)
+        public async Task<Organization> UpsertLogo(Guid id, IFormFile? file)
         {
             var result = GetById(id);
+
+            if (file == null)
+                throw new ArgumentNullException(nameof(file));
+
             var currentLogoId = result.LogoId;
 
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
@@ -210,9 +210,13 @@ namespace Yoma.Core.Domain.Entity.Services
             return result;
         }
 
-        public async Task<Organization> UpsertRegistrationDocument(Guid id, IFormFile file)
+        public async Task<Organization> UpsertRegistrationDocument(Guid id, IFormFile? file)
         {
             var result = GetById(id);
+
+            if (file == null)
+                throw new ArgumentNullException(nameof(file));
+
             var currentDocumentId = result.CompanyRegistrationDocumentId;
 
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))

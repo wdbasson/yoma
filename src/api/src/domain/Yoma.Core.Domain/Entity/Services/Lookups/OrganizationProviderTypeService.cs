@@ -29,11 +29,7 @@ namespace Yoma.Core.Domain.Entity.Services.Lookups
         #region Public Members
         public OrganizationProviderType GetById(Guid id)
         {
-            var result = GetByIdOrNull(id);
-
-            if (result == null)
-                throw new ArgumentException($"{nameof(OrganizationProviderType)} for '{id}' does not exists", nameof(id));
-
+            var result = GetByIdOrNull(id) ?? throw new ArgumentException($"{nameof(OrganizationProviderType)} for '{id}' does not exists", nameof(id));
             return result;
         }
 
@@ -55,11 +51,7 @@ namespace Yoma.Core.Domain.Entity.Services.Lookups
                 entry.SlidingExpiration = TimeSpan.FromHours(_appSettings.CacheSlidingExpirationLookupInHours);
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(_appSettings.CacheAbsoluteExpirationRelativeToNowLookupInDays);
                 return _providerTypeRepository.Query().OrderBy(o => o.Name).ToList();
-            });
-
-            if (result == null)
-                throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(OrganizationProviderType)}s'");
-
+            }) ?? throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(OrganizationProviderType)}s'");
             return result;
         }
         #endregion

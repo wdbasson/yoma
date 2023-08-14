@@ -29,11 +29,7 @@ namespace Yoma.Core.Domain.Lookups.Services
         #region Public Members
         public TimeInterval GetByName(string name)
         {
-            var result = GetByNameOrNull(name);
-
-            if (result == null)
-                throw new ArgumentException($"{nameof(TimeInterval)} with name '{name}' does not exists", nameof(name));
-
+            var result = GetByNameOrNull(name) ?? throw new ArgumentException($"{nameof(TimeInterval)} with name '{name}' does not exists", nameof(name));
             return result;
         }
 
@@ -48,11 +44,7 @@ namespace Yoma.Core.Domain.Lookups.Services
 
         public TimeInterval GetById(Guid id)
         {
-            var result = GetByIdOrNull(id);
-
-            if (result == null)
-                throw new ArgumentException($"{nameof(TimeInterval)} for '{id}' does not exists", nameof(id));
-
+            var result = GetByIdOrNull(id) ?? throw new ArgumentException($"{nameof(TimeInterval)} for '{id}' does not exists", nameof(id));
             return result;
         }
 
@@ -74,11 +66,7 @@ namespace Yoma.Core.Domain.Lookups.Services
                 entry.SlidingExpiration = TimeSpan.FromHours(_appSettings.CacheSlidingExpirationLookupInHours);
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(_appSettings.CacheAbsoluteExpirationRelativeToNowLookupInDays);
                 return _timeIntervalRepository.Query().OrderBy(o => o.Name).ToList();
-            });
-
-            if (result == null)
-                throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(TimeInterval)}s'");
-
+            }) ?? throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(TimeInterval)}s'");
             return result;
         }
         #endregion

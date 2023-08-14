@@ -87,13 +87,7 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories
 
         public async Task Update(Domain.Opportunity.Models.Opportunity item)
         {
-            var entity = _context.Opportunity.Where(o => o.Id == item.Id).SingleOrDefault();
-
-            if (entity == null)
-                throw new ArgumentOutOfRangeException(nameof(item), $"{nameof(Entities.Opportunity)} with id '{item.Id}' does not exist");
-
-            item.DateModified = DateTimeOffset.Now;
-
+            var entity = _context.Opportunity.Where(o => o.Id == item.Id).SingleOrDefault() ?? throw new ArgumentOutOfRangeException(nameof(item), $"{nameof(Entities.Opportunity)} with id '{item.Id}' does not exist");
             entity.Title = item.Title;
             entity.Description = item.Description;
             entity.TypeId = item.TypeId;
@@ -114,7 +108,7 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories
             entity.Keywords = item.Keywords;
             entity.DateStart = item.DateStart;
             entity.DateEnd = item.DateEnd;
-            entity.DateModified = item.DateModified;
+            entity.DateModified = DateTimeOffset.Now;
             entity.ModifiedBy = item.ModifiedBy;
 
             await _context.SaveChangesAsync();

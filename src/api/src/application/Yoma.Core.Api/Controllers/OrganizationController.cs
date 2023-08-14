@@ -41,11 +41,11 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(List<Domain.Entity.Models.Lookups.OrganizationProviderType>), (int)HttpStatusCode.OK)]
         public IActionResult ListProviderTypes()
         {
-            _logger.LogInformation($"Handling request {nameof(ListProviderTypes)}");
+            _logger.LogInformation("Handling request {requestName}", nameof(ListProviderTypes));
 
             var result = _providerTypeService.List();
 
-            _logger.LogInformation($"Request {nameof(ListProviderTypes)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(ListProviderTypes));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
@@ -55,11 +55,11 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
         public IActionResult GetById([FromRoute] Guid id)
         {
-            _logger.LogInformation($"Handling request {nameof(GetById)} ({nameof(id)}: {id})");
+            _logger.LogInformation("Handling request {requestName} {paramName}: {paramValue})", nameof(GetById), nameof(id), id);
 
             var result = _organizationService.GetById(id);
 
-            _logger.LogInformation($"Request {nameof(GetById)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(GetById));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
@@ -69,11 +69,12 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> Upsert([FromBody] OrganizationRequest request)
         {
-            _logger.LogInformation($"Handling request {nameof(Upsert)} ({nameof(request)}: {(!request.Id.HasValue ? "insert" : $"update: {request.Id.Value}")}"); 
+            _logger.LogInformation("Handling request {requestName} {paramName}: {paramValue}",
+                nameof(Upsert), nameof(request), !request.Id.HasValue ? "insert" : $"update: {request.Id.Value}");
 
             var result = await _organizationService.Upsert(request);
 
-            _logger.LogInformation($"Request {nameof(Upsert)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(Upsert));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
@@ -83,11 +84,11 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(List<Domain.Entity.Models.Lookups.OrganizationProviderType>), (int)HttpStatusCode.OK)]
         public IActionResult ListProviderTypesById([FromRoute] Guid id)
         {
-            _logger.LogInformation($"Handling request {nameof(ListProviderTypesById)} ({nameof(id)}: {id})");
+            _logger.LogInformation("Handling request {requestName} {paramName}: {paramValue})", nameof(ListProviderTypesById), nameof(id), id);
 
             var result = _organizationService.ListProviderTypesById(id);
 
-            _logger.LogInformation($"Request {nameof(ListProviderTypesById)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(ListProviderTypesById));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
@@ -97,11 +98,12 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType((int)HttpStatusCode.OK)]
         public async Task<IActionResult> AssignProviderType([FromRoute] Guid id, [FromBody] List<Guid> providerTypeIds)
         {
-            _logger.LogInformation($"Handling request {nameof(AssignProviderType)} ({nameof(id)}: {id} | {nameof(providerTypeIds)}: {providerTypeIds})");
+            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})", 
+                nameof(AssignProviderType), nameof(id), id, nameof(providerTypeIds), providerTypeIds);
 
             await _organizationService.AssignProviderTypes(id, providerTypeIds);
 
-            _logger.LogInformation($"Request {nameof(AssignProviderType)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(AssignProviderType));
 
             return StatusCode((int)HttpStatusCode.OK);
         }
@@ -111,11 +113,12 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType((int)HttpStatusCode.OK)]
         public async Task<IActionResult> DeleteProviderType([FromRoute] Guid id, [FromBody] List<Guid> providerTypeIds)
         {
-            _logger.LogInformation($"Handling request {nameof(DeleteProviderType)} ({nameof(id)}: {id} | {nameof(providerTypeIds)}: {providerTypeIds})");
+            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})",
+             nameof(DeleteProviderType), nameof(id), id, nameof(providerTypeIds), providerTypeIds);
 
             await _organizationService.DeleteProviderTypes(id, providerTypeIds);
 
-            _logger.LogInformation($"Request {nameof(DeleteProviderType)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(DeleteProviderType));
 
             return StatusCode((int)HttpStatusCode.OK);
         }
@@ -125,11 +128,11 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpsertLogo([FromRoute] Guid id, [Required] IFormFile file)
         {
-            _logger.LogInformation($"Handling request {nameof(UpsertLogo)} ({file.Name})");
+            _logger.LogInformation("Handling request {requestName} ({paramName}: {paramValue})", nameof(UpsertLogo), nameof(file.Name), file?.Name);
 
             var result = await _organizationService.UpsertLogo(id, file);
 
-            _logger.LogInformation($"Request {nameof(UpsertLogo)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(UpsertLogo));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
@@ -139,11 +142,11 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpsertRegistrationDocument([FromRoute] Guid id, [Required] IFormFile file)
         {
-            _logger.LogInformation($"Handling request {nameof(UpsertRegistrationDocument)} ({file.Name})");
+            _logger.LogInformation("Handling request {requestName} ({paramName}: {paramValue})", nameof(UpsertRegistrationDocument), nameof(file.Name), file?.Name);
 
             var result = await _organizationService.UpsertRegistrationDocument(id, file);
 
-            _logger.LogInformation($"Request {nameof(UpsertRegistrationDocument)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(UpsertRegistrationDocument));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
@@ -153,11 +156,12 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType((int)HttpStatusCode.OK)]
         public IActionResult AssignAdmin([FromRoute] Guid id, [FromRoute] Guid userId)
         {
-            _logger.LogInformation($"Handling request {nameof(AssignAdmin)} ({nameof(id)}: {id} | {nameof(userId)}: {userId})");
+            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})", 
+                nameof(AssignAdmin), nameof(id), id, nameof(userId), userId);
 
             var result = _organizationService.AssignAdmin(id, userId);
 
-            _logger.LogInformation($"Request {nameof(AssignAdmin)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(AssignAdmin));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
@@ -167,11 +171,13 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType((int)HttpStatusCode.OK)]
         public IActionResult RemoveAdmin([FromRoute] Guid id, [FromRoute] Guid userId)
         {
-            _logger.LogInformation($"Handling request {nameof(RemoveAdmin)} ({nameof(id)}: {id} | {nameof(userId)}: {userId})");
+            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})",
+                nameof(RemoveAdmin), nameof(id), id, nameof(userId), userId);
+
 
             var result = _organizationService.RemoveAdmin(id, userId);
 
-            _logger.LogInformation($"Request {nameof(RemoveAdmin)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(RemoveAdmin));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }

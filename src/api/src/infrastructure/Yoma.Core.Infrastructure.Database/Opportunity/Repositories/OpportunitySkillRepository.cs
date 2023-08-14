@@ -49,11 +49,7 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories
 
         public async Task Delete(OpportunitySkill item)
         {
-            var entity = _context.OpportunitySkills.Where(o => o.Id == item.Id).SingleOrDefault();
-
-            if (entity == null)
-                throw new ArgumentOutOfRangeException(nameof(item), $"{nameof(OpportunitySkill)} with id '{item.Id}' does not exist");
-
+            var entity = _context.OpportunitySkills.Where(o => o.Id == item.Id).SingleOrDefault() ?? throw new ArgumentOutOfRangeException(nameof(item), $"{nameof(OpportunitySkill)} with id '{item.Id}' does not exist");
             _context.OpportunitySkills.Remove(entity);
             await _context.SaveChangesAsync();
         }

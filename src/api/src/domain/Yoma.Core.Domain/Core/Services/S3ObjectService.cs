@@ -16,12 +16,12 @@ namespace Yoma.Core.Domain.Core.Services
         #region Class Variables
         private readonly IEnvironmentProvider _environmentProvider;
         private readonly IAmazonS3 _s3Client;
-        private readonly AWSSettings _aWSOptions;
+        private readonly AWSOptions _aWSOptions;
         private readonly IRepository<Models.S3Object> _s3ObjectRepository;
         #endregion
 
         #region Constructor
-        public S3ObjectService(IEnvironmentProvider environmentProvider, IAmazonS3 s3Client, IOptions<AWSSettings> aWSOptions, IRepository<Models.S3Object> s3ObjectRepository)
+        public S3ObjectService(IEnvironmentProvider environmentProvider, IAmazonS3 s3Client, IOptions<AWSOptions> aWSOptions, IRepository<Models.S3Object> s3ObjectRepository)
         {
             _environmentProvider = environmentProvider;
             _s3Client = s3Client;
@@ -38,10 +38,7 @@ namespace Yoma.Core.Domain.Core.Services
 
             var result = _s3ObjectRepository.Query().SingleOrDefault(o => o.Id == id);
 
-            if (result == null)
-                throw new ArgumentOutOfRangeException(nameof(id), $"S3Object with id '{id}' does not exist");
-
-            return result;
+            return result ?? throw new ArgumentOutOfRangeException(nameof(id), $"S3Object with id '{id}' does not exist");
         }
 
         public async Task<Models.S3Object> Create(IFormFile file, FileTypeEnum type)
@@ -116,28 +113,26 @@ namespace Yoma.Core.Domain.Core.Services
         {
             var item = GetById(id);
 
-            using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
+            using var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+            await _s3ObjectRepository.Delete(item);
+
+            var deleteRequest = new DeleteObjectRequest
             {
-                await _s3ObjectRepository.Delete(item);
+                BucketName = _aWSOptions.S3BucketName,
+                Key = item.ObjectKey
+            };
 
-                var deleteRequest = new DeleteObjectRequest
-                {
-                    BucketName = _aWSOptions.S3BucketName,
-                    Key = item.ObjectKey
-                };
+            try
+            {
+                await _s3Client.DeleteObjectAsync(deleteRequest);
 
-                try
-                {
-                    await _s3Client.DeleteObjectAsync(deleteRequest);
-                    
-                }
-                catch (AmazonS3Exception ex)
-                {
-                    throw new TechnicalException($"Failed to delete S3 object with key '{item.ObjectKey}'", ex);
-                }
-
-                scope.Complete();
             }
+            catch (AmazonS3Exception ex)
+            {
+                throw new TechnicalException($"Failed to delete S3 object with key '{item.ObjectKey}'", ex);
+            }
+
+            scope.Complete();
         }
         #endregion
     }

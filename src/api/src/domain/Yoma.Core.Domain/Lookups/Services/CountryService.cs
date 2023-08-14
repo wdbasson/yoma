@@ -29,11 +29,7 @@ namespace Yoma.Core.Domain.Lookups.Services
         #region Public Members
         public Country GetByName(string name)
         {
-            var result = GetByNameOrNull(name);
-
-            if (result == null)
-                throw new ArgumentException($"{nameof(Country)} with name '{name}' does not exists", nameof(name));
-
+            var result = GetByNameOrNull(name) ?? throw new ArgumentException($"{nameof(Country)} with name '{name}' does not exists", nameof(name));
             return result;
         }
 
@@ -48,11 +44,7 @@ namespace Yoma.Core.Domain.Lookups.Services
 
         public Country GetByCodeAplha2(string code)
         {
-            var result = GetByCodeAplha2OrNull(code);
-
-            if (result == null)
-                throw new ArgumentException($"{nameof(Country)} with code '{code}' does not exists", nameof(code));
-
+            var result = GetByCodeAplha2OrNull(code) ?? throw new ArgumentException($"{nameof(Country)} with code '{code}' does not exists", nameof(code));
             return result;
         }
 
@@ -67,11 +59,7 @@ namespace Yoma.Core.Domain.Lookups.Services
 
         public Country GetById(Guid id)
         {
-            var result = GetByIdOrNull(id);
-            
-            if (result == null)
-                throw new ArgumentException($"{nameof(Country)} for '{id}' does not exists", nameof(id));
-
+            var result = GetByIdOrNull(id) ?? throw new ArgumentException($"{nameof(Country)} for '{id}' does not exists", nameof(id));
             return result;
         }
 
@@ -93,11 +81,7 @@ namespace Yoma.Core.Domain.Lookups.Services
                 entry.SlidingExpiration = TimeSpan.FromHours(_appSettings.CacheSlidingExpirationLookupInHours);
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(_appSettings.CacheAbsoluteExpirationRelativeToNowLookupInDays);
                 return _countryRepository.Query().OrderBy(o => o.Name).ToList();
-            });
-
-            if (result == null)
-                throw new InvalidOperationException($"Failed to retrieve cached list of 'Countries'");
-
+            }) ?? throw new InvalidOperationException($"Failed to retrieve cached list of 'Countries'");
             return result;
         }
         #endregion

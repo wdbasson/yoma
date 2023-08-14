@@ -52,10 +52,7 @@ namespace Yoma.Core.Domain.Entity.Services
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentNullException(nameof(email));
 
-            var result = GetByEmailOrNull(email);
-            if (result == null)
-                throw new ValidationException($"User with email '{email}' does not exist");
-
+            var result = GetByEmailOrNull(email) ?? throw new ValidationException($"User with email '{email}' does not exist");
             result.PhotoURL = GetS3ObjectURL(result.PhotoId);
 
             return result;
@@ -80,11 +77,7 @@ namespace Yoma.Core.Domain.Entity.Services
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
 
-            var result = _userRepository.Query().SingleOrDefault(o => o.Id == id);
-
-            if (result == null)
-                throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(User)} with id '{id}' does not exist");
-
+            var result = _userRepository.Query().SingleOrDefault(o => o.Id == id) ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(User)} with id '{id}' does not exist");
             result.PhotoURL = GetS3ObjectURL(result.PhotoId);
 
             return result;
@@ -165,10 +158,7 @@ namespace Yoma.Core.Domain.Entity.Services
             //profile fields updatable via UpdateProfile; Keycloak is source of truth
             if (isNew)
             {
-                var kcUser = await _keycloakClient.GetUser(result.Email);
-                if (kcUser == null)
-                    throw new InvalidOperationException($"{nameof(User)} with email '{result.Email}' does not exist in Keycloak");
-
+                var kcUser = await _keycloakClient.GetUser(result.Email) ?? throw new InvalidOperationException($"{nameof(User)} with email '{result.Email}' does not exist in Keycloak");
                 result.Email = request.Email;
                 result.FirstName = request.FirstName;
                 result.Surname = request.Surname;
@@ -199,9 +189,13 @@ namespace Yoma.Core.Domain.Entity.Services
             return result;
         }
 
-        public async Task<User> UpsertPhoto(string? email, IFormFile file)
+        public async Task<User> UpsertPhoto(string? email, IFormFile? file)
         {
             var result = GetByEmail(email);
+
+            if(file == null)
+                throw new ArgumentNullException(nameof(file));
+
             var currentPhotoId = result.PhotoId;
 
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net;
+using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Lookups.Models;
 
@@ -48,11 +49,11 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(List<Country>), (int)HttpStatusCode.OK)]
         public IActionResult ListCountries()
         {
-            _logger.LogInformation($"Handling request {nameof(ListCountries)}");
+            _logger.LogInformation("Handling request {requestName}", nameof(ListCountries));
 
             var result = _countryService.List();
 
-            _logger.LogInformation($"Request {nameof(ListCountries)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(ListCountries));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
@@ -62,53 +63,53 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(List<Gender>), (int)HttpStatusCode.OK)]
         public IActionResult ListGenders()
         {
-            _logger.LogInformation($"Handling request {nameof(ListGenders)}");
+            _logger.LogInformation("Handling request {requestName}", nameof(ListGenders));
 
             var result = _genderService.List();
 
-            _logger.LogInformation($"Request {nameof(ListGenders)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(ListGenders));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
         [SwaggerOperation(Summary = "Return a list of languages")]
         [HttpGet("language")]
-        [ProducesResponseType(typeof(List<Gender>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(List<Language>), (int)HttpStatusCode.OK)]
         public IActionResult ListLanguages()
         {
-            _logger.LogInformation($"Handling request {nameof(ListLanguages)}");
+            _logger.LogInformation("Handling request {requestName}", nameof(ListLanguages));
 
             var result = _languageService.List();
 
-            _logger.LogInformation($"Request {nameof(ListLanguages)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(ListLanguages));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Return a list of skills")]
+        [SwaggerOperation(Summary = "Search for skills based on the supplied filter")]
         [HttpGet("skill")]
-        [ProducesResponseType(typeof(List<Gender>), (int)HttpStatusCode.OK)]
-        public IActionResult ListSkills()
+        [ProducesResponseType(typeof(SkillSearchResults), (int)HttpStatusCode.OK)]
+        public IActionResult SearchSkills([FromQuery] FilterPagination filter)
         {
-            _logger.LogInformation($"Handling request {nameof(ListSkills)}");
+            _logger.LogInformation("Handling request {requestName}", nameof(SearchSkills));
 
-            var result = _skillService.List();
+            var result = _skillService.Search(filter);
 
-            _logger.LogInformation($"Request {nameof(ListSkills)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(SearchSkills));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
         [SwaggerOperation(Summary = "Return a list of time intervals")]
         [HttpGet("timeInterval")]
-        [ProducesResponseType(typeof(List<Gender>), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(List<TimeInterval>), (int)HttpStatusCode.OK)]
         public IActionResult ListTimeIntervals()
         {
-            _logger.LogInformation($"Handling request {nameof(ListTimeIntervals)}");
+            _logger.LogInformation("Handling request {requestName}", nameof(ListTimeIntervals));
 
             var result = _timeIntervalService.List();
 
-            _logger.LogInformation($"Request {nameof(ListTimeIntervals)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(ListTimeIntervals));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }

@@ -13,10 +13,7 @@ namespace Yoma.Core.Domain.Core.Extensions
 
             var type = value.GetType();
 
-            var fieldInfo = type?.GetField(value.ToString());
-            if (fieldInfo == null)
-                throw new InvalidOperationException($"Failed to reflect the {nameof(value)} field info");
-
+            var fieldInfo = (type?.GetField(value.ToString())) ?? throw new InvalidOperationException($"Failed to reflect the {nameof(value)} field info");
             var attrib = fieldInfo
                 .GetCustomAttributes(false)
                 .SingleOrDefault(attr => attr.GetType() == typeof(EnumMemberAttribute)) as EnumMemberAttribute;
@@ -32,10 +29,7 @@ namespace Yoma.Core.Domain.Core.Extensions
 
             var type = value.GetType();
 
-            var fieldInfo = type?.GetField(value.ToString());
-            if (fieldInfo == null)
-                throw new InvalidOperationException($"Failed to reflect the {nameof(value)} field info");
-
+            var fieldInfo = (type?.GetField(value.ToString())) ?? throw new InvalidOperationException($"Failed to reflect the {nameof(value)} field info");
             var attrib = fieldInfo
                 .GetCustomAttributes(false)
                 .SingleOrDefault(attr => attr.GetType() == typeof(DescriptionAttribute)) as DescriptionAttribute;

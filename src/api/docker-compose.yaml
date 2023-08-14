@@ -138,6 +138,7 @@ services:
       CLIENT_YOMA_OP_URL: "http://localhost:3001"
       CLIENT_YOMA_ADMIN_URL: "http://localhost:3002"
       CLIENT_ATINGI_URL: "http://localhost:3002"
+      CLIENT_ATINGI_REDIRECT_URL: "http://localhost:3002"
       CLIENT_GOODWALL_URL: "https://www.goodwall.io"
       CLIENT_GOODWALL_URL_REDIRECT: "goodwallauth://yomaredirect"
       CLIENT_YOMA_API_SECRET: superSecretYomaApiClientSecret

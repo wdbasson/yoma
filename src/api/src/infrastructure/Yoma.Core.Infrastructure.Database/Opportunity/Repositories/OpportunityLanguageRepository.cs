@@ -49,11 +49,7 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories
 
         public async Task Delete(OpportunityLanguage item)
         {
-            var entity = _context.OpportunityLanguages.Where(o => o.Id == item.Id).SingleOrDefault();
-
-            if (entity == null)
-                throw new ArgumentOutOfRangeException(nameof(item), $"{nameof(OpportunityLanguage)} with id '{item.Id}' does not exist");
-
+            var entity = _context.OpportunityLanguages.Where(o => o.Id == item.Id).SingleOrDefault() ?? throw new ArgumentOutOfRangeException(nameof(item), $"{nameof(OpportunityLanguage)} with id '{item.Id}' does not exist");
             _context.OpportunityLanguages.Remove(entity);
             await _context.SaveChangesAsync();
         }
