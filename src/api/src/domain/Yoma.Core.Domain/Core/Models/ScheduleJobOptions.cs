@@ -4,8 +4,12 @@
     {
         public const string Section = "ScheduleJob";
 
-        public string ScheduleSeedSkills { get; set; }
+        public string SeedSkillsSchedule { get; set; }
 
-        public string ScheduleSeedJobTitles { get; set; }
+        public int SeedSkillsBatchSize { get; set; }
+
+        public string SeedJobTitlesSchedule { get; set; }
+
+        public int SeedJobTitlesBatchSize { get; set; }
     }
 }

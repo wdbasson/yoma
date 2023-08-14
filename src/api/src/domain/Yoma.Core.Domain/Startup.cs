@@ -63,9 +63,10 @@ namespace Yoma.Core.Domain
         public static void ConfigureServices_RecurringJobs(this IServiceProvider serviceProvider, IConfiguration configuration)
         {
             var options = configuration.GetSection(ScheduleJobOptions.Section).Get<ScheduleJobOptions>() ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{ScheduleJobOptions.Section}'");
+
             using var scope = serviceProvider.CreateScope();
             var skillService = scope.ServiceProvider.GetRequiredService<ISkillService>();
-            RecurringJob.AddOrUpdate("Skill Reference Seeding", () => skillService.SeedSkills(), options.ScheduleSeedSkills, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+            RecurringJob.AddOrUpdate("Skill Reference Seeding", () => skillService.SeedSkills(), options.SeedSkillsSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
         }
 
         public static void ConfigureServices_AWSClients(this IServiceCollection services, IConfiguration configuration)

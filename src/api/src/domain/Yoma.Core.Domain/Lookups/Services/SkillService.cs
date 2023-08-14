@@ -12,18 +12,21 @@ namespace Yoma.Core.Domain.Lookups.Services
     {
         #region Class Variables
         private readonly AppSettings _appSettings;
+        private ScheduleJobOptions _scheduleJobOptions;
         private readonly IMemoryCache _memoryCache;
         private readonly IEmsiClient _emsiClient;
         private readonly IRepositoryBatched<Skill> _skillRepository;
         #endregion
 
         #region Constructor
-        public SkillService(IOptions<AppSettings> appSettings, 
+        public SkillService(IOptions<AppSettings> appSettings,
+            IOptions<ScheduleJobOptions> scheduleJobOptions,
             IMemoryCache memoryCache,
             IEmsiClientFactory emsiClientFactory,
             IRepositoryBatched<Skill> skillRepository)
         {
             _appSettings = appSettings.Value;
+            _scheduleJobOptions = scheduleJobOptions.Value;
             _memoryCache = memoryCache;
             _emsiClient = emsiClientFactory.CreateClient();
             _skillRepository = skillRepository;
@@ -102,7 +105,7 @@ namespace Yoma.Core.Domain.Lookups.Services
             var incomingResults = await _emsiClient.ListSkills();
             if (incomingResults == null || !incomingResults.Any()) return;
 
-            int batchSize = 1000; 
+            int batchSize = _scheduleJobOptions.SeedSkillsBatchSize; 
             int pageIndex = 0;
             do
             {

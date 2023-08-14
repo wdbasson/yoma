@@ -52,6 +52,8 @@ namespace Yoma.Core.Api
             #region Configuration
             services.Configure<AppSettings>(options =>
                 _configuration.GetSection(nameof(AppSettings)).Bind(options));
+            services.Configure<ScheduleJobOptions>(options =>
+                _configuration.GetSection(ScheduleJobOptions.Section).Bind(options));
             services.ConfigureServices_Keycloak(_configuration);
             services.ConfigureServices_Emsi(_configuration);
             services.AddSingleton<IEnvironmentProvider>(p => ActivatorUtilities.CreateInstance<EnvironmentProvider>(p, _webHostEnvironment.EnvironmentName));
