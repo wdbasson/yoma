@@ -13,7 +13,7 @@ namespace Yoma.Core.Infrastructure.Emsi
             services.Configure<EmsiOptions>(options => configuration.GetSection(EmsiOptions.Section).Bind(options));
         }
 
-        public static void ConfigureService_InfrastructureLaborMarketProvider(this IServiceCollection services)
+        public static void ConfigureServices_InfrastructureLaborMarketProvider(this IServiceCollection services)
         {
             services.AddScoped<ILaborMarketProviderClientFactory, EmsiClientFactory>();
         }

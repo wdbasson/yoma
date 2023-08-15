@@ -14,7 +14,7 @@ namespace Yoma.Core.Infrastructure.SendGrid
             services.Configure<SendGridOptions>(options => configuration.GetSection(SendGridOptions.Section).Bind(options));
         }
 
-        public static void ConfigureService_InfrastructureEmailProvider(this IServiceCollection services, IConfiguration configuration)
+        public static void ConfigureServices_InfrastructureEmailProvider(this IServiceCollection services, IConfiguration configuration)
         {
             var options = configuration.GetSection(SendGridOptions.Section).Get<SendGridOptions>() 
                 ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{SendGridOptions.Section}'");

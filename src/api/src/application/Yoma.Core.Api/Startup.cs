@@ -12,7 +12,6 @@ using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Services;
 using Microsoft.AspNetCore.Authorization;
 using Yoma.Core.Infrastructure.Keycloak;
-using Yoma.Core.Infrastructure.Keycloak.Models;
 using Yoma.Core.Infrastructure.Emsi;
 using Hangfire;
 using Hangfire.SqlServer;
@@ -21,6 +20,8 @@ using Hangfire.Dashboard.BasicAuthorization;
 using Yoma.Core.Infrastructure.SendGrid;
 using Yoma.Core.Infrastructure.AmazonS3;
 using Yoma.Core.Domain.IdentityProvider.Interfaces;
+using Yoma.Core.Infrastructure.Database.Context;
+using FS.Keycloak.RestApiClient.Client;
 
 namespace Yoma.Core.Api
 {
@@ -83,17 +84,20 @@ namespace Yoma.Core.Api
             services.ConfigureServices_AuthenticationIdentityProvider(_configuration);
             ConfigureAuthorization(services, _configuration);
             ConfigureSwagger(services);
-            ConfigureHangfire(services, _configuration);
             #endregion 3rd Party
 
             #region Services & Infrastructure
             services.ConfigureServices_DomainServices();
-            services.ConfigureService_InfrastructureBlobProvider(_configuration);
-            services.ConfigureService_InfrastructureIdentityProvider();
-            services.ConfigureService_InfrastructureLaborMarketProvider();
-            services.ConfigureService_InfrastructureEmailProvider(_configuration);
+            services.ConfigureServices_InfrastructureBlobProvider(_configuration);
+            services.ConfigureServices_InfrastructureIdentityProvider();
+            services.ConfigureServices_InfrastructureLaborMarketProvider();
+            services.ConfigureServices_InfrastructureEmailProvider(_configuration);
             services.ConfigureServices_InfrastructureDatabase(_configuration);
             #endregion Services & Infrastructure
+
+            #region 3rd Party (post ConfigureServices_InfrastructureDatabase)
+            ConfigureHangfire(services, _configuration); //
+            #endregion 3rd Party (post ConfigureServices_InfrastructureDatabase)
         }
 
         public void Configure(IApplicationBuilder app, IServiceProvider serviceProvider)
@@ -153,10 +157,10 @@ namespace Yoma.Core.Api
             });
             #endregion System
 
-            #region Services & Infrastructure
-            serviceProvider.Configure_InfrastructureDatabase();
-            serviceProvider.ConfigureServices_RecurringJobs(_configuration);
-            #endregion Services & Infrastructure
+            #region Recurring Jobs
+            //migrations applied as part of ConfigureHangfire to ensure db exist prior to executing Hangfire migrations
+            serviceProvider.Configure_RecurringJobs(_configuration);
+            #endregion ring Jobs
         }
         #endregion
 
@@ -201,18 +205,22 @@ namespace Yoma.Core.Api
 
         private static void ConfigureHangfire(IServiceCollection services, IConfiguration configuration)
         {
-            services.AddHangfire(config => config
-                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-                .UseSimpleAssemblyNameTypeSerializer()
-                .UseRecommendedSerializerSettings()
-                .UseSqlServerStorage(configuration.Configuration_ConnectionString(), new SqlServerStorageOptions
-                {
-                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-                    QueuePollInterval = TimeSpan.Zero,
-                    UseRecommendedIsolationLevel = true,
-                    DisableGlobalLocks = true
-                }));
+            services.AddHangfire((serviceProvider, config) =>
+            {
+                serviceProvider.Configure_InfrastructureDatabase();
+                config.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+               .UseSimpleAssemblyNameTypeSerializer()
+               .UseRecommendedSerializerSettings()
+               .UseSqlServerStorage(configuration.Configuration_ConnectionString(), new SqlServerStorageOptions
+               {
+                   PrepareSchemaIfNecessary = true,
+                   CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                   SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                   QueuePollInterval = TimeSpan.Zero,
+                   UseRecommendedIsolationLevel = true,
+                   DisableGlobalLocks = false
+               });
+            });
 
             services.AddHangfireServer();
         }

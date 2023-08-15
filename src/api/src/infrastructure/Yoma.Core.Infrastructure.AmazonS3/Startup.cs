@@ -17,7 +17,7 @@ namespace Yoma.Core.Infrastructure.AmazonS3
             services.Configure<AWSS3Options>(options => configuration.GetSection(AWSS3Options.Section).Bind(options));
         }
 
-        public static void ConfigureService_InfrastructureBlobProvider(this IServiceCollection services, IConfiguration configuration)
+        public static void ConfigureServices_InfrastructureBlobProvider(this IServiceCollection services, IConfiguration configuration)
         {
             var options = configuration.GetSection(AWSS3Options.Section).Get<AWSS3Options>() 
                 ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{AWSS3Options.Section}'");
