@@ -62,7 +62,7 @@ namespace Yoma.Core.Api.Controllers
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Update the user's profile, within Yoma and Keycloak, optionally requesting a email verification and/or password reset (Authenticated User)")]
+        [SwaggerOperation(Summary = "Update the user's profile, within Yoma and the identity provider, optionally requesting a email verification and/or password reset (Authenticated User)")]
         [HttpPatch()]
         [ProducesResponseType(typeof(User), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpdateProfile([FromBody] UserProfileRequest profile)

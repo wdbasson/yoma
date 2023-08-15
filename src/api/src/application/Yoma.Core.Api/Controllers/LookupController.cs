@@ -89,7 +89,7 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Search for skills based on the supplied filter")]
         [HttpGet("skill")]
         [ProducesResponseType(typeof(SkillSearchResults), (int)HttpStatusCode.OK)]
-        public IActionResult SearchSkills([FromQuery] FilterPagination filter)
+        public IActionResult SearchSkills([FromQuery] SkillSearchFilter filter)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(SearchSkills));
 

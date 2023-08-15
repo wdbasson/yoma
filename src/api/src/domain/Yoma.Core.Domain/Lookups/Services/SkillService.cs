@@ -11,9 +11,7 @@ namespace Yoma.Core.Domain.Lookups.Services
     public class SkillService : ISkillService
     {
         #region Class Variables
-        private readonly AppSettings _appSettings;
-        private ScheduleJobOptions _scheduleJobOptions;
-        private readonly IMemoryCache _memoryCache;
+        private readonly ScheduleJobOptions _scheduleJobOptions;
         private readonly IEmsiClient _emsiClient;
         private readonly IRepositoryBatched<Skill> _skillRepository;
         #endregion
@@ -25,9 +23,7 @@ namespace Yoma.Core.Domain.Lookups.Services
             IEmsiClientFactory emsiClientFactory,
             IRepositoryBatched<Skill> skillRepository)
         {
-            _appSettings = appSettings.Value;
             _scheduleJobOptions = scheduleJobOptions.Value;
-            _memoryCache = memoryCache;
             _emsiClient = emsiClientFactory.CreateClient();
             _skillRepository = skillRepository;
         }
@@ -47,7 +43,7 @@ namespace Yoma.Core.Domain.Lookups.Services
                 throw new ArgumentNullException(nameof(name));
             name = name.Trim();
 
-            return List().SingleOrDefault(o => o.Name == name);
+            return _skillRepository.Query().SingleOrDefault(o => o.Name == name);
         }
 
         public Skill GetById(Guid id)
@@ -62,41 +58,30 @@ namespace Yoma.Core.Domain.Lookups.Services
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
 
-            return List().SingleOrDefault(o => o.Id == id);
+            return _skillRepository.Query().SingleOrDefault(o => o.Id == id);
         }
 
-        public SkillSearchResults Search(FilterPagination filter)
+        public SkillSearchResults Search(SkillSearchFilter filter)
         {
             if (filter == null)
                 throw new ArgumentNullException(nameof(filter));
 
-            if (!filter.PaginationEnabled)
-                throw new ArgumentException("Pagination criteria not specified", nameof(filter));
+            filter.EnsurePagination();
 
-            if (!filter.PageNumber.HasValue || filter.PageNumber.Value <= 0)
-                throw new ArgumentException($"{nameof(filter.PageNumber)} must be greater than 0", nameof(filter));
+            var query = _skillRepository.Query();
+            if(!string.IsNullOrEmpty(filter.NameContains))
+                query = query.Where(o => o.Name.Contains(filter.NameContains));
 
-            if (!filter.PageSize.HasValue || filter.PageSize.Value <= 0)
-                throw new ArgumentException($"{nameof(filter.PageNumber)} must be greater than 0", nameof(filter));
+            query = query.OrderBy(o => o.Name);
 
-            return new SkillSearchResults 
-            { 
-                TotalCount = List().Count,
-                Items = List().Skip((filter.PageNumber.Value - 1) * filter.PageSize.Value).Take(filter.PageSize.Value).ToList()
-            };
-        }
-
-        public List<Skill> List()
-        {
-            if (!_appSettings.CacheEnabledByReferenceDataTypes.HasFlag(Core.ReferenceDataType.Lookups))
-                return _skillRepository.Query().ToList();
-
-            var result = _memoryCache.GetOrCreate(nameof(Skill), entry =>
+            var result = new SkillSearchResults
             {
-                entry.SlidingExpiration = TimeSpan.FromHours(_appSettings.CacheSlidingExpirationLookupInHours);
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(_appSettings.CacheAbsoluteExpirationRelativeToNowLookupInDays);
-                return _skillRepository.Query().OrderBy(o => o.Name).ToList();
-            }) ?? throw new InvalidOperationException($"Failed to retrieve cached list of '{nameof(Skill)}s'");
+                TotalCount = query.Count()
+            };
+
+            query = query.Skip((filter.PageNumber.Value - 1) * filter.PageSize.Value).Take(filter.PageSize.Value);
+            result.Items = query.ToList();
+
             return result;
         }
 

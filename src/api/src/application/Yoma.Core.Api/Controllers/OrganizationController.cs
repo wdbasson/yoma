@@ -10,10 +10,17 @@ using Yoma.Core.Domain.Entity.Models;
 
 namespace Yoma.Core.Api.Controllers
 {
+    /* TODO:
+        - User organization registration (User role only)
+        - Approve / Deny
+        - Request verification
+        - Search (by admin and / or name)
+    */
+
     [Route("api/v3/organization")]
     [ApiController]
     [Authorize(Policy = Common.Constants.Authorization_Policy, Roles = $"{Constants.Role_Admin},{Constants.Role_OrganizationAdmin}")]
-    [SwaggerTag("(Admin or Organization Admin roles required)")]
+    [SwaggerTag("(by default, Admin or Organization Admin roles required)")]
     public class OrganizationController : Controller
     {
         #region Class Variables
@@ -36,20 +43,6 @@ namespace Yoma.Core.Api.Controllers
 
         #region Public Members
         #region Administrative Actions
-        [SwaggerOperation(Summary = "Return a list of provider types")]
-        [HttpGet("lookup/providerType")]
-        [ProducesResponseType(typeof(List<Domain.Entity.Models.Lookups.OrganizationProviderType>), (int)HttpStatusCode.OK)]
-        public IActionResult ListProviderTypes()
-        {
-            _logger.LogInformation("Handling request {requestName}", nameof(ListProviderTypes));
-
-            var result = _providerTypeService.List();
-
-            _logger.LogInformation("Request {requestName} handled", nameof(ListProviderTypes));
-
-            return StatusCode((int)HttpStatusCode.OK, result);
-        }
-
         [SwaggerOperation(Summary = "Get the specified organization by id")]
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
@@ -64,7 +57,8 @@ namespace Yoma.Core.Api.Controllers
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Insert or update an organization")]
+        [SwaggerOperation(Summary = "Insert or update an organization (User, Admin or Organization Admin role required)", 
+            Description = "Newly created organization defaults to an unapproved (unverified) state. A user can only create an organization and is automatically assigned the role of Organization Admin.")]
         [HttpPost()]
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> Upsert([FromBody] OrganizationRequest request)
@@ -75,6 +69,20 @@ namespace Yoma.Core.Api.Controllers
             var result = await _organizationService.Upsert(request);
 
             _logger.LogInformation("Request {requestName} handled", nameof(Upsert));
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
+        [SwaggerOperation(Summary = "Return a list of provider types")]
+        [HttpGet("lookup/providerType")]
+        [ProducesResponseType(typeof(List<Domain.Entity.Models.Lookups.OrganizationProviderType>), (int)HttpStatusCode.OK)]
+        public IActionResult ListProviderTypes()
+        {
+            _logger.LogInformation("Handling request {requestName}", nameof(ListProviderTypes));
+
+            var result = _providerTypeService.List();
+
+            _logger.LogInformation("Request {requestName} handled", nameof(ListProviderTypes));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
@@ -98,7 +106,7 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType((int)HttpStatusCode.OK)]
         public async Task<IActionResult> AssignProviderType([FromRoute] Guid id, [FromBody] List<Guid> providerTypeIds)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})", 
+            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})",
                 nameof(AssignProviderType), nameof(id), id, nameof(providerTypeIds), providerTypeIds);
 
             await _organizationService.AssignProviderTypes(id, providerTypeIds);
@@ -108,9 +116,10 @@ namespace Yoma.Core.Api.Controllers
             return StatusCode((int)HttpStatusCode.OK);
         }
 
-        [SwaggerOperation(Summary = "Remove provider type(s) from the specified organization")]
+        [SwaggerOperation(Summary = "Remove provider type(s) from the specified organization (Admin role required)")]
         [HttpDelete("{id}/remove/providerTypes")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
+        [Authorize(Roles = Constants.Role_Admin)]
         public async Task<IActionResult> DeleteProviderType([FromRoute] Guid id, [FromBody] List<Guid> providerTypeIds)
         {
             _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})",
@@ -151,9 +160,10 @@ namespace Yoma.Core.Api.Controllers
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Assign the specified user as organization administrator")]
+        [SwaggerOperation(Summary = "Assign the specified user as organization administrator (Admin role required)")]
         [HttpPut("{id}/assign/{userId}/admin")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
+        [Authorize(Roles = Constants.Role_Admin)]
         public IActionResult AssignAdmin([FromRoute] Guid id, [FromRoute] Guid userId)
         {
             _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})", 
@@ -166,9 +176,10 @@ namespace Yoma.Core.Api.Controllers
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Remove the specified user as organization administrator")]
+        [SwaggerOperation(Summary = "Remove the specified user as organization administrator (Admin role required)")]
         [HttpDelete("{id}/remove/{userId}/admin")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
+        [Authorize(Roles = Constants.Role_Admin)]
         public IActionResult RemoveAdmin([FromRoute] Guid id, [FromRoute] Guid userId)
         {
             _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})",

@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Http;
+using System.Security;
 using System.Transactions;
 using Yoma.Core.Domain.Core;
 using Yoma.Core.Domain.Core.Interfaces;
@@ -42,7 +43,7 @@ namespace Yoma.Core.Domain.Entity.Services
             _organizationRequestValidator = organizationRequestValidator;
             _organizationRepository = organizationRepository;
             _organizationUserRepository = organizationUserRepository;
-            _organizationProviderTypeRepository = organizationProviderTypeRepository;   
+            _organizationProviderTypeRepository = organizationProviderTypeRepository;
         }
         #endregion
 
@@ -80,9 +81,10 @@ namespace Yoma.Core.Domain.Entity.Services
                 throw new ArgumentNullException(nameof(request));
 
             await _organizationRequestValidator.ValidateAndThrowAsync(request);
-            
+
             // check if user exists
             var isNew = !request.Id.HasValue;
+
             var result = !request.Id.HasValue ? new Organization { Id = Guid.NewGuid() } : GetById(request.Id.Value);
 
             var existingByEmail = GetByNameOrNull(request.Name);
@@ -104,7 +106,7 @@ namespace Yoma.Core.Domain.Entity.Services
             result.PostalCode = request.PostalCode;
             result.Tagline = request.Tagline;
             result.Biography = request.Biography;
-            result.Approved = false;
+            if (isNew) result.Approved = false; //new organization defaults to unapproved
             result.Active = true;
 
             if (isNew)
