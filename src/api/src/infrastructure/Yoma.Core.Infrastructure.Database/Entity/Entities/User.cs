@@ -41,7 +41,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Entities
 
         [ForeignKey(nameof(PhotoId))]
         public Guid? PhotoId { get; set; }
-        public S3Object? Photo { get; set; }
+        public BlobObject? Photo { get; set; }
 
         [ForeignKey("GenderId")]
         public Guid? GenderId { get; set; }

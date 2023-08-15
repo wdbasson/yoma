@@ -4,12 +4,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Yoma.Core.Infrastructure.Database.Core.Entities
 {
-    [Table("File", Schema = "object")]
-    [Index(nameof(ObjectKey), IsUnique = true)]
-    public class S3Object : BaseEntity<Guid>
+    [Table("Blob", Schema = "object")]
+    [Index(nameof(Key), IsUnique = true)]
+    public class BlobObject : BaseEntity<Guid>
     {
         [Column(TypeName = "varchar(125)")]
-        public string ObjectKey { get; set; }
+        public string Key { get; set; }
 
         [Required]
         public DateTimeOffset DateCreated { get; set; }

@@ -14,7 +14,7 @@ namespace Yoma.Core.Infrastructure.Database.Context
 
         #region Public Members
         #region Core
-        public DbSet<S3Object> S3Object { get; set; }
+        public DbSet<BlobObject> BlobObject { get; set; }
         #endregion Core
 
         #region Entity

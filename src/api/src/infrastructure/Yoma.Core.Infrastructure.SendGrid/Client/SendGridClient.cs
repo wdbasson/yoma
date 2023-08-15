@@ -14,7 +14,7 @@ namespace Yoma.Core.Infrastructure.SendGrid.Client
 {
     public class SendGridClient : IEmailProviderClient
     {
-        #region Class 
+        #region Class Variables
         private readonly IEnvironmentProvider _environmentProvider;
         private readonly SendGridOptions _options;
         private readonly ISendGridClient _sendGridClient;

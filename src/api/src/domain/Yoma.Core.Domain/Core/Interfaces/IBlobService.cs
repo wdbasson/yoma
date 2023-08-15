@@ -3,11 +3,11 @@ using Yoma.Core.Domain.Core.Models;
 
 namespace Yoma.Core.Domain.Core.Interfaces
 {
-    public interface IS3ObjectService
+    public interface IBlobService
     {
-        S3Object GetById(Guid id);
+        BlobObject GetById(Guid id);
 
-        Task<S3Object> Create(IFormFile file, FileTypeEnum type);
+        Task<BlobObject> Create(IFormFile file, FileTypeEnum type);
 
         string GetURL(Guid id);
 

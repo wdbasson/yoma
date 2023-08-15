@@ -70,11 +70,11 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Entities
 
         [ForeignKey(nameof(LogoId))]
         public Guid? LogoId { get; set; }
-        public S3Object? Logo { get; set; }
+        public BlobObject? Logo { get; set; }
 
         [ForeignKey(nameof(CompanyRegistrationDocumentId))]
         public Guid? CompanyRegistrationDocumentId { get; set; }
-        public S3Object? CompanyRegistrationDocument { get; set; }
+        public BlobObject? CompanyRegistrationDocument { get; set; }
 
         [Required]
         public DateTimeOffset DateCreated { get; set; }

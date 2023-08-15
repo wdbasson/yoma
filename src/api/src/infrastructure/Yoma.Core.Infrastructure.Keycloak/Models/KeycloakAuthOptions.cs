@@ -1,6 +1,8 @@
-﻿namespace Yoma.Core.Infrastructure.Keycloak.Models
+﻿using Yoma.Core.Domain.IdentityProvider.Interfaces;
+
+namespace Yoma.Core.Infrastructure.Keycloak.Models
 {
-    public class KeycloakAuthOptions
+    public class KeycloakAuthOptions : IIdentityProviderAuthOptions
     {
         public string ClientId { get; set; }
 
