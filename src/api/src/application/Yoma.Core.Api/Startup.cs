@@ -18,6 +18,7 @@ using Hangfire;
 using Hangfire.SqlServer;
 using Hangfire.Dashboard;
 using Hangfire.Dashboard.BasicAuthorization;
+using Yoma.Core.Infrastructure.SendGrid;
 
 namespace Yoma.Core.Api
 {
@@ -57,6 +58,7 @@ namespace Yoma.Core.Api
             services.ConfigureServices_IdentityProvider(_configuration);
             services.ConfigureServices_LaborMarketProvider(_configuration);
             services.AddSingleton<IEnvironmentProvider>(p => ActivatorUtilities.CreateInstance<EnvironmentProvider>(p, _webHostEnvironment.EnvironmentName));
+            services.ConfigureServices_EmailProvider(_configuration);
             #endregion Configuration
 
             #region System
@@ -86,6 +88,7 @@ namespace Yoma.Core.Api
             services.ConfigureServices_AWSClients(_configuration);
             services.ConfigureService_InfrastructureIdentityProvider();
             services.ConfigureService_InfrastructureLaborMarketProvider();
+            services.ConfigureService_InfrastructureEmailProvider(_configuration);
             services.ConfigureServices_InfrastructureDatabase(_configuration);
             #endregion Services & Infrastructure
         }
