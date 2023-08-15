@@ -7,7 +7,7 @@ using Yoma.Core.Domain.Entity.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Yoma.Core.Domain.Keycloak.Models;
 using Yoma.Core.Infrastructure.Keycloak;
-using Yoma.Core.Domain.Keycloak.Interfaces;
+using Yoma.Core.Domain.IdentityProvider.Interfaces;
 
 namespace Yoma.Core.Api.Controllers
 {
@@ -19,7 +19,7 @@ namespace Yoma.Core.Api.Controllers
     {
         #region Class Variables
         private readonly ILogger _logger;
-        private readonly IKeycloakClient _keycloakClient;
+        private readonly IIdentityProviderClient _identityProviderClient;
         private readonly IUserService _userService;
         private readonly IGenderService _genderService;
         private readonly ICountryService _countryService;
@@ -27,13 +27,13 @@ namespace Yoma.Core.Api.Controllers
 
         #region Constructors
         public KeycloakController(ILogger<KeycloakController> logger,
-          IKeycloakClientFactory keycloakClientFactory,
+          IIdentityProviderClientFactory identityProviderClientFactory,
           IUserService userService,
           IGenderService genderService,
           ICountryService countryService)
         {
             _logger = logger;
-            _keycloakClient = keycloakClientFactory.CreateClient();
+            _identityProviderClient = identityProviderClientFactory.CreateClient();
             _userService = userService;
             _genderService = genderService;
             _countryService = countryService;
@@ -47,7 +47,7 @@ namespace Yoma.Core.Api.Controllers
             var authorized = false;
             try
             {
-                authorized = _keycloakClient.AuthenticateWebhook(HttpContext);
+                authorized = _identityProviderClient.AuthenticateWebhook(HttpContext);
 
                 return authorized ? StatusCode(StatusCodes.Status200OK) : StatusCode(StatusCodes.Status403Forbidden);
             }
@@ -110,7 +110,7 @@ namespace Yoma.Core.Api.Controllers
             }
 
             _logger.LogInformation("Trying to find the Keycloak user with username '{username}'", payload?.details?.username);
-            var kcUser = await _keycloakClient.GetUser(payload?.details?.username);
+            var kcUser = await _identityProviderClient.GetUser(payload?.details?.username);
             if (kcUser == null)
             {
                 _logger.LogError("Failed to retrieve the Keycloak user with username '{username}'", payload?.details.username);
@@ -180,7 +180,7 @@ namespace Yoma.Core.Api.Controllers
                     if (type == WebhookRequestEventType.UpdateProfile) break;
 
                     //add newly registered user to the default "User" role
-                    await _keycloakClient.EnsureRoles(kcUser.Id, new List<string> { Constants.Role_User });
+                    await _identityProviderClient.EnsureRoles(kcUser.Id, new List<string> { Constants.Role_User });
 
                     //TODO: AriesCloudApi tenant / wallet creation
                     break;

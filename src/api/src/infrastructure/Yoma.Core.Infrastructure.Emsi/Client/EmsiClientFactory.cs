@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Options;
-using Yoma.Core.Domain.Emsi.Interfaces;
+using Yoma.Core.Domain.LaborMarketProvider.Interfaces;
 using Yoma.Core.Infrastructure.Emsi.Models;
 
 namespace Yoma.Core.Infrastructure.Emsi.Client
 {
-    public class EmsiClientFactory : IEmsiClientFactory
+    public class EmsiClientFactory : ILaborMarketProviderClientFactory
     {
         #region Class Variables
         private readonly EmsiOptions _options;
@@ -18,7 +18,7 @@ namespace Yoma.Core.Infrastructure.Emsi.Client
         #endregion
 
         #region Public Members
-        public IEmsiClient CreateClient()
+        public ILaborMarketProviderClient CreateClient()
         {
             return new EmsiClient(_options);
         }

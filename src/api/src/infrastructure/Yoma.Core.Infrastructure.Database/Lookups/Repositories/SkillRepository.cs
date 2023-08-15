@@ -1,5 +1,4 @@
-﻿using System;
-using Yoma.Core.Domain.Core.Interfaces;
+﻿using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;
 using Yoma.Core.Infrastructure.Database.Lookups.Entities;

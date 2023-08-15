@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Yoma.Core.Domain.Keycloak.Models;
+using Yoma.Core.Domain.IdentityProvider.Models;
 
-namespace Yoma.Core.Domain.Keycloak.Interfaces
+namespace Yoma.Core.Domain.IdentityProvider.Interfaces
 {
-    public interface IKeycloakClient
+    public interface IIdentityProviderClient
     {
         bool AuthenticateWebhook(HttpContext httpContext);
 

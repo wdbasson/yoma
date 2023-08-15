@@ -1,36 +1,36 @@
 ﻿using FS.Keycloak.RestApiClient.Api;
 using FS.Keycloak.RestApiClient.Client;
 using Keycloak.AuthServices.Authentication;
-using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Core.Extensions;
 using Yoma.Core.Domain.Core;
-using Yoma.Core.Domain.Keycloak.Models;
-using Yoma.Core.Domain.Keycloak.Interfaces;
 using Microsoft.AspNetCore.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using FS.Keycloak.RestApiClient.Model;
 using Yoma.Core.Domain.Exceptions;
+using Yoma.Core.Domain.IdentityProvider.Interfaces;
+using Yoma.Core.Domain.IdentityProvider.Models;
+using Yoma.Core.Infrastructure.Keycloak.Models;
 
 namespace Yoma.Core.Infrastructure.Keycloak.Client
 {
-    public sealed class KeycloakClient : IDisposable, IKeycloakClient
+    public sealed class KeycloakClient : IDisposable, IIdentityProviderClient
     {
         #region Class Variables
-        private readonly AppSettings _appSettings;
+        private readonly KeycloakAdminOptions _keycloakAdminOptions;
         private readonly KeycloakAuthenticationOptions _keycloakAuthenticationOptions;
         private readonly KeycloakHttpClient _httpClient;
         #endregion
 
         #region Constructor
-        public KeycloakClient(AppSettings appSettings,
+        public KeycloakClient(KeycloakAdminOptions keycloakAdminOptions,
             KeycloakAuthenticationOptions keycloakAuthenticationOptions)
         {
-            _appSettings = appSettings;
+            _keycloakAdminOptions = keycloakAdminOptions;
             _keycloakAuthenticationOptions = keycloakAuthenticationOptions;
 
-            _httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl, appSettings.AdminKeycloak.Realm,
-                _appSettings.AdminKeycloak.Username, _appSettings.AdminKeycloak.Password);
+            _httpClient = new KeycloakHttpClient(_keycloakAuthenticationOptions.AuthServerUrl, _keycloakAdminOptions.Admin.Realm,
+                _keycloakAdminOptions.Admin.Username, _keycloakAdminOptions.Admin.Password);
         }
         #endregion
 
@@ -51,7 +51,7 @@ namespace Yoma.Core.Infrastructure.Keycloak.Client
             var username = credentials[0];
             var password = credentials[1];
 
-            return username == _appSettings.WebhookAdminKeycloak.Username && password == _appSettings.WebhookAdminKeycloak.Password;
+            return username == _keycloakAdminOptions.WebhookAdmin.Username && password == _keycloakAdminOptions.WebhookAdmin.Password;
         }
 
         public async Task<User?> GetUser(string? username)
