@@ -57,7 +57,7 @@ namespace Yoma.Core.Domain
             #endregion Opportunity
         }
 
-        public static void ConfigureServices_RecurringJobs(this IServiceProvider serviceProvider, IConfiguration configuration)
+        public static void Configure_RecurringJobs(this IServiceProvider serviceProvider, IConfiguration configuration)
         {
             var options = configuration.GetSection(ScheduleJobOptions.Section).Get<ScheduleJobOptions>() ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{ScheduleJobOptions.Section}'");
 

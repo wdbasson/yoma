@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -11,16 +12,30 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
-                name: "lookup");
+                name: "object");
 
             migrationBuilder.EnsureSchema(
-                name: "object");
+                name: "lookup");
 
             migrationBuilder.EnsureSchema(
                 name: "opportunity");
 
             migrationBuilder.EnsureSchema(
                 name: "entity");
+
+            migrationBuilder.CreateTable(
+                name: "Blob",
+                schema: "object",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Key = table.Column<string>(type: "varchar(125)", nullable: false),
+                    DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Blob", x => x.Id);
+                });
 
             migrationBuilder.CreateTable(
                 name: "Country",
@@ -37,20 +52,6 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Country", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "File",
-                schema: "object",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ObjectKey = table.Column<string>(type: "varchar(125)", nullable: false),
-                    DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_File", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -217,22 +218,22 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 {
                     table.PrimaryKey("PK_Organization", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Organization_Blob_CompanyRegistrationDocumentId",
+                        column: x => x.CompanyRegistrationDocumentId,
+                        principalSchema: "object",
+                        principalTable: "Blob",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Organization_Blob_LogoId",
+                        column: x => x.LogoId,
+                        principalSchema: "object",
+                        principalTable: "Blob",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_Organization_Country_CountryId",
                         column: x => x.CountryId,
                         principalSchema: "lookup",
                         principalTable: "Country",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Organization_File_CompanyRegistrationDocumentId",
-                        column: x => x.CompanyRegistrationDocumentId,
-                        principalSchema: "object",
-                        principalTable: "File",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Organization_File_LogoId",
-                        column: x => x.LogoId,
-                        principalSchema: "object",
-                        principalTable: "File",
                         principalColumn: "Id");
                 });
 
@@ -265,6 +266,12 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 {
                     table.PrimaryKey("PK_User", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_User_Blob_PhotoId",
+                        column: x => x.PhotoId,
+                        principalSchema: "object",
+                        principalTable: "Blob",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_User_Country_CountryId",
                         column: x => x.CountryId,
                         principalSchema: "lookup",
@@ -281,12 +288,6 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                         column: x => x.ZltoWalletCountryId,
                         principalSchema: "lookup",
                         principalTable: "Country",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_User_File_PhotoId",
-                        column: x => x.PhotoId,
-                        principalSchema: "object",
-                        principalTable: "File",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_User_Gender_GenderId",
@@ -571,6 +572,13 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Blob_Key",
+                schema: "object",
+                table: "Blob",
+                column: "Key",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Country_CodeAlpha2",
                 schema: "lookup",
                 table: "Country",
@@ -596,13 +604,6 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 schema: "lookup",
                 table: "Country",
                 column: "Name",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_File_ObjectKey",
-                schema: "object",
-                table: "File",
-                column: "ObjectKey",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -967,12 +968,12 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 schema: "lookup");
 
             migrationBuilder.DropTable(
-                name: "Country",
-                schema: "lookup");
+                name: "Blob",
+                schema: "object");
 
             migrationBuilder.DropTable(
-                name: "File",
-                schema: "object");
+                name: "Country",
+                schema: "lookup");
         }
     }
 }

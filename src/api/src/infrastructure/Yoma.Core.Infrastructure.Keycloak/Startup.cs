@@ -20,7 +20,7 @@ namespace Yoma.Core.Infrastructure.Keycloak
             services.Configure<KeycloakAuthenticationOptions>(options => configuration.GetSection(KeycloakAuthenticationOptions.Section).Bind(options));
         }
 
-        public static void ConfigureService_InfrastructureIdentityProvider(this IServiceCollection services)
+        public static void ConfigureServices_InfrastructureIdentityProvider(this IServiceCollection services)
         {
             services.AddScoped<IIdentityProviderClientFactory, KeycloakClientFactory>();
         }

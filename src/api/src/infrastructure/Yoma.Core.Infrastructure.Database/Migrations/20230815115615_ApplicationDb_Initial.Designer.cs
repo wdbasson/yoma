@@ -12,7 +12,7 @@ using Yoma.Core.Infrastructure.Database.Context;
 namespace Yoma.Core.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230814122044_ApplicationDb_Initial")]
+    [Migration("20230815115615_ApplicationDb_Initial")]
     partial class ApplicationDb_Initial
     {
         /// <inheritdoc />
@@ -25,7 +25,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Core.Entities.S3Object", b =>
+            modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Core.Entities.BlobObject", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -34,16 +34,16 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     b.Property<DateTimeOffset>("DateCreated")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("ObjectKey")
+                    b.Property<string>("Key")
                         .IsRequired()
                         .HasColumnType("varchar(125)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ObjectKey")
+                    b.HasIndex("Key")
                         .IsUnique();
 
-                    b.ToTable("File", "object");
+                    b.ToTable("Blob", "object");
                 });
 
             modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Entity.Entities.Lookups.OrganizationProviderType", b =>
@@ -749,7 +749,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
 
             modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Entity.Entities.Organization", b =>
                 {
-                    b.HasOne("Yoma.Core.Infrastructure.Database.Core.Entities.S3Object", "CompanyRegistrationDocument")
+                    b.HasOne("Yoma.Core.Infrastructure.Database.Core.Entities.BlobObject", "CompanyRegistrationDocument")
                         .WithMany()
                         .HasForeignKey("CompanyRegistrationDocumentId");
 
@@ -757,7 +757,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                         .WithMany()
                         .HasForeignKey("CountryId");
 
-                    b.HasOne("Yoma.Core.Infrastructure.Database.Core.Entities.S3Object", "Logo")
+                    b.HasOne("Yoma.Core.Infrastructure.Database.Core.Entities.BlobObject", "Logo")
                         .WithMany()
                         .HasForeignKey("LogoId");
 
@@ -820,7 +820,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                         .WithMany()
                         .HasForeignKey("GenderId");
 
-                    b.HasOne("Yoma.Core.Infrastructure.Database.Core.Entities.S3Object", "Photo")
+                    b.HasOne("Yoma.Core.Infrastructure.Database.Core.Entities.BlobObject", "Photo")
                         .WithMany()
                         .HasForeignKey("PhotoId");
 
