@@ -1,4 +1,4 @@
-﻿using Yoma.Core.Domain.IdentityProvider.Interfaces;
+using Yoma.Core.Domain.IdentityProvider.Interfaces;
 
 namespace Yoma.Core.Infrastructure.Keycloak.Models
 {
@@ -6,7 +6,7 @@ namespace Yoma.Core.Infrastructure.Keycloak.Models
     {
         public string ClientId { get; set; }
 
-        public string ClientSecret { get; set; }  
+        public string ClientSecret { get; set; }
 
         public Uri AuthorizationUrl { get; set; }
 

@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
@@ -101,7 +101,7 @@ namespace Yoma.Core.Domain.Lookups.Services
             var incomingResults = await _laborMarketProviderClient.ListSkills();
             if (incomingResults == null || !incomingResults.Any()) return;
 
-            int batchSize = _scheduleJobOptions.SeedSkillsBatchSize; 
+            int batchSize = _scheduleJobOptions.SeedSkillsBatchSize;
             int pageIndex = 0;
             do
             {
@@ -112,7 +112,7 @@ namespace Yoma.Core.Domain.Lookups.Services
                 foreach (var item in incomingBatch)
                 {
                     var existItem = existingItems.SingleOrDefault(o => o.ExternalId == item.Id);
-                    if(existItem != null)
+                    if (existItem != null)
                     {
                         existItem.Name = item.Name;
                         existItem.InfoURL = item.InfoURL;
@@ -132,7 +132,7 @@ namespace Yoma.Core.Domain.Lookups.Services
                 if (existingItems.Any()) await _skillRepository.Update(existingItems);
 
                 pageIndex++;
-            } 
+            }
             while ((pageIndex - 1) * batchSize < incomingResults.Count);
         }
         #endregion

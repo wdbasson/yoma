@@ -1,4 +1,4 @@
-﻿using Yoma.Core.Domain.Core.Interfaces;
+using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Opportunity.Models.Lookups;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;

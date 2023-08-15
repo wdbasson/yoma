@@ -88,9 +88,7 @@ const Settings: NextPageWithLayout = () => {
 };
 
 UserProfile.getLayout = function getLayout(page: ReactElement) {
-  return (
-    <MainBackButton rightMenuChildren={<Settings />}>{page}</MainBackButton>
-  );
+  return <MainBackButton rightMenuChildren={<Settings />}>{page}</MainBackButton>;
 };
 
 export default UserProfile;

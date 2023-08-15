@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.LaborMarketProvider.Interfaces
+namespace Yoma.Core.Domain.LaborMarketProvider.Interfaces
 {
     public interface ILaborMarketProviderClientFactory
     {

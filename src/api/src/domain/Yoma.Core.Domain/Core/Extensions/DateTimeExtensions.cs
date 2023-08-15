@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Core.Extensions
+namespace Yoma.Core.Domain.Core.Extensions
 {
     public static class DateTimeExtensions
     {

@@ -10,7 +10,7 @@ namespace Yoma.Core.Api.Middleware
         private readonly AppSettings _appSettings;
 
         public RequiredClaimAuthorizationHandler(IOptions<AppSettings> appSettings)
-        { 
+        {
             _appSettings = appSettings.Value;
         }
 

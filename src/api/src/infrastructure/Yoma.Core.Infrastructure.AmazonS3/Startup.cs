@@ -1,4 +1,4 @@
-﻿using Amazon;
+using Amazon;
 using Amazon.Extensions.NETCore.Setup;
 using Amazon.Runtime;
 using Amazon.S3;
@@ -19,7 +19,7 @@ namespace Yoma.Core.Infrastructure.AmazonS3
 
         public static void ConfigureServices_InfrastructureBlobProvider(this IServiceCollection services, IConfiguration configuration)
         {
-            var options = configuration.GetSection(AWSS3Options.Section).Get<AWSS3Options>() 
+            var options = configuration.GetSection(AWSS3Options.Section).Get<AWSS3Options>()
                 ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{AWSS3Options.Section}'");
 
             var optionsAWS = new AWSOptions

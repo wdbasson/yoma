@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Entity.Models.Lookups
+namespace Yoma.Core.Domain.Entity.Models.Lookups
 {
     public class OrganizationProviderType
     {

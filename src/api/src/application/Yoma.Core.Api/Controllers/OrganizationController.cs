@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel.DataAnnotations;
@@ -57,7 +57,7 @@ namespace Yoma.Core.Api.Controllers
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Insert or update an organization (User, Admin or Organization Admin role required)", 
+        [SwaggerOperation(Summary = "Insert or update an organization (User, Admin or Organization Admin role required)",
             Description = "Newly created organization defaults to an unapproved (unverified) state. A user can only create an organization and is automatically assigned the role of Organization Admin.")]
         [HttpPost()]
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
@@ -107,7 +107,7 @@ namespace Yoma.Core.Api.Controllers
         [Authorize(Roles = Constants.Role_Admin)]
         public async Task<IActionResult> DeleteProviderType([FromRoute] Guid id, [FromBody] List<Guid> providerTypeIds)
         {
-            _logger.LogInformation("Handling request {requestName}",nameof(DeleteProviderType));
+            _logger.LogInformation("Handling request {requestName}", nameof(DeleteProviderType));
 
             await _organizationService.DeleteProviderTypes(id, providerTypeIds);
 
@@ -150,7 +150,7 @@ namespace Yoma.Core.Api.Controllers
         [Authorize(Roles = Constants.Role_Admin)]
         public IActionResult AssignAdmin([FromRoute] Guid id, [FromRoute] Guid userId)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})", 
+            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})",
                 nameof(AssignAdmin), nameof(id), id, nameof(userId), userId);
 
             var result = _organizationService.AssignAdmin(id, userId);

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Yoma.Core.Infrastructure.SendGrid.Models;
 using SendGrid.Extensions.DependencyInjection;
@@ -16,7 +16,7 @@ namespace Yoma.Core.Infrastructure.SendGrid
 
         public static void ConfigureServices_InfrastructureEmailProvider(this IServiceCollection services, IConfiguration configuration)
         {
-            var options = configuration.GetSection(SendGridOptions.Section).Get<SendGridOptions>() 
+            var options = configuration.GetSection(SendGridOptions.Section).Get<SendGridOptions>()
                 ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{SendGridOptions.Section}'");
             services.AddSendGrid(options => { options.ApiKey = options.ApiKey; });
 

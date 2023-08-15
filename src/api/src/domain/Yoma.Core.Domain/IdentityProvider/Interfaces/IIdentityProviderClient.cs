@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Yoma.Core.Domain.IdentityProvider.Models;
 
 namespace Yoma.Core.Domain.IdentityProvider.Interfaces

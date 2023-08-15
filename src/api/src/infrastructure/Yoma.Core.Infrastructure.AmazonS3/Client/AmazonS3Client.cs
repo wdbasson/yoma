@@ -1,4 +1,4 @@
-﻿using Amazon.S3;
+using Amazon.S3;
 using Amazon.S3.Model;
 using Yoma.Core.Domain.BlobProvider.Interfaces;
 using Yoma.Core.Domain.Core.Exceptions;

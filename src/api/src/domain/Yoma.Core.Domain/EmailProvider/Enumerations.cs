@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.EmailProvider
+namespace Yoma.Core.Domain.EmailProvider
 {
     public enum EmailType
     {

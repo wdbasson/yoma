@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;
@@ -47,9 +47,9 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
                 CompanyRegistrationDocumentId = entity.CompanyRegistrationDocumentId,
                 DateCreated = entity.DateCreated,
                 DateModified = entity.DateModified,
-                ProviderTypes = includeChildItems ? 
+                ProviderTypes = includeChildItems ?
                     entity.ProviderTypes.Select(o => new Domain.Entity.Models.Lookups.OrganizationProviderType { Id = o.Id, Name = o.ProviderType.Name }).ToList() : null
-            }); 
+            });
         }
 
         public Expression<Func<Domain.Entity.Models.Organization, bool>> Contains(Expression<Func<Domain.Entity.Models.Organization, bool>> predicate, string value)

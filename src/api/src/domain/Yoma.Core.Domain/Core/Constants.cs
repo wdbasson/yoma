@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Core
+namespace Yoma.Core.Domain.Core
 {
     public static class Constants
     {

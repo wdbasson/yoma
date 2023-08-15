@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Core.Interfaces
+namespace Yoma.Core.Domain.Core.Interfaces
 {
     public interface IEnvironmentProvider
     {

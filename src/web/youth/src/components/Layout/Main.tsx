@@ -45,9 +45,7 @@ const MainLayout: LayoutProps = ({
         </Head>
         <Navbar />
         {/* items-center justify-center */}
-        <main className="flex min-h-screen flex-col bg-white dark:bg-slate-800">
-          {children}
-        </main>
+        <main className="flex min-h-screen flex-col bg-white dark:bg-slate-800">{children}</main>
         <Footer />
       </NextAuthProvider>
     </>

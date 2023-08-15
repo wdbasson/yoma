@@ -1,4 +1,4 @@
-﻿using Yoma.Core.Domain.EmailProvider.Models;
+using Yoma.Core.Domain.EmailProvider.Models;
 
 namespace Yoma.Core.Domain.EmailProvider.Interfaces
 {

@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Lookups.Models
+namespace Yoma.Core.Domain.Lookups.Models
 {
     public class Country
     {

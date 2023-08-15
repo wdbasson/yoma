@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.IdentityProvider.Interfaces
+namespace Yoma.Core.Domain.IdentityProvider.Interfaces
 {
     public interface IIdentityProviderClientFactory
     {
