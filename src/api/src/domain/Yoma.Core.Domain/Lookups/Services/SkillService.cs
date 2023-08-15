@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
-using Yoma.Core.Domain.Emsi.Interfaces;
+using Yoma.Core.Domain.LaborMarketProvider.Interfaces;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Lookups.Models;
 
@@ -12,7 +12,7 @@ namespace Yoma.Core.Domain.Lookups.Services
     {
         #region Class Variables
         private readonly ScheduleJobOptions _scheduleJobOptions;
-        private readonly IEmsiClient _emsiClient;
+        private readonly ILaborMarketProviderClient _laborMarketProviderClient;
         private readonly IRepositoryBatched<Skill> _skillRepository;
         #endregion
 
@@ -20,11 +20,11 @@ namespace Yoma.Core.Domain.Lookups.Services
         public SkillService(IOptions<AppSettings> appSettings,
             IOptions<ScheduleJobOptions> scheduleJobOptions,
             IMemoryCache memoryCache,
-            IEmsiClientFactory emsiClientFactory,
+            ILaborMarketProviderClientFactory laborMarketProviderClientFactory,
             IRepositoryBatched<Skill> skillRepository)
         {
             _scheduleJobOptions = scheduleJobOptions.Value;
-            _emsiClient = emsiClientFactory.CreateClient();
+            _laborMarketProviderClient = laborMarketProviderClientFactory.CreateClient();
             _skillRepository = skillRepository;
         }
         #endregion
@@ -87,7 +87,7 @@ namespace Yoma.Core.Domain.Lookups.Services
 
         public async Task SeedSkills()
         {
-            var incomingResults = await _emsiClient.ListSkills();
+            var incomingResults = await _laborMarketProviderClient.ListSkills();
             if (incomingResults == null || !incomingResults.Any()) return;
 
             int batchSize = _scheduleJobOptions.SeedSkillsBatchSize; 

@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Emsi.Models
+﻿namespace Yoma.Core.Domain.LaborMarketProvider.Models
 {
     public class Skill
     {

@@ -7,35 +7,36 @@ using Yoma.Core.Infrastructure.Keycloak.Client;
 using Yoma.Core.Infrastructure.Keycloak.Middleware;
 using Yoma.Core.Infrastructure.Keycloak.Models;
 using Flurl;
-using Yoma.Core.Domain.Keycloak.Interfaces;
+using Yoma.Core.Domain.IdentityProvider.Interfaces;
 
 namespace Yoma.Core.Infrastructure.Keycloak
 {
     public static class Startup
     {
         #region Public Members
-        public static void ConfigureServices_Keycloak(this IServiceCollection services, IConfiguration configuration)
+        public static void ConfigureServices_IdentityProvider(this IServiceCollection services, IConfiguration configuration)
         {
+            services.Configure<KeycloakAdminOptions>(options => configuration.GetSection(KeycloakAdminOptions.Section).Bind(options));
             services.Configure<KeycloakAuthenticationOptions>(options => configuration.GetSection(KeycloakAuthenticationOptions.Section).Bind(options));
         }
 
-        public static void ConfigureService_InfrastructuresKeycloak(this IServiceCollection services)
+        public static void ConfigureService_InfrastructureIdentityProvider(this IServiceCollection services)
         {
-            services.AddScoped<IKeycloakClientFactory, KeycloakClientFactory>();
+            services.AddScoped<IIdentityProviderClientFactory, KeycloakClientFactory>();
         }
 
-        public static void ConfigureServices_AuthenticationKeycloak(this IServiceCollection services, IConfiguration configuration)
+        public static void ConfigureServices_AuthenticationIdentityProvider(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddKeycloakAuthentication(AuthenticationOptions(configuration));
         }
 
-        public static void ConfigureServices_AuthorizationKeycloak(this IServiceCollection services, IConfiguration configuration)
+        public static void ConfigureServices_AuthorizationIdentityProvider(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddKeycloakAuthorization(ProtectionClientOptions(configuration));
             services.AddTransient<IClaimsTransformation, KeyCloakClaimsTransformer>();
         }
 
-        public static KeycloakAuthOptions Configuration_AuthenticationOptions(this IConfiguration configuration)
+        public static KeycloakAuthOptions Configuration_IdentityProviderAuthenticationOptions(this IConfiguration configuration)
         {
             var authenticationOptions = AuthenticationOptions(configuration);
 ;          
@@ -68,13 +69,19 @@ namespace Yoma.Core.Infrastructure.Keycloak
         {
             var authenticationOptions = configuration.GetSection(KeycloakAuthenticationOptions.Section).Get<KeycloakAuthenticationOptions>();
 
-            return authenticationOptions ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{KeycloakAuthenticationOptions.Section}'");
+            return authenticationOptions == null
+                    ? throw new InvalidOperationException($"Failed to retrieve configuration section '{KeycloakAuthenticationOptions.Section}'")
+                    : authenticationOptions;
         }
 
         private static KeycloakProtectionClientOptions ProtectionClientOptions(IConfiguration configuration)
         {
             var protectionClientOptions = configuration
-              .GetSection(KeycloakProtectionClientOptions.Section).Get<KeycloakProtectionClientOptions>() ?? throw new InvalidOperationException($"Failed to retrieve config section '{KeycloakProtectionClientOptions.Section}.{nameof(KeycloakProtectionClientOptions)}'");
+              .GetSection(KeycloakProtectionClientOptions.Section).Get<KeycloakProtectionClientOptions>();
+
+            if (protectionClientOptions == null)
+                throw new InvalidOperationException($"Failed to retrieve config section '{KeycloakProtectionClientOptions.Section}.{nameof(KeycloakProtectionClientOptions)}'");
+
             return protectionClientOptions;
         }
         #endregion

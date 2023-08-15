@@ -42,7 +42,7 @@ namespace Yoma.Core.Api
             var appSettings = _configuration.GetSection(nameof(AppSettings)).Get<AppSettings>() ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{nameof(AppSettings)}'");
             _appSettings = appSettings;
 
-            _keycloakAuthOptions = configuration.Configuration_AuthenticationOptions();
+            _keycloakAuthOptions = configuration.Configuration_IdentityProviderAuthenticationOptions();
         }
         #endregion
 
@@ -54,8 +54,8 @@ namespace Yoma.Core.Api
                 _configuration.GetSection(nameof(AppSettings)).Bind(options));
             services.Configure<ScheduleJobOptions>(options =>
                 _configuration.GetSection(ScheduleJobOptions.Section).Bind(options));
-            services.ConfigureServices_Keycloak(_configuration);
-            services.ConfigureServices_Emsi(_configuration);
+            services.ConfigureServices_IdentityProvider(_configuration);
+            services.ConfigureServices_LaborMarketProvider(_configuration);
             services.AddSingleton<IEnvironmentProvider>(p => ActivatorUtilities.CreateInstance<EnvironmentProvider>(p, _webHostEnvironment.EnvironmentName));
             #endregion Configuration
 
@@ -75,7 +75,7 @@ namespace Yoma.Core.Api
 
             #region 3rd Party
             ConfigureCORS(services);
-            services.ConfigureServices_AuthenticationKeycloak(_configuration);
+            services.ConfigureServices_AuthenticationIdentityProvider(_configuration);
             ConfigureAuthorization(services, _configuration);
             ConfigureSwagger(services);
             ConfigureHangfire(services, _configuration);
@@ -84,8 +84,8 @@ namespace Yoma.Core.Api
             #region Services & Infrastructure
             services.ConfigureServices_DomainServices();
             services.ConfigureServices_AWSClients(_configuration);
-            services.ConfigureService_InfrastructuresKeycloak();
-            services.ConfigureService_InfrastructuresEmsi();
+            services.ConfigureService_InfrastructureIdentityProvider();
+            services.ConfigureService_InfrastructureLaborMarketProvider();
             services.ConfigureServices_InfrastructureDatabase(_configuration);
             #endregion Services & Infrastructure
         }
@@ -190,7 +190,7 @@ namespace Yoma.Core.Api
                 });
             });
             services.AddSingleton<IAuthorizationHandler, RequiredClaimAuthorizationHandler>();
-            services.ConfigureServices_AuthorizationKeycloak(configuration);
+            services.ConfigureServices_AuthorizationIdentityProvider(configuration);
         }
 
         private static void ConfigureHangfire(IServiceCollection services, IConfiguration configuration)

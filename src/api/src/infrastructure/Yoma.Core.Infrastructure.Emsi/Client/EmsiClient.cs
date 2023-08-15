@@ -1,13 +1,13 @@
 ﻿using Flurl.Http;
-using Yoma.Core.Domain.Emsi.Interfaces;
-using Yoma.Core.Domain.Emsi.Models;
 using Yoma.Core.Infrastructure.Emsi.Models;
 using Yoma.Core.Domain.Core.Extensions;
 using Flurl;
+using Yoma.Core.Domain.LaborMarketProvider.Interfaces;
+using Yoma.Core.Domain.LaborMarketProvider.Models;
 
 namespace Yoma.Core.Infrastructure.Emsi.Client
 {
-    public class EmsiClient : IEmsiClient
+    public class EmsiClient : ILaborMarketProviderClient
     {
         #region Class Variables
         private readonly EmsiOptions _options;
@@ -25,7 +25,7 @@ namespace Yoma.Core.Infrastructure.Emsi.Client
         #endregion
 
         #region Public Members
-        public async Task<List<Domain.Emsi.Models.Skill>?> ListSkills()
+        public async Task<List<Domain.LaborMarketProvider.Models.Skill>?> ListSkills()
         {
             var resp = await _options.BaseUrl
                .AppendPathSegment($"/skills/versions/latest/skills")
@@ -35,7 +35,7 @@ namespace Yoma.Core.Infrastructure.Emsi.Client
 
             var results = await resp.GetJsonAsync<SkillResponse>();
 
-            return results?.Data.Select(o => new Domain.Emsi.Models.Skill { Id = o.Id, Name = o.Name, InfoURL = o.InfoUrl }).ToList();
+            return results?.Data.Select(o => new Domain.LaborMarketProvider.Models.Skill { Id = o.Id, Name = o.Name, InfoURL = o.InfoUrl }).ToList();
         }
 
         public async Task<List<JobTitle>?> ListJobTitles()

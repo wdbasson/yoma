@@ -10,14 +10,14 @@ using System.Transactions;
 using Microsoft.AspNetCore.Http;
 using Yoma.Core.Domain.Core;
 using User = Yoma.Core.Domain.Entity.Models.User;
-using Yoma.Core.Domain.Keycloak.Interfaces;
+using Yoma.Core.Domain.IdentityProvider.Interfaces;
 
 namespace Yoma.Core.Domain.Entity.Services
 {
     public class UserService : IUserService
     {
         #region Class Variables
-        private readonly IKeycloakClient _keycloakClient;
+        private readonly IIdentityProviderClient _identityProviderClient;
         private readonly IS3ObjectService _s3ObjectService;
         private readonly IGenderService _genderService;
         private readonly ICountryService _countryService;
@@ -28,7 +28,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
         #region Constructor
         public UserService(
-            IKeycloakClientFactory keycloakClientFactory,
+            IIdentityProviderClientFactory identityProviderClientFactory,
             IS3ObjectService s3ObjectService,
             IGenderService genderService,
             ICountryService countryService,
@@ -36,7 +36,7 @@ namespace Yoma.Core.Domain.Entity.Services
             UserProfileRequestValidator userProfileRequestValidator,
             IRepository<User> userRepository)
         {
-            _keycloakClient = keycloakClientFactory.CreateClient();
+            _identityProviderClient = identityProviderClientFactory.CreateClient();
             _s3ObjectService = s3ObjectService;
             _genderService = genderService;
             _countryService = countryService;
@@ -117,7 +117,7 @@ namespace Yoma.Core.Domain.Entity.Services
                 await _userRepository.Update(result);
                 result.DateModified = DateTimeOffset.Now;
 
-                var user = new Keycloak.Models.User
+                var user = new IdentityProvider.Models.User
                 {
                     Id = result.ExternalId.Value,
                     FirstName = result.FirstName,
@@ -132,7 +132,7 @@ namespace Yoma.Core.Domain.Entity.Services
                     DateOfBirth = result.DateOfBirth.HasValue ? result.DateOfBirth.Value.ToString("yyyy/MM/dd") : null
                 };
 
-                await _keycloakClient.UpdateUser(user, request.ResetPassword);
+                await _identityProviderClient.UpdateUser(user, request.ResetPassword);
 
                 scope.Complete();
             }
@@ -155,10 +155,10 @@ namespace Yoma.Core.Domain.Entity.Services
             if (existingByEmail != null && (isNew || result.Id != existingByEmail.Id))
                 throw new ValidationException($"{nameof(User)} with the specified email address '{request.Email}' already exists");
 
-            //profile fields updatable via UpdateProfile; Keycloak is source of truth
+            //profile fields updatable via UpdateProfile; Identity provider is source of truth
             if (isNew)
             {
-                var kcUser = await _keycloakClient.GetUser(result.Email) ?? throw new InvalidOperationException($"{nameof(User)} with email '{result.Email}' does not exist in Keycloak");
+                var kcUser = await _identityProviderClient.GetUser(result.Email) ?? throw new InvalidOperationException($"{nameof(User)} with email '{result.Email}' does not exist");
                 result.Email = request.Email;
                 result.FirstName = request.FirstName;
                 result.Surname = request.Surname;

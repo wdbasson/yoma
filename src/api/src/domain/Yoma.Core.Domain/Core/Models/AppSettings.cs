@@ -2,10 +2,6 @@
 {
     public class AppSettings
     {
-        public AppSettingsCredentials AdminKeycloak { get; set; }
-
-        public AppSettingsCredentials WebhookAdminKeycloak { get; set; }
-
         public AppSettingsCredentials Hangfire { get; set; }
 
         public string AuthorizationPolicyScope { get; set; }
@@ -21,8 +17,6 @@
 
     public class AppSettingsCredentials
     {
-        public string? Realm { get; set; }
-
         public string Username { get; set; }
 
         public string Password { get; set; }

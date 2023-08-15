@@ -1,6 +1,5 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Http;
-using System.Security;
 using System.Transactions;
 using Yoma.Core.Domain.Core;
 using Yoma.Core.Domain.Core.Interfaces;
@@ -9,7 +8,7 @@ using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Interfaces.Lookups;
 using Yoma.Core.Domain.Entity.Models;
 using Yoma.Core.Domain.Entity.Validators;
-using Yoma.Core.Domain.Keycloak.Interfaces;
+using Yoma.Core.Domain.IdentityProvider.Interfaces;
 
 namespace Yoma.Core.Domain.Entity.Services
 {
@@ -17,7 +16,7 @@ namespace Yoma.Core.Domain.Entity.Services
     {
         #region Class Variables
         private readonly IUserService _userService;
-        private readonly IKeycloakClient _keycloakClient;
+        private readonly IIdentityProviderClient _identityProviderClient;
         private readonly IOrganizationProviderTypeService _providerTypeService;
         private readonly IS3ObjectService _s3ObjectService;
         private readonly OrganizationRequestValidator _organizationRequestValidator;
@@ -28,7 +27,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
         #region Constructor
         public OrganizationService(IUserService userService,
-            IKeycloakClientFactory keycloakClientFactory,
+            IIdentityProviderClientFactory identityProviderClientFactory,
             IOrganizationProviderTypeService providerTypeService,
             IS3ObjectService s3ObjectService,
             OrganizationRequestValidator organizationRequestValidator,
@@ -37,7 +36,7 @@ namespace Yoma.Core.Domain.Entity.Services
             IRepository<OrganizationProviderType> organizationProviderTypeRepository)
         {
             _userService = userService;
-            _keycloakClient = keycloakClientFactory.CreateClient();
+            _identityProviderClient = identityProviderClientFactory.CreateClient();
             _providerTypeService = providerTypeService;
             _s3ObjectService = s3ObjectService;
             _organizationRequestValidator = organizationRequestValidator;
@@ -268,7 +267,7 @@ namespace Yoma.Core.Domain.Entity.Services
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             await _organizationUserRepository.Create(item);
 
-            await _keycloakClient.EnsureRoles(user.ExternalId.Value, new List<string> { Constants.Role_OrganizationAdmin });
+            await _identityProviderClient.EnsureRoles(user.ExternalId.Value, new List<string> { Constants.Role_OrganizationAdmin });
 
             scope.Complete();
         }
@@ -287,7 +286,7 @@ namespace Yoma.Core.Domain.Entity.Services
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             await _organizationUserRepository.Delete(item);
 
-            await _keycloakClient.RemoveRoles(user.ExternalId.Value, new List<string> { Constants.Role_OrganizationAdmin });
+            await _identityProviderClient.RemoveRoles(user.ExternalId.Value, new List<string> { Constants.Role_OrganizationAdmin });
 
             scope.Complete();
         }
