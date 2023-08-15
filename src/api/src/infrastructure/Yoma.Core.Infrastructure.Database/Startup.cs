@@ -37,7 +37,7 @@ namespace Yoma.Core.Infrastructure.Database
 
             // repositories
             #region Core
-            services.AddScoped<IRepository<S3Object>, S3ObjectRepository>();
+            services.AddScoped<IRepository<BlobObject>, BlobObjectRepository>();
             #endregion Core
 
             #region Entity

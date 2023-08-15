@@ -18,7 +18,7 @@ namespace Yoma.Core.Domain.Entity.Services
     {
         #region Class Variables
         private readonly IIdentityProviderClient _identityProviderClient;
-        private readonly IS3ObjectService _s3ObjectService;
+        private readonly IBlobService _blobService;
         private readonly IGenderService _genderService;
         private readonly ICountryService _countryService;
         private readonly UserRequestValidator _userValidator;
@@ -29,7 +29,7 @@ namespace Yoma.Core.Domain.Entity.Services
         #region Constructor
         public UserService(
             IIdentityProviderClientFactory identityProviderClientFactory,
-            IS3ObjectService s3ObjectService,
+            IBlobService blobService,
             IGenderService genderService,
             ICountryService countryService,
             UserRequestValidator userValidator,
@@ -37,7 +37,7 @@ namespace Yoma.Core.Domain.Entity.Services
             IRepository<User> userRepository)
         {
             _identityProviderClient = identityProviderClientFactory.CreateClient();
-            _s3ObjectService = s3ObjectService;
+            _blobService = blobService;
             _genderService = genderService;
             _countryService = countryService;
             _userValidator = userValidator;
@@ -200,22 +200,22 @@ namespace Yoma.Core.Domain.Entity.Services
 
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
-                S3Object? s3Object = null;
+                BlobObject? s3Object = null;
                 try
                 {
-                    s3Object = await _s3ObjectService.Create(file, FileTypeEnum.Photos);
+                    s3Object = await _blobService.Create(file, FileTypeEnum.Photos);
                     result.PhotoId = s3Object.Id;
                     await _userRepository.Update(result);
 
                     if (currentPhotoId.HasValue)
-                        await _s3ObjectService.Delete(currentPhotoId.Value);
+                        await _blobService.Delete(currentPhotoId.Value);
 
                     scope.Complete();
                 }
                 catch
                 {
                     if (s3Object != null)
-                        await _s3ObjectService.Delete(s3Object.Id);
+                        await _blobService.Delete(s3Object.Id);
 
                     throw;
                 }
@@ -231,7 +231,7 @@ namespace Yoma.Core.Domain.Entity.Services
         private string? GetS3ObjectURL(Guid? id)
         {
             if (!id.HasValue) return null;
-            return _s3ObjectService.GetURL(id.Value);
+            return _blobService.GetURL(id.Value);
         }
         #endregion
     }

@@ -1,7 +1,4 @@
-﻿using Amazon;
-using Amazon.Runtime;
-using Amazon.S3;
-using FluentValidation;
+﻿using FluentValidation;
 using Hangfire;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,7 +27,7 @@ namespace Yoma.Core.Domain
             services.AddValidatorsFromAssemblyContaining<UserService>();
 
             #region Core
-            services.AddScoped<IS3ObjectService, S3ObjectService>();
+            services.AddScoped<IBlobService, BlobService>();
             #endregion Core
 
             #region Entity
@@ -67,20 +64,6 @@ namespace Yoma.Core.Domain
             using var scope = serviceProvider.CreateScope();
             var skillService = scope.ServiceProvider.GetRequiredService<ISkillService>();
             RecurringJob.AddOrUpdate("Skill Reference Seeding", () => skillService.SeedSkills(), options.SeedSkillsSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
-        }
-
-        public static void ConfigureServices_AWSClients(this IServiceCollection services, IConfiguration configuration)
-        {
-            var aWSSettings = configuration.GetSection(AWSOptions.Section).Get<AWSOptions>() ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{nameof(AWSOptions)}'");
-            services.Configure<AWSOptions>(options => configuration.GetSection(nameof(AWSOptions)).Bind(options));
-
-            var aWSS3Options = new Amazon.Extensions.NETCore.Setup.AWSOptions
-            {
-                Region = RegionEndpoint.GetBySystemName(aWSSettings.S3Region),
-                Credentials = new BasicAWSCredentials(aWSSettings.S3AccessKey, aWSSettings.S3SecretKey)
-            };
-
-            services.AddAWSService<IAmazonS3>(aWSS3Options);
         }
         #endregion
     }

@@ -36,7 +36,7 @@ namespace Yoma.Core.Infrastructure.Keycloak
             services.AddTransient<IClaimsTransformation, KeyCloakClaimsTransformer>();
         }
 
-        public static KeycloakAuthOptions Configuration_IdentityProviderAuthenticationOptions(this IConfiguration configuration)
+        public static IIdentityProviderAuthOptions Configuration_IdentityProviderAuthenticationOptions(this IConfiguration configuration)
         {
             var authenticationOptions = AuthenticationOptions(configuration);
 ;          

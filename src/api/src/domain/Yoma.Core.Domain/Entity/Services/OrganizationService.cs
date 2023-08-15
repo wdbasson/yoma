@@ -18,7 +18,7 @@ namespace Yoma.Core.Domain.Entity.Services
         private readonly IUserService _userService;
         private readonly IIdentityProviderClient _identityProviderClient;
         private readonly IOrganizationProviderTypeService _providerTypeService;
-        private readonly IS3ObjectService _s3ObjectService;
+        private readonly IBlobService _blobService;
         private readonly OrganizationRequestValidator _organizationRequestValidator;
         private readonly IRepository<Organization> _organizationRepository;
         private readonly IRepository<OrganizationUser> _organizationUserRepository;
@@ -29,7 +29,7 @@ namespace Yoma.Core.Domain.Entity.Services
         public OrganizationService(IUserService userService,
             IIdentityProviderClientFactory identityProviderClientFactory,
             IOrganizationProviderTypeService providerTypeService,
-            IS3ObjectService s3ObjectService,
+            IBlobService blobService,
             OrganizationRequestValidator organizationRequestValidator,
             IRepository<Organization> organizationRepository,
             IRepository<OrganizationUser> organizationUserRepository,
@@ -38,7 +38,7 @@ namespace Yoma.Core.Domain.Entity.Services
             _userService = userService;
             _identityProviderClient = identityProviderClientFactory.CreateClient();
             _providerTypeService = providerTypeService;
-            _s3ObjectService = s3ObjectService;
+            _blobService = blobService;
             _organizationRequestValidator = organizationRequestValidator;
             _organizationRepository = organizationRepository;
             _organizationUserRepository = organizationUserRepository;
@@ -185,22 +185,22 @@ namespace Yoma.Core.Domain.Entity.Services
 
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
-                S3Object? s3Object = null;
+                BlobObject? s3Object = null;
                 try
                 {
-                    s3Object = await _s3ObjectService.Create(file, FileTypeEnum.Photos);
+                    s3Object = await _blobService.Create(file, FileTypeEnum.Photos);
                     result.LogoId = s3Object.Id;
                     await _organizationRepository.Update(result);
 
                     if (currentLogoId.HasValue)
-                        await _s3ObjectService.Delete(currentLogoId.Value);
+                        await _blobService.Delete(currentLogoId.Value);
 
                     scope.Complete();
                 }
                 catch
                 {
                     if (s3Object != null)
-                        await _s3ObjectService.Delete(s3Object.Id);
+                        await _blobService.Delete(s3Object.Id);
 
                     throw;
                 }
@@ -222,22 +222,22 @@ namespace Yoma.Core.Domain.Entity.Services
 
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
             {
-                S3Object? s3Object = null;
+                BlobObject? s3Object = null;
                 try
                 {
-                    s3Object = await _s3ObjectService.Create(file, FileTypeEnum.Documents);
+                    s3Object = await _blobService.Create(file, FileTypeEnum.Documents);
                     result.CompanyRegistrationDocumentId = s3Object.Id;
                     await _organizationRepository.Update(result);
 
                     if (currentDocumentId.HasValue)
-                        await _s3ObjectService.Delete(currentDocumentId.Value);
+                        await _blobService.Delete(currentDocumentId.Value);
 
                     scope.Complete();
                 }
                 catch
                 {
                     if (s3Object != null)
-                        await _s3ObjectService.Delete(s3Object.Id);
+                        await _blobService.Delete(s3Object.Id);
 
                     throw;
                 }
@@ -296,7 +296,7 @@ namespace Yoma.Core.Domain.Entity.Services
         private string? GetS3ObjectURL(Guid? id)
         {
             if (!id.HasValue) return null;
-            return _s3ObjectService.GetURL(id.Value);
+            return _blobService.GetURL(id.Value);
         }
         #endregion
     }

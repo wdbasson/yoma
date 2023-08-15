@@ -2,6 +2,8 @@
 {
     public class AppSettings
     {
+        public const string Section = nameof(AppSettings);
+
         public AppSettingsCredentials Hangfire { get; set; }
 
         public string AuthorizationPolicyScope { get; set; }

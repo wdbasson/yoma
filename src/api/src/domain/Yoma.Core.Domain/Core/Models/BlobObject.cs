@@ -1,10 +1,10 @@
 ﻿namespace Yoma.Core.Domain.Core.Models
 {
-    public class S3Object
+    public class BlobObject
     {
         public Guid Id { get; set; }
 
-        public string ObjectKey { get; set; }
+        public string Key { get; set; }
 
         public DateTimeOffset DateCreated { get; set; }
     }

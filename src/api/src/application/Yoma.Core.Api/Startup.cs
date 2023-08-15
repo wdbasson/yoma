@@ -19,6 +19,8 @@ using Hangfire.SqlServer;
 using Hangfire.Dashboard;
 using Hangfire.Dashboard.BasicAuthorization;
 using Yoma.Core.Infrastructure.SendGrid;
+using Yoma.Core.Infrastructure.AmazonS3;
+using Yoma.Core.Domain.IdentityProvider.Interfaces;
 
 namespace Yoma.Core.Api
 {
@@ -29,7 +31,7 @@ namespace Yoma.Core.Api
         private readonly IConfiguration _configuration;
         private readonly Domain.Core.Environment _environment;
         private readonly AppSettings _appSettings;
-        private readonly KeycloakAuthOptions _keycloakAuthOptions;
+        private readonly IIdentityProviderAuthOptions _identityProviderAuthOptions;
         private const string _oAuth_Scope_Separator = " ";
         #endregion
 
@@ -40,10 +42,10 @@ namespace Yoma.Core.Api
             _webHostEnvironment = env;
             _environment = EnvironmentHelper.FromString(_webHostEnvironment.EnvironmentName);
 
-            var appSettings = _configuration.GetSection(nameof(AppSettings)).Get<AppSettings>() ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{nameof(AppSettings)}'");
+            var appSettings = _configuration.GetSection(AppSettings.Section).Get<AppSettings>() ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{AppSettings.Section}'");
             _appSettings = appSettings;
 
-            _keycloakAuthOptions = configuration.Configuration_IdentityProviderAuthenticationOptions();
+            _identityProviderAuthOptions = configuration.Configuration_IdentityProviderAuthenticationOptions();
         }
         #endregion
 
@@ -52,13 +54,14 @@ namespace Yoma.Core.Api
         {
             #region Configuration
             services.Configure<AppSettings>(options =>
-                _configuration.GetSection(nameof(AppSettings)).Bind(options));
+                _configuration.GetSection(AppSettings.Section).Bind(options));
             services.Configure<ScheduleJobOptions>(options =>
                 _configuration.GetSection(ScheduleJobOptions.Section).Bind(options));
             services.ConfigureServices_IdentityProvider(_configuration);
             services.ConfigureServices_LaborMarketProvider(_configuration);
             services.AddSingleton<IEnvironmentProvider>(p => ActivatorUtilities.CreateInstance<EnvironmentProvider>(p, _webHostEnvironment.EnvironmentName));
             services.ConfigureServices_EmailProvider(_configuration);
+            services.ConfigureServices_BlobProvider(_configuration);
             #endregion Configuration
 
             #region System
@@ -85,7 +88,7 @@ namespace Yoma.Core.Api
 
             #region Services & Infrastructure
             services.ConfigureServices_DomainServices();
-            services.ConfigureServices_AWSClients(_configuration);
+            services.ConfigureService_InfrastructureBlobProvider(_configuration);
             services.ConfigureService_InfrastructureIdentityProvider();
             services.ConfigureService_InfrastructureLaborMarketProvider();
             services.ConfigureService_InfrastructureEmailProvider(_configuration);
@@ -101,8 +104,8 @@ namespace Yoma.Core.Api
             {
                 s.SwaggerEndpoint("/swagger/v3/swagger.json", $"Yoma Core Api ({_environment.ToDescription()} v3)");
                 s.RoutePrefix = "";
-                s.OAuthClientId(_keycloakAuthOptions.ClientId);
-                s.OAuthClientSecret(_keycloakAuthOptions.ClientSecret);
+                s.OAuthClientId(_identityProviderAuthOptions.ClientId);
+                s.OAuthClientSecret(_identityProviderAuthOptions.ClientSecret);
                 s.OAuthScopeSeparator(_oAuth_Scope_Separator);
             });
             #endregion 3rd Party
@@ -218,7 +221,7 @@ namespace Yoma.Core.Api
         {
             var scopes = _appSettings.SwaggerScopes.Split(_oAuth_Scope_Separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToArray();
             if (!scopes.Any())
-                throw new InvalidOperationException($"Configuration section '{nameof(AppSettings)}' contains no configured swagger scopes");
+                throw new InvalidOperationException($"Configuration section '{AppSettings.Section}' contains no configured swagger scopes");
 
             services.AddSwaggerGen(c =>
             {
@@ -234,8 +237,8 @@ namespace Yoma.Core.Api
                         AuthorizationCode = new OpenApiOAuthFlow()
                         {
                             Scopes = scopes.ToDictionary(item => item, item => item),
-                            TokenUrl = _keycloakAuthOptions.TokenUrl,
-                            AuthorizationUrl = _keycloakAuthOptions.AuthorizationUrl
+                            TokenUrl = _identityProviderAuthOptions.TokenUrl,
+                            AuthorizationUrl = _identityProviderAuthOptions.AuthorizationUrl
                         }
                     }
                 });
