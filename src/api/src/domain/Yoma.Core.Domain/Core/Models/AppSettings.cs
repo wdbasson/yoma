@@ -6,6 +6,8 @@
 
         public AppSettingsCredentials WebhookAdminKeycloak { get; set; }
 
+        public AppSettingsCredentials Hangfire { get; set; }
+
         public string AuthorizationPolicyScope { get; set; }
 
         public string SwaggerScopes { get; set; }

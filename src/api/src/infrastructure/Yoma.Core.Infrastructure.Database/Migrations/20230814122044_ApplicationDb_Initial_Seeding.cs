@@ -6,6 +6,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
     {
         internal static void Seed(MigrationBuilder migrationBuilder)
         {
+            #region Entity
             migrationBuilder.InsertData(
             table: "OrganizationProviderType",
             columns: new[] { "Id", "Name", "DateCreated" },
@@ -18,7 +19,9 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     {"D2987F9F-8CC8-4576-AF09-C01213A1435E","Marketplace",DateTimeOffset.Now}
             },
             schema: "entity");
+            #endregion Entity
 
+            #region Lookups
             migrationBuilder.InsertData(
             table: "Country",
             columns: new[] { "Id", "Name", "CodeAlpha2", "CodeAlpha3", "CodeNumeric", "DateCreated" },
@@ -544,7 +547,378 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
             },
             schema: "lookup");
 
-            //Language
+            migrationBuilder.InsertData(
+            table: "Language",
+            columns: new[] { "Id", "Name", "CodeAlpha2", "DateCreated" },
+            values: new object[,]
+            {
+                    {"86FA3FF2-F3C7-43CE-B6A2-22C46EA22112" ,"Abkhazian" ,"AB", DateTimeOffset.Now}
+                    ,
+                    {"7F524E66-28E9-4421-9166-1345C6EB6FD6" ,"Afar" ,"AA", DateTimeOffset.Now}
+                    ,
+                    {"1D348660-1C76-4698-97DF-5FE1D6DD14FB" ,"Afrikaans" ,"AF", DateTimeOffset.Now}
+                    ,
+                    {"13299E24-B887-4342-B407-F6CBDAE8F7AC" ,"Akan" ,"AK", DateTimeOffset.Now}
+                    ,
+                    {"C0FAA6D1-0A0A-4E91-BF71-CF96C3754217" ,"Albanian" ,"SQ", DateTimeOffset.Now}
+                    ,
+                    {"E7202ABB-F03F-4EDF-AE4C-CF0743E92416" ,"Amharic" ,"AM", DateTimeOffset.Now}
+                    ,
+                    {"9FB76965-E0B3-471E-BDC0-91CB4DE82AA5" ,"Arabic" ,"AR", DateTimeOffset.Now}
+                    ,
+                    {"AB138F2A-EB47-4F47-BC02-2498D91B6A6F" ,"Aragonese" ,"AN", DateTimeOffset.Now}
+                    ,
+                    {"6EB2F511-3301-41A3-A6AB-F0C8FBB603EE" ,"Armenian" ,"HY", DateTimeOffset.Now}
+                    ,
+                    {"174C9FD5-3CC7-4E64-AD4F-E624972411C1" ,"Assamese" ,"AS", DateTimeOffset.Now}
+                    ,
+                    {"4258B0CE-F99E-4033-828D-3BBB938965E1" ,"Avaric" ,"AV", DateTimeOffset.Now}
+                    ,
+                    {"BFD381B5-E094-44AF-BEC2-E6A96762FA4C" ,"Avestan" ,"AE", DateTimeOffset.Now}
+                    ,
+                    {"ED7B5FA8-2C94-4425-854B-BE32CE05D690" ,"Aymara" ,"AY", DateTimeOffset.Now}
+                    ,
+                    {"AA566553-CC3F-467B-B5C7-4099742ED931" ,"Azerbaijani" ,"AZ", DateTimeOffset.Now}
+                    ,
+                    {"3F21A510-3616-4093-980F-64D47ECA6CC1" ,"Bambara" ,"BM", DateTimeOffset.Now}
+                    ,
+                    {"5793ED67-3974-4BD8-B338-99D67DB769FD" ,"Bashkir" ,"BA", DateTimeOffset.Now}
+                    ,
+                    {"635A80BC-DF8B-4B8C-A923-3D5742EBE863" ,"Basque" ,"EU", DateTimeOffset.Now}
+                    ,
+                    {"0B6F9A26-FFF2-49DD-909F-19B6ADDB6D52" ,"Belarusian" ,"BE", DateTimeOffset.Now}
+                    ,
+                    {"3DEDAAFB-6E2B-4BF8-907C-A5273CCF41AE" ,"Bengali" ,"BN", DateTimeOffset.Now}
+                    ,
+                    {"B8489D5F-3AE4-4BE6-A1D7-348AD8430470" ,"Bislama" ,"BI", DateTimeOffset.Now}
+                    ,
+                    {"ADA89F50-438D-436E-B9BE-6F5F2A05CEEE" ,"Bosnian" ,"BS", DateTimeOffset.Now}
+                    ,
+                    {"B8F2F45E-E216-478A-903B-E01B386B2AD0" ,"Breton" ,"BR", DateTimeOffset.Now}
+                    ,
+                    {"53CB35BF-15EF-4076-90E0-372BCA32BB1E" ,"Bulgarian" ,"BG", DateTimeOffset.Now}
+                    ,
+                    {"DF361163-48DB-4FFF-93E4-48BAC94AD3FA" ,"Burmese" ,"MY", DateTimeOffset.Now}
+                    ,
+                    {"456161DE-61A7-4C6C-9C87-2B78B8674DFD" ,"Catalan, Valencian" ,"CA", DateTimeOffset.Now}
+                    ,
+                    {"2BA84F27-7FB7-43A3-B8CF-499E722D77F4" ,"Chamorro" ,"CH", DateTimeOffset.Now}
+                    ,
+                    {"EFEFCF27-09CF-44B4-8753-288E298DAD70" ,"Chechen" ,"CE", DateTimeOffset.Now}
+                    ,
+                    {"F6B285FE-D540-4D42-92DE-67CBC93396A8" ,"Chichewa, Chewa, Nyanja" ,"NY", DateTimeOffset.Now}
+                    ,
+                    {"1AD605AC-3E17-4936-AE37-FDD18F3A2CFB" ,"Chinese" ,"ZH", DateTimeOffset.Now}
+                    ,
+                    {"D081ED37-D5CC-49C5-8635-2AAA9C501E87" ,"Church Slavonic, Old Slavonic, Old Church Slavonic" ,"CU", DateTimeOffset.Now}
+                    ,
+                    {"5CCC2BA5-B6B4-4239-AA92-C3F01283E5B2" ,"Chuvash" ,"CV", DateTimeOffset.Now}
+                    ,
+                    {"2F15BF8C-B7CD-40CC-BB11-4E5766189445" ,"Cornish" ,"KW", DateTimeOffset.Now}
+                    ,
+                    {"FB16A476-0B89-47A2-95E5-B048888BE296" ,"Corsican" ,"CO", DateTimeOffset.Now}
+                    ,
+                    {"43870A55-4F1F-44F7-A2FF-B2A09DF35A81" ,"Cree" ,"CR", DateTimeOffset.Now}
+                    ,
+                    {"F0F82A5C-A702-4CA9-9737-105A265310E7" ,"Croatian" ,"HR", DateTimeOffset.Now}
+                    ,
+                    {"6734609C-FAFA-4F5A-8D4B-BB495D7AA6F6" ,"Czech" ,"CS", DateTimeOffset.Now}
+                    ,
+                    {"56531126-A5FB-4DF9-AA54-D4E14041E989" ,"Danish" ,"DA", DateTimeOffset.Now}
+                    ,
+                    {"496A3547-3FD7-49F5-B475-66BB649B5CE7" ,"Divehi, Dhivehi, Maldivian" ,"DV", DateTimeOffset.Now}
+                    ,
+                    {"6026E7BD-C5BB-4788-B096-16E5FE3EE350" ,"Dutch, Flemish" ,"NL", DateTimeOffset.Now}
+                    ,
+                    {"EFEB113D-B902-477C-834E-D6BE95655065" ,"Dzongkha" ,"DZ", DateTimeOffset.Now}
+                    ,
+                    {"867B61F1-D669-4A2C-BF22-65EBD084D0CD" ,"English" ,"EN", DateTimeOffset.Now}
+                    ,
+                    {"E37F2991-7333-4736-83FF-0BA39CBE1065" ,"Esperanto" ,"EO", DateTimeOffset.Now}
+                    ,
+                    {"4F300FE8-32EA-4F85-9557-4A6091890424" ,"Estonian" ,"ET", DateTimeOffset.Now}
+                    ,
+                    {"FCDB8957-A61A-4B79-8141-824D72666EF9" ,"Ewe" ,"EE", DateTimeOffset.Now}
+                    ,
+                    {"EA821224-B8F5-4887-AC8F-E68135FEC0A9" ,"Faroese" ,"FO", DateTimeOffset.Now}
+                    ,
+                    {"20FCCE4C-5ADB-41B9-8FA8-3F469B1971ED" ,"Fijian" ,"FJ", DateTimeOffset.Now}
+                    ,
+                    {"EA684E6A-5F90-43D2-BB2D-4F02F04EADFC" ,"Finnish" ,"FI", DateTimeOffset.Now}
+                    ,
+                    {"39E6D00E-8F81-420F-A8D5-CDFC0D466A9D" ,"French" ,"FR", DateTimeOffset.Now}
+                    ,
+                    {"4538505C-5660-480B-80A4-BAE107525D9E" ,"Western Frisian" ,"FY", DateTimeOffset.Now}
+                    ,
+                    {"800E21CC-9FAD-451D-BC9E-166C7CD76F00" ,"Fulah" ,"FF", DateTimeOffset.Now}
+                    ,
+                    {"7A742523-0EEB-4D8B-B72C-313E898CB32E" ,"Gaelic, Scottish Gaelic" ,"GD", DateTimeOffset.Now}
+                    ,
+                    {"8BAEFCBF-4652-4A05-AD6F-BECA87329F5B" ,"Galician" ,"GL", DateTimeOffset.Now}
+                    ,
+                    {"F57C01D7-D46E-4070-A0DC-8E2573D34F1A" ,"Ganda" ,"LG", DateTimeOffset.Now}
+                    ,
+                    {"6DB09919-4C35-4CCC-86A2-A8BD4C6C00E5" ,"Georgian" ,"KA", DateTimeOffset.Now}
+                    ,
+                    {"AE449EF4-7375-4C86-B626-8F85D29A4249" ,"German" ,"DE", DateTimeOffset.Now}
+                    ,
+                    {"4E9EC14D-CE9B-4513-8AE3-3C80468F2500" ,"Greek, Modern (1453–)" ,"EL", DateTimeOffset.Now}
+                    ,
+                    {"00101BD1-7E43-4D91-97D6-6B52BEAD4F39" ,"Kalaallisut, Greenlandic" ,"KL", DateTimeOffset.Now}
+                    ,
+                    {"1A64D7F0-7971-4858-8559-77CFCC7462AE" ,"Guarani" ,"GN", DateTimeOffset.Now}
+                    ,
+                    {"4A40FA3E-2982-4F35-AF12-3E4A8905592D" ,"Gujarati" ,"GU", DateTimeOffset.Now}
+                    ,
+                    {"8FECA0FD-8B43-4BBF-AB04-D2B915948F2E" ,"Haitian, Haitian Creole" ,"HT", DateTimeOffset.Now}
+                    ,
+                    {"6C245FB3-CFEF-4AF9-85C2-219761104877" ,"Hausa" ,"HA", DateTimeOffset.Now}
+                    ,
+                    {"42F1BB9D-E021-47ED-8569-B71C3519F7A3" ,"Hebrew" ,"HE", DateTimeOffset.Now}
+                    ,
+                    {"B70EDC6B-D424-491A-A23B-1BBA4528C374" ,"Herero" ,"HZ", DateTimeOffset.Now}
+                    ,
+                    {"71DD1E57-2F3F-42C4-9F27-A2BF06595090" ,"Hindi" ,"HI", DateTimeOffset.Now}
+                    ,
+                    {"70E77492-F9B3-4A1A-965B-592C49BE0A44" ,"Hiri Motu" ,"HO", DateTimeOffset.Now}
+                    ,
+                    {"C577A688-2E51-4B42-8FE5-F0CD886B890F" ,"Hungarian" ,"HU", DateTimeOffset.Now}
+                    ,
+                    {"C2E54FEA-7C82-4EF5-BD63-890810374236" ,"Icelandic" ,"IS", DateTimeOffset.Now}
+                    ,
+                    {"BA2CCF38-A663-4811-93EB-1F981665D91B" ,"Ido" ,"IO", DateTimeOffset.Now}
+                    ,
+                    {"CA812D25-C726-4416-8D83-4499D3CE7949" ,"Igbo" ,"IG", DateTimeOffset.Now}
+                    ,
+                    {"95D7D113-160D-4E64-8BF4-669CEFF3AFE4" ,"Indonesian" ,"ID", DateTimeOffset.Now}
+                    ,
+                    {"07B9D739-11A8-4DF6-8D28-E93ABBE090D1" ,"Interlingua (International Auxiliary Language Association)" ,"IA", DateTimeOffset.Now}
+                    ,
+                    {"E102D217-46EA-4EE3-B672-96EDB3285580" ,"Interlingue, Occidental" ,"IE", DateTimeOffset.Now}
+                    ,
+                    {"96C11375-8B33-4091-B0A0-F1B0A8493422" ,"Inuktitut" ,"IU", DateTimeOffset.Now}
+                    ,
+                    {"EF29B5E2-3A1D-4439-91DC-ADB241CC17C9" ,"Inupiaq" ,"IK", DateTimeOffset.Now}
+                    ,
+                    {"9CDBC3BD-2A06-45CE-AB7C-F025B1E25DE8" ,"Irish" ,"GA", DateTimeOffset.Now}
+                    ,
+                    {"C17BC33C-7EE3-45D5-A742-53F914722103" ,"Italian" ,"IT", DateTimeOffset.Now}
+                    ,
+                    {"F04C7A36-8CDA-4E15-BC8A-ECD256F3AD88" ,"Japanese" ,"JA", DateTimeOffset.Now}
+                    ,
+                    {"6551848F-1C1F-45B6-8740-2BAE2F15079A" ,"Javanese" ,"JV", DateTimeOffset.Now}
+                    ,
+                    {"8D956B34-2F8A-48A7-8A2B-FB595D7B0842" ,"Kannada" ,"KN", DateTimeOffset.Now}
+                    ,
+                    {"13A83723-160A-42EF-A7E0-08E1A5124139" ,"Kanuri" ,"KR", DateTimeOffset.Now}
+                    ,
+                    {"7347C807-75AB-4F72-9C21-C9F7CBBAC6C3" ,"Kashmiri" ,"KS", DateTimeOffset.Now}
+                    ,
+                    {"B8D12498-1F9A-401E-958C-5F2427A13410" ,"Kazakh" ,"KK", DateTimeOffset.Now}
+                    ,
+                    {"2718639F-2A78-482C-B90D-51E4B0D68FB6" ,"Central Khmer" ,"KM", DateTimeOffset.Now}
+                    ,
+                    {"45B80679-2AF9-4516-B75D-70FF4D965E3C" ,"Kikuyu, Gikuyu" ,"KI", DateTimeOffset.Now}
+                    ,
+                    {"1384DB07-CD62-48A1-AF4B-F7E6EE449D94" ,"Kinyarwanda" ,"RW", DateTimeOffset.Now}
+                    ,
+                    {"3F864F2A-0DB7-4066-8ADB-6F9A52F28B06" ,"Kirghiz, Kyrgyz" ,"KY", DateTimeOffset.Now}
+                    ,
+                    {"94664A8B-1EA1-4652-9CDF-314BC12EBF55" ,"Komi" ,"KV", DateTimeOffset.Now}
+                    ,
+                    {"FD7189EF-4212-4573-8D4E-BF52BE4ADD89" ,"Kongo" ,"KG", DateTimeOffset.Now}
+                    ,
+                    {"4A070AB7-B71F-46CD-99FD-D9D963B9344C" ,"Korean" ,"KO", DateTimeOffset.Now}
+                    ,
+                    {"ED8B281B-CF70-4964-A8AA-8C39316169C9" ,"Kuanyama, Kwanyama" ,"KJ", DateTimeOffset.Now}
+                    ,
+                    {"CA745109-36E2-4B67-B70E-91B1CF5B86D4" ,"Kurdish" ,"KU", DateTimeOffset.Now}
+                    ,
+                    {"2D035865-5801-4386-BE03-44E4FB0ED8FA" ,"Lao" ,"LO", DateTimeOffset.Now}
+                    ,
+                    {"D40684CC-B988-4CA5-A599-8B35AA9088BF" ,"Latin" ,"LA", DateTimeOffset.Now}
+                    ,
+                    {"50C3F8B0-2FD6-4213-89A5-7E9ADD8FA2CC" ,"Latvian" ,"LV", DateTimeOffset.Now}
+                    ,
+                    {"13D9D9F2-81F2-480E-B96B-FC09C76F8FB1" ,"Limburgan, Limburger, Limburgish" ,"LI", DateTimeOffset.Now}
+                    ,
+                    {"9FD4451A-3550-473C-920D-A0CF340D2804" ,"Lingala" ,"LN", DateTimeOffset.Now}
+                    ,
+                    {"681D76FB-EC6D-4EC0-9782-50D0E4CC66A8" ,"Lithuanian" ,"LT", DateTimeOffset.Now}
+                    ,
+                    {"4F7EA487-BE51-404E-A72B-8BBA24BEFA9C" ,"Luba-Katanga" ,"LU", DateTimeOffset.Now}
+                    ,
+                    {"CC5B51EE-AA2A-4CEE-92B0-A4450B723543" ,"Luxembourgish, Letzeburgesch" ,"LB", DateTimeOffset.Now}
+                    ,
+                    {"CE2C8FE3-48BA-4524-B135-F45DA8A82D3B" ,"Macedonian" ,"MK", DateTimeOffset.Now}
+                    ,
+                    {"3B16F70F-6928-4189-8BD4-FCE81B1E47DE" ,"Malagasy" ,"MG", DateTimeOffset.Now}
+                    ,
+                    {"F0B9D162-C8E4-4A3C-BDBE-6ED306CBCABD" ,"Malay" ,"MS", DateTimeOffset.Now}
+                    ,
+                    {"08EE45DD-7931-474F-AD5B-2192A37BB608" ,"Malayalam" ,"ML", DateTimeOffset.Now}
+                    ,
+                    {"D1DA3716-8B0C-4F1E-948E-83E4451C41E5" ,"Maltese" ,"MT", DateTimeOffset.Now}
+                    ,
+                    {"6D55FF64-D804-455A-9A53-D6B02441812F" ,"Manx" ,"GV", DateTimeOffset.Now}
+                    ,
+                    {"AFAD8093-C278-46EA-8FA8-E15EB993D18E" ,"Maori" ,"MI", DateTimeOffset.Now}
+                    ,
+                    {"2AC23FCA-26F2-48DE-946D-989F1FEE5590" ,"Marathi" ,"MR", DateTimeOffset.Now}
+                    ,
+                    {"63C0159A-2550-4559-89F4-A1448231D3F2" ,"Marshallese" ,"MH", DateTimeOffset.Now}
+                    ,
+                    {"A76507AA-4A5A-4C7F-ABDA-A04E9B6F4ED6" ,"Mongolian" ,"MN", DateTimeOffset.Now}
+                    ,
+                    {"30FE040D-737F-4633-B599-B99A5DB125F9" ,"Nauru" ,"NA", DateTimeOffset.Now}
+                    ,
+                    {"A7DFCE9A-68D7-47B8-9D58-B07EC1427070" ,"Navajo, Navaho" ,"NV", DateTimeOffset.Now}
+                    ,
+                    {"63D5FEC3-B194-458B-A752-F526C45B0B55" ,"North Ndebele" ,"ND", DateTimeOffset.Now}
+                    ,
+                    {"7070E054-2865-4BE8-9862-58DFE1F66FE0" ,"South Ndebele" ,"NR", DateTimeOffset.Now}
+                    ,
+                    {"C03CB67F-B388-45F4-9928-15252A6C0C44" ,"Ndonga" ,"NG", DateTimeOffset.Now}
+                    ,
+                    {"2638596D-9A9A-488E-AD26-D8E5095DF1C6" ,"Nepali" ,"NE", DateTimeOffset.Now}
+                    ,
+                    {"62DBE07F-4FC0-4260-926F-EEFCBF15918E" ,"Norwegian" ,"NO", DateTimeOffset.Now}
+                    ,
+                    {"CC735EEC-FDF2-46B5-B3E9-B1944065F444" ,"Norwegian Bokmål" ,"NB", DateTimeOffset.Now}
+                    ,
+                    {"B1F40B6B-8946-4210-9614-6331DFA0576E" ,"Norwegian Nynorsk" ,"NN", DateTimeOffset.Now}
+                    ,
+                    {"1B159CD8-3C47-481B-86B9-C0A84478A8AD" ,"Sichuan Yi, Nuosu" ,"II", DateTimeOffset.Now}
+                    ,
+                    {"9C05B82D-44EA-4912-8A47-B864B2F93644" ,"Occitan" ,"OC", DateTimeOffset.Now}
+                    ,
+                    {"36BA9D0D-C263-4910-9024-9B07CE95CBE4" ,"Ojibwa" ,"OJ", DateTimeOffset.Now}
+                    ,
+                    {"5B8A51D6-BDEE-42DF-B7C8-98490107AF47" ,"Oriya" ,"OR", DateTimeOffset.Now}
+                    ,
+                    {"5D1CD6A3-6015-4B6D-96CF-B8EC19E45369" ,"Oromo" ,"OM", DateTimeOffset.Now}
+                    ,
+                    {"4B3990B8-EAF1-4485-9AF2-39BCE6AB3FBA" ,"Ossetian, Ossetic" ,"OS", DateTimeOffset.Now}
+                    ,
+                    {"A120ED0B-55CF-421D-8E42-8447C2BBA28B" ,"Pali" ,"PI", DateTimeOffset.Now}
+                    ,
+                    {"6486B3DB-98B3-4374-9010-23E397ADB86F" ,"Pashto, Pushto" ,"PS", DateTimeOffset.Now}
+                    ,
+                    {"3D8B7720-C8CC-4A94-90C1-33D965F23190" ,"Persian" ,"FA", DateTimeOffset.Now}
+                    ,
+                    {"1F8B8C62-A3FB-4C6B-B743-52F3904FF51C" ,"Polish" ,"PL", DateTimeOffset.Now}
+                    ,
+                    {"4B01185B-DB05-4BA7-A185-AA84AA534751" ,"Portuguese" ,"PT", DateTimeOffset.Now}
+                    ,
+                    {"BB0EFF48-8896-4A5B-9548-6287557408A5" ,"Punjabi, Panjabi" ,"PA", DateTimeOffset.Now}
+                    ,
+                    {"6320D8E4-2D9E-4F1B-9830-B59C49FE4B77" ,"Quechua" ,"QU", DateTimeOffset.Now}
+                    ,
+                    {"F10FD62A-544A-44D1-9A2D-B2E0F1E0DB65" ,"Romanian, Moldavian, Moldovan" ,"RO", DateTimeOffset.Now}
+                    ,
+                    {"C586BC7E-079D-4DF8-8AD4-295DC55F2596" ,"Romansh" ,"RM", DateTimeOffset.Now}
+                    ,
+                    {"6D9967A6-8252-4623-B4BF-9E38A70AC409" ,"Rundi" ,"RN", DateTimeOffset.Now}
+                    ,
+                    {"F03FDD6C-1C1E-4056-A653-8801C165B390" ,"Russian" ,"RU", DateTimeOffset.Now}
+                    ,
+                    {"63DD6543-C251-49E6-9908-CC5A0E5E1293" ,"Northern Sami" ,"SE", DateTimeOffset.Now}
+                    ,
+                    {"27EBD049-434F-481A-B95B-41C1F2A6F430" ,"Samoan" ,"SM", DateTimeOffset.Now}
+                    ,
+                    {"C05D7B71-6EA2-46F7-8A01-AF9EA8670EE8" ,"Sango" ,"SG", DateTimeOffset.Now}
+                    ,
+                    {"CE03B8D7-6CB7-4589-9070-7A17E902B678" ,"Sanskrit" ,"SA", DateTimeOffset.Now}
+                    ,
+                    {"AD630947-A87B-4446-B9BE-A3F3D5A2A51E" ,"Sardinian" ,"SC", DateTimeOffset.Now}
+                    ,
+                    {"37BEAE37-290A-4AA6-AF27-85B548EF4FBD" ,"Serbian" ,"SR", DateTimeOffset.Now}
+                    ,
+                    {"FA9824DA-BD28-450A-9163-05B1891B3EA0" ,"Shona" ,"SN", DateTimeOffset.Now}
+                    ,
+                    {"1E4B3E84-7FB4-426B-AED7-D6737C6E60EF" ,"Sindhi" ,"SD", DateTimeOffset.Now}
+                    ,
+                    {"80419202-2B93-48A1-A9CF-08083DA676A0" ,"Sinhala, Sinhalese" ,"SI", DateTimeOffset.Now}
+                    ,
+                    {"AD810C94-A734-445C-A4C3-69A27A7FB321" ,"Slovak" ,"SK", DateTimeOffset.Now}
+                    ,
+                    {"5AC6F022-06C5-454F-B464-20353C963C14" ,"Slovenian" ,"SL", DateTimeOffset.Now}
+                    ,
+                    {"170519E9-6908-4DB9-A5C9-4EB8D1A206EC" ,"Somali" ,"SO", DateTimeOffset.Now}
+                    ,
+                    {"EEB1EB32-D222-4D43-8EEF-FDDE184F1428" ,"Southern Sotho" ,"ST", DateTimeOffset.Now}
+                    ,
+                    {"4A45C012-C7BB-46C1-B1BD-BBAC02C00D05" ,"Spanish, Castilian" ,"ES", DateTimeOffset.Now}
+                    ,
+                    {"74DF3B3E-EB14-41CB-B990-8C3D5BAF6E3A" ,"Sundanese" ,"SU", DateTimeOffset.Now}
+                    ,
+                    {"2A747C34-D2B5-4F0C-A110-B308DE8A2B2C" ,"Swahili" ,"SW", DateTimeOffset.Now}
+                    ,
+                    {"6655B866-460B-4355-86A8-E6FDB37AE9D6" ,"Swati" ,"SS", DateTimeOffset.Now}
+                    ,
+                    {"2F09D11B-C9E4-42BB-9F69-AA994AFDCC35" ,"Swedish" ,"SV", DateTimeOffset.Now}
+                    ,
+                    {"02E3AE78-0BAB-41AC-9EBE-EC2D22DC7E49" ,"Tagalog" ,"TL", DateTimeOffset.Now}
+                    ,
+                    {"7DA2D602-6FF0-4F67-9A07-A2A2C89C2B7F" ,"Tahitian" ,"TY", DateTimeOffset.Now}
+                    ,
+                    {"5D0408E6-4FE4-471D-8AAD-398446E7EFBB" ,"Tajik" ,"TG", DateTimeOffset.Now}
+                    ,
+                    {"96E786C2-7715-489E-947E-CAA84E0DC2E7" ,"Tamil" ,"TA", DateTimeOffset.Now}
+                    ,
+                    {"68F449CE-76DD-4FD2-AF49-7CB352C2E295" ,"Tatar" ,"TT", DateTimeOffset.Now}
+                    ,
+                    {"482BD204-A423-4049-88E5-13469E34057E" ,"Telugu" ,"TE", DateTimeOffset.Now}
+                    ,
+                    {"414574C0-4129-4155-BA34-1F6D9B30241D" ,"Thai" ,"TH", DateTimeOffset.Now}
+                    ,
+                    {"6BC5F049-9936-4A56-807A-3375662E5C2A" ,"Tibetan" ,"BO", DateTimeOffset.Now}
+                    ,
+                    {"B7B45200-4373-46DF-955F-8DD847D137BF" ,"Tigrinya" ,"TI", DateTimeOffset.Now}
+                    ,
+                    {"E49EC18E-FEFA-469E-A07E-A3CAA786B4FB" ,"Tonga (Tonga Islands)" ,"TO", DateTimeOffset.Now}
+                    ,
+                    {"335CF910-E9F2-4764-A97A-417FF2D16B82" ,"Tsonga" ,"TS", DateTimeOffset.Now}
+                    ,
+                    {"53B9B819-C4E9-4477-AFD3-0B4AEF645629" ,"Tswana" ,"TN", DateTimeOffset.Now}
+                    ,
+                    {"7D2B3978-EC73-4A78-BF4E-8F600EB0755A" ,"Turkish" ,"TR", DateTimeOffset.Now}
+                    ,
+                    {"C4E5BA5E-1947-401D-AC13-E695D9C1C019" ,"Turkmen" ,"TK", DateTimeOffset.Now}
+                    ,
+                    {"E69F1C42-8F74-4804-888B-A08016528173" ,"Twi" ,"TW", DateTimeOffset.Now}
+                    ,
+                    {"DA1F2F1B-C607-4E3F-A900-93CDF94789AB" ,"Uighur, Uyghur" ,"UG", DateTimeOffset.Now}
+                    ,
+                    {"CB4535E8-7103-4D76-8D18-7B674C26F324" ,"Ukrainian" ,"UK", DateTimeOffset.Now}
+                    ,
+                    {"7F4FF1A0-EF42-4CE2-B948-481C53961E75" ,"Urdu" ,"UR", DateTimeOffset.Now}
+                    ,
+                    {"981282E8-3CCE-46B0-8928-C1E62FF464CB" ,"Uzbek" ,"UZ", DateTimeOffset.Now}
+                    ,
+                    {"5DA62308-6B62-4B11-94FA-A3D01112974E" ,"Venda" ,"VE", DateTimeOffset.Now}
+                    ,
+                    {"D2B52674-EB69-4245-81A4-63FAD9DB0C0B" ,"Vietnamese" ,"VI", DateTimeOffset.Now}
+                    ,
+                    {"3876753C-6CC9-4EAA-8E7E-A33BEE6AD315" ,"Volapük" ,"VO", DateTimeOffset.Now}
+                    ,
+                    {"2C11A442-3753-4D43-9AA6-261E897F79AA" ,"Walloon" ,"WA", DateTimeOffset.Now}
+                    ,
+                    {"B0305613-0743-40A2-A2DC-28BF5F264D2D" ,"Welsh" ,"CY", DateTimeOffset.Now}
+                    ,
+                    {"449387E5-01E4-4548-BB35-4CE5CD231D1B" ,"Wolof" ,"WO", DateTimeOffset.Now}
+                    ,
+                    {"5CC757B7-6947-4F8F-88E2-80048115D564" ,"Xhosa" ,"XH", DateTimeOffset.Now}
+                    ,
+                    {"1D963444-3D74-4B31-9C31-6A59C3566C31" ,"Yiddish" ,"YI", DateTimeOffset.Now}
+                    ,
+                    {"D2A1046A-18D1-4AA6-AB71-176EB8617D22" ,"Yoruba" ,"YO", DateTimeOffset.Now}
+                    ,
+                    {"F904E820-FEF8-436F-9F59-E9C6E418ADE1" ,"Zhuang, Chuang" ,"ZA", DateTimeOffset.Now}
+                    ,
+                    {"C4C9EA0F-ED40-48C1-B984-9BACC743CE0D" ,"Zulu" ,"ZU", DateTimeOffset.Now}
+            },
+            schema: "lookup");
 
             migrationBuilder.InsertData(
             table: "TimeInterval",
@@ -560,7 +934,9 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     {"0EFC48B5-E04E-4BA5-A2F1-305E965BC7CB","Month",DateTimeOffset.Now}
             },
             schema: "lookup");
+            #endregion Lookups
 
+            #region Opportunity
             migrationBuilder.InsertData(
             table: "OpportunityCategory",
             columns: new[] { "Id", "Name", "DateCreated" },
@@ -580,11 +956,51 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
             },
             schema: "opportunity");
 
-            //OpportunityDifficulty
+            migrationBuilder.InsertData(
+            table: "OpportunityDifficulty",
+            columns: new[] { "Id", "Name", "DateCreated" },
+            values: new object[,]
+            {
+                    {"E33AE372-C63F-459D-983F-4527355FD0C4","Beginner",DateTimeOffset.Now}
+                    ,
+                    {"E84EFA58-F0FF-41F4-A2DB-12C33F5E306C","Intermediate",DateTimeOffset.Now}
+                    ,
+                    {"833E1F02-31B9-455E-8F4F-CE6A6C4A9AA7","Advanced",DateTimeOffset.Now}
+                    ,
+                    {"448E2CE3-DDF9-43EA-BE8D-B30CB8712222","Any Level",DateTimeOffset.Now}
+            },
+            schema: "opportunity");
 
-            //OpportunityStatus
+            migrationBuilder.InsertData(
+            table: "OpportunityStatus",
+            columns: new[] { "Id", "Name", "DateCreated" },
+            values: new object[,]
+            {
+                    {"B99D26D7-A4B0-4A38-B35D-AE2D379A414E","Active",DateTimeOffset.Now}
+                    ,
+                    {"61B0A354-2F42-4140-85F2-4B31BDA214C7","Draft",DateTimeOffset.Now}
+                    ,
+                    {"46FD954E-2F0E-4892-83EE-1B967E9B2803","Inactive",DateTimeOffset.Now}
+                    ,
+                    {"7FD45DD7-89BC-4307-B119-8B166E1B945F","Expired",DateTimeOffset.Now}
+                    ,
+                    {"691CA956-5C83-4EAC-B1EB-50161A603D95","Deleted",DateTimeOffset.Now}
+            },
+            schema: "opportunity");
 
-            //OpportunityType
+            migrationBuilder.InsertData(
+            table: "OpportunityType",
+            columns: new[] { "Id", "Name", "DateCreated" },
+            values: new object[,]
+            {
+                    {"E2DDDE38-9790-4DE8-A5D0-0167199BD86B","Impact",DateTimeOffset.Now}
+                    ,
+                    {"6267069F-0DE7-4AA9-9D75-542FF7C97512","Learning",DateTimeOffset.Now}
+                    ,
+                    {"F18F0FF6-E6D8-4526-ACF4-0F9CB1C4B54F","Task",DateTimeOffset.Now}
+            },
+            schema: "opportunity");
+            #endregion Opportunity
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -74,7 +75,8 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "varchar(125)", nullable: false),
-                    CodeAlpha2 = table.Column<string>(type: "varchar(2)", nullable: false)
+                    CodeAlpha2 = table.Column<string>(type: "varchar(2)", nullable: false),
+                    DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -158,7 +160,10 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "varchar(255)", nullable: false),
-                    DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    InfoURL = table.Column<string>(type: "varchar(2048)", nullable: true),
+                    ExternalId = table.Column<string>(type: "varchar(100)", nullable: false),
+                    DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    DateModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -319,7 +324,9 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     DateStart = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     DateEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     DateCreated = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    DateModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    CreatedBy = table.Column<string>(type: "varchar(320)", nullable: false),
+                    DateModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    ModifiedBy = table.Column<string>(type: "varchar(320)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -565,6 +572,27 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Country_CodeAlpha2",
+                schema: "lookup",
+                table: "Country",
+                column: "CodeAlpha2",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Country_CodeAlpha3",
+                schema: "lookup",
+                table: "Country",
+                column: "CodeAlpha3",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Country_CodeNumeric",
+                schema: "lookup",
+                table: "Country",
+                column: "CodeNumeric",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Country_Name",
                 schema: "lookup",
                 table: "Country",
@@ -583,6 +611,13 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 schema: "lookup",
                 table: "Gender",
                 column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Language_CodeAlpha2",
+                schema: "lookup",
+                table: "Language",
+                column: "CodeAlpha2",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -772,6 +807,13 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 schema: "entity",
                 table: "OrganizationUsers",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Skill_ExternalId",
+                schema: "lookup",
+                table: "Skill",
+                column: "ExternalId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Skill_Name",

@@ -37,11 +37,11 @@ namespace Yoma.Core.Api.Controllers
         [Authorize(Roles = Constants.Role_Admin)]
         public IActionResult GetById([FromRoute] Guid id)
         {
-            _logger.LogInformation($"Handling request {nameof(GetById)} ({nameof(id)}: {id})");
+            _logger.LogInformation("Handling request {requestName} ({paramName}: {paramValue})", nameof(GetById), nameof(id), id);
 
             var result = _userService.GetById(id);
 
-            _logger.LogInformation($"Request {nameof(GetById)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(GetById));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
@@ -53,25 +53,25 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(User), (int)HttpStatusCode.OK)]
         public IActionResult Get()
         {
-            _logger.LogInformation($"Handling request {nameof(Get)}");
+            _logger.LogInformation("Handling request {requestName}", nameof(Get));
 
             var result = _userService.GetByEmail(HttpContext.User.Identity?.Name);
 
-            _logger.LogInformation($"Request {nameof(Get)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(Get));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Update the user's profile, within Yoma and Keycloak, optionally requesting a email verification and/or password reset (Authenticated User)")]
+        [SwaggerOperation(Summary = "Update the user's profile, within Yoma and the identity provider, optionally requesting a email verification and/or password reset (Authenticated User)")]
         [HttpPatch()]
         [ProducesResponseType(typeof(User), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpdateProfile([FromBody] UserProfileRequest profile)
         {
-            _logger.LogInformation($"Handling request {nameof(UpdateProfile)} (Username: {HttpContext.User.Identity?.Name}");
+            _logger.LogInformation("Handling request {requestName} (Username: {paramValue}", nameof(UpdateProfile), HttpContext.User.Identity?.Name);
 
             var result = await _userService.UpdateProfile(HttpContext.User.Identity?.Name, profile);
 
-            _logger.LogInformation($"Request {nameof(UpdateProfile)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(UpdateProfile));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
@@ -81,11 +81,11 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(User), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpsertPhoto([Required] IFormFile file)
         {
-            _logger.LogInformation($"Handling request {nameof(UpsertPhoto)} ({file.Name})");
+            _logger.LogInformation("Handling request {requestName} ({paramName}: {paramValue})", nameof(UpsertPhoto), nameof(file.Name), file?.Name);
 
             var result = await _userService.UpsertPhoto(HttpContext.User.Identity?.Name, file);
 
-            _logger.LogInformation($"Request {nameof(UpsertPhoto)} handled");
+            _logger.LogInformation("Request {requestName} handled", nameof(UpsertPhoto));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }

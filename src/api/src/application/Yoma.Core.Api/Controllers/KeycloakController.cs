@@ -44,11 +44,7 @@ namespace Yoma.Core.Api.Controllers
         [HttpPost("webhook")]
         public IActionResult ReceiveKeyCloakEvent([FromBody] KeycloakWebhookRequest payload)
         {
-            if (payload == null)
-                throw new ArgumentNullException(nameof(payload));
-
             var authorized = false;
-
             try
             {
                 authorized = _keycloakClient.AuthenticateWebhook(HttpContext);
@@ -59,10 +55,20 @@ namespace Yoma.Core.Api.Controllers
             {
                 Response.OnCompleted(async () =>
                 {
-                    if (!authorized) return;
+                    if (!authorized)
+                    {
+                        _logger.LogInformation("Authorization failed");
+                        return;
+                    }
+
+                    if (payload == null)
+                    {
+                        _logger.LogError("Webhook payload is empty. Processing skipped");
+                        return;
+                    }
 
                     var sType = payload.type;
-                    _logger.LogInformation($"{sType} event received");
+                    _logger.LogInformation("{sType} event received", sType);
 
                     Enum.TryParse<WebhookRequestEventType>(sType, true, out var type);
 
@@ -70,23 +76,23 @@ namespace Yoma.Core.Api.Controllers
                     {
                         case WebhookRequestEventType.Register:
                         case WebhookRequestEventType.UpdateProfile:
-                            _logger.LogInformation($"{type} event processing");
+                            _logger.LogInformation("{type} event processing", type);
 
                             await UpdateUserProfile(type, payload);
 
-                            _logger.LogInformation($"{type} event processed");
+                            _logger.LogInformation("{type} event processed", type);
                             break;
 
                         case WebhookRequestEventType.Login:
-                            _logger.LogInformation($"{type} event processing");
+                            _logger.LogInformation("{type} event processing", type);
 
                             await UpdateUserProfile(type, payload);
 
-                            _logger.LogInformation($"{type} event processed");
+                            _logger.LogInformation("{type} event processed", type);
                             break;
 
                         default:
-                            _logger.LogInformation($"Unknown event type of '{sType}' receive. Processing skipped");
+                            _logger.LogInformation("Unknown event type of '{sType}' receive. Processing skipped", sType);
                             return;
                     }
                 });
@@ -99,15 +105,15 @@ namespace Yoma.Core.Api.Controllers
         {
             if (string.IsNullOrEmpty(payload?.details?.username))
             {
-                _logger.LogError($"Webhook payload contains no associated Keycloak username");
+                _logger.LogError("Webhook payload contains no associated Keycloak username");
                 return;
             }
 
-            _logger.LogInformation($"Trying to find the Keycloak user with username '{payload?.details?.username}'");
+            _logger.LogInformation("Trying to find the Keycloak user with username '{username}'", payload?.details?.username);
             var kcUser = await _keycloakClient.GetUser(payload?.details?.username);
             if (kcUser == null)
             {
-                _logger.LogError($"Failed to retrieve the Keycloak user with username '{payload?.details.username}'");
+                _logger.LogError("Failed to retrieve the Keycloak user with username '{username}'", payload?.details.username);
                 return;
             }
 
@@ -121,7 +127,7 @@ namespace Yoma.Core.Api.Controllers
                     {
                         if (type == WebhookRequestEventType.UpdateProfile)
                         {
-                            _logger.LogError($"{type}: Failed to retrieve the Yoma user with username '{payload?.details.username}'");
+                            _logger.LogError("{type}: Failed to retrieve the Yoma user with username '{username}'", type, payload?.details.username);
                             return;
                         }
                         userRequest = new UserRequest();
@@ -138,17 +144,17 @@ namespace Yoma.Core.Api.Controllers
                         var gender = _genderService.GetByNameOrNull(kcUser.Gender);
 
                         if (gender == null)
-                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.Gender}' with value '{kcUser.Gender}'");
+                            _logger.LogError("Failed to parse Keycloak '{customAttribute}' with value '{gender}'", CustomAttributes.Gender, kcUser.Gender);
                         else
                             userRequest.GenderId = gender.Id;
                     }
 
-                       if (!string.IsNullOrEmpty(kcUser.CountryOfOrigin))
+                    if (!string.IsNullOrEmpty(kcUser.CountryOfOrigin))
                     {
                         var country = _countryService.GetByNameOrNull(kcUser.CountryOfOrigin);
 
                         if (country == null)
-                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.CountryOfOrigin}' with value '{kcUser.CountryOfOrigin}'");
+                            _logger.LogError("Failed to parse Keycloak '{customAttribute}' with value '{countryOfOrigin}'", CustomAttributes.CountryOfOrigin, kcUser.CountryOfOrigin);
                         else
                             userRequest.CountryId = country.Id;
                     }
@@ -158,7 +164,7 @@ namespace Yoma.Core.Api.Controllers
                         var country = _countryService.GetByNameOrNull(kcUser.CountryOfResidence);
 
                         if (country == null)
-                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.CountryOfResidence}' with value '{kcUser.CountryOfResidence}'");
+                            _logger.LogError("Failed to parse Keycloak '{customAttributes}' with value '{countryOfResidence}'", CustomAttributes.CountryOfResidence, kcUser.CountryOfResidence);
                         else
                             userRequest.CountryOfResidenceId = country.Id;
                     }
@@ -166,7 +172,7 @@ namespace Yoma.Core.Api.Controllers
                     if (!string.IsNullOrEmpty(kcUser.DateOfBirth))
                     {
                         if (!DateTime.TryParse(kcUser.DateOfBirth, out var dateOfBirth))
-                            _logger.LogError($"Failed to parse Keycloak '{CustomAttributes.DateOfBirth}' with value '{kcUser.DateOfBirth}'");
+                            _logger.LogError("Failed to parse Keycloak '{customAttributes}' with value '{dateOfBirth}'", CustomAttributes.DateOfBirth, kcUser.DateOfBirth);
                         else
                             userRequest.DateOfBirth = dateOfBirth;
                     }
@@ -182,7 +188,7 @@ namespace Yoma.Core.Api.Controllers
                 case WebhookRequestEventType.Login:
                     if (userRequest == null)
                     {
-                        _logger.LogError($"{type}: Failed to retrieve the Yoma user with username '{payload?.details.username}'");
+                        _logger.LogError("{type}: Failed to retrieve the Yoma user with username '{username}'", type, payload?.details.username);
                         return;
                     }
 

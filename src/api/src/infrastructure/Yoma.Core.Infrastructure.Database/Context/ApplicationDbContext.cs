@@ -41,6 +41,8 @@ namespace Yoma.Core.Infrastructure.Database.Context
         public DbSet<Language> Language { get; set; }
 
         public DbSet<Skill> Skill { get; set; }
+
+        public DbSet<TimeInterval> TimeInterval { get; set; }
         #endregion
 
         #region Opportunity

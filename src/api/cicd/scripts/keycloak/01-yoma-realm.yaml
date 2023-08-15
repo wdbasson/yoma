@@ -527,6 +527,7 @@ clients:
     secret: $(env:CLIENT_ATINGI_SECRET)
     redirectUris:
       - "/*"
+      - $(env:CLIENT_ATINGI_REDIRECT_URL)
     webOrigins:
       - $(env:CLIENT_ATINGI_URL)
     notBefore: 0

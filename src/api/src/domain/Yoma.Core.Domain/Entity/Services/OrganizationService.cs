@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Http;
+using System.Security;
 using System.Transactions;
 using Yoma.Core.Domain.Core;
 using Yoma.Core.Domain.Core.Interfaces;
@@ -7,7 +8,6 @@ using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Interfaces.Lookups;
 using Yoma.Core.Domain.Entity.Models;
-using Yoma.Core.Domain.Entity.Models.Lookups;
 using Yoma.Core.Domain.Entity.Validators;
 using Yoma.Core.Domain.Keycloak.Interfaces;
 
@@ -23,7 +23,7 @@ namespace Yoma.Core.Domain.Entity.Services
         private readonly OrganizationRequestValidator _organizationRequestValidator;
         private readonly IRepository<Organization> _organizationRepository;
         private readonly IRepository<OrganizationUser> _organizationUserRepository;
-        private readonly IRepository<Models.OrganizationProviderType> _organizationProviderTypeRepository;
+        private readonly IRepository<OrganizationProviderType> _organizationProviderTypeRepository;
         #endregion
 
         #region Constructor
@@ -34,7 +34,7 @@ namespace Yoma.Core.Domain.Entity.Services
             OrganizationRequestValidator organizationRequestValidator,
             IRepository<Organization> organizationRepository,
             IRepository<OrganizationUser> organizationUserRepository,
-            IRepository<Models.OrganizationProviderType> organizationProviderTypeRepository)
+            IRepository<OrganizationProviderType> organizationProviderTypeRepository)
         {
             _userService = userService;
             _keycloakClient = keycloakClientFactory.CreateClient();
@@ -43,7 +43,7 @@ namespace Yoma.Core.Domain.Entity.Services
             _organizationRequestValidator = organizationRequestValidator;
             _organizationRepository = organizationRepository;
             _organizationUserRepository = organizationUserRepository;
-            _organizationProviderTypeRepository = organizationProviderTypeRepository;   
+            _organizationProviderTypeRepository = organizationProviderTypeRepository;
         }
         #endregion
 
@@ -53,11 +53,7 @@ namespace Yoma.Core.Domain.Entity.Services
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
 
-            var result = _organizationRepository.Query().SingleOrDefault(o => o.Id == id);
-
-            if (result == null)
-                throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(Organization)} with id '{id}' does not exist");
-
+            var result = _organizationRepository.Query().SingleOrDefault(o => o.Id == id) ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(Organization)} with id '{id}' does not exist");
             result.LogoURL = GetS3ObjectURL(result.LogoId);
             result.CompanyRegistrationDocumentURL = GetS3ObjectURL(result.CompanyRegistrationDocumentId);
 
@@ -85,9 +81,10 @@ namespace Yoma.Core.Domain.Entity.Services
                 throw new ArgumentNullException(nameof(request));
 
             await _organizationRequestValidator.ValidateAndThrowAsync(request);
-            
+
             // check if user exists
             var isNew = !request.Id.HasValue;
+
             var result = !request.Id.HasValue ? new Organization { Id = Guid.NewGuid() } : GetById(request.Id.Value);
 
             var existingByEmail = GetByNameOrNull(request.Name);
@@ -109,7 +106,7 @@ namespace Yoma.Core.Domain.Entity.Services
             result.PostalCode = request.PostalCode;
             result.Tagline = request.Tagline;
             result.Biography = request.Biography;
-            result.Approved = false;
+            if (isNew) result.Approved = false; //new organization defaults to unapproved
             result.Active = true;
 
             if (isNew)
@@ -147,7 +144,7 @@ namespace Yoma.Core.Domain.Entity.Services
                 var item = _organizationProviderTypeRepository.Query().SingleOrDefault(o => o.OrganizationId == org.Id && o.ProviderTypeId == type.Id);
                 if (item != null) return;
 
-                item = new Models.OrganizationProviderType
+                item = new OrganizationProviderType
                 {
                     OrganizationId = org.Id,
                     ProviderTypeId = type.Id
@@ -178,9 +175,13 @@ namespace Yoma.Core.Domain.Entity.Services
             }
         }
 
-        public async Task<Organization> UpsertLogo(Guid id, IFormFile file)
+        public async Task<Organization> UpsertLogo(Guid id, IFormFile? file)
         {
             var result = GetById(id);
+
+            if (file == null)
+                throw new ArgumentNullException(nameof(file));
+
             var currentLogoId = result.LogoId;
 
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
@@ -211,9 +212,13 @@ namespace Yoma.Core.Domain.Entity.Services
             return result;
         }
 
-        public async Task<Organization> UpsertRegistrationDocument(Guid id, IFormFile file)
+        public async Task<Organization> UpsertRegistrationDocument(Guid id, IFormFile? file)
         {
             var result = GetById(id);
+
+            if (file == null)
+                throw new ArgumentNullException(nameof(file));
+
             var currentDocumentId = result.CompanyRegistrationDocumentId;
 
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))

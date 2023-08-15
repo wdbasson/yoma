@@ -7,9 +7,6 @@ namespace Yoma.Core.Infrastructure.Database.Lookups.Repositories
 {
     public class GenderRepository : BaseRepository<Gender>, IRepository<Domain.Lookups.Models.Gender>
     {
-        #region Class Variables
-        #endregion
-
         #region Constructor
         public GenderRepository(ApplicationDbContext context) : base(context)
         {

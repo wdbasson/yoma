@@ -15,6 +15,6 @@ namespace Yoma.Core.Domain.Entity.Interfaces
 
         Task<User> UpdateProfile(string? email, UserProfileRequest request);
 
-        Task<User> UpsertPhoto(string? email, IFormFile file);
+        Task<User> UpsertPhoto(string? email, IFormFile? file);
     }
 }

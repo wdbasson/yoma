@@ -51,11 +51,7 @@ namespace Yoma.Core.Infrastructure.Database.Core.Repositories
 
         public async Task Delete(Domain.Core.Models.S3Object item)
         {
-            var entity = _context.S3Object.Where(o => o.Id == item.Id).SingleOrDefault();
-
-            if (entity == null)
-                throw new ArgumentOutOfRangeException(nameof(item), $"S3Object with id '{item.Id}' does not exist");
-
+            var entity = _context.S3Object.Where(o => o.Id == item.Id).SingleOrDefault() ?? throw new ArgumentOutOfRangeException(nameof(item), $"S3Object with id '{item.Id}' does not exist");
             _context.S3Object.Remove(entity);
             await _context.SaveChangesAsync();
         }

@@ -7,9 +7,6 @@ namespace Yoma.Core.Infrastructure.Database.Lookups.Repositories
 {
     public class CountryRepository : BaseRepository<Country>, IRepository<Domain.Lookups.Models.Country>
     {
-        #region Class Variables
-        #endregion
-
         #region Constructor
         public CountryRepository(ApplicationDbContext context) : base(context)
         {
