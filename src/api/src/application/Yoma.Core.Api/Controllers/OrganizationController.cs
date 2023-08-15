@@ -12,7 +12,7 @@ namespace Yoma.Core.Api.Controllers
 {
     /* TODO:
         - User organization registration (User role only)
-        - Approve / Deny
+        - Approve / Declined
         - Request verification
         - Search (by admin and / or name)
     */
