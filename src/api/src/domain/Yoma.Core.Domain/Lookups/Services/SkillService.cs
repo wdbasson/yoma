@@ -1,10 +1,11 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using FluentValidation;
 using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.LaborMarketProvider.Interfaces;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Lookups.Models;
+using Yoma.Core.Domain.Lookups.Validators;
 
 namespace Yoma.Core.Domain.Lookups.Services
 {
@@ -13,18 +14,19 @@ namespace Yoma.Core.Domain.Lookups.Services
         #region Class Variables
         private readonly ScheduleJobOptions _scheduleJobOptions;
         private readonly ILaborMarketProviderClient _laborMarketProviderClient;
+        private readonly SkillSearchFilterValidator _searchFilterValidator;
         private readonly IRepositoryBatchedWithValueContains<Skill> _skillRepository;
         #endregion
 
         #region Constructor
-        public SkillService(IOptions<AppSettings> appSettings,
-            IOptions<ScheduleJobOptions> scheduleJobOptions,
-            IMemoryCache memoryCache,
+        public SkillService(IOptions<ScheduleJobOptions> scheduleJobOptions,
             ILaborMarketProviderClientFactory laborMarketProviderClientFactory,
+            SkillSearchFilterValidator searchFilterValidator,
             IRepositoryBatchedWithValueContains<Skill> skillRepository)
         {
             _scheduleJobOptions = scheduleJobOptions.Value;
             _laborMarketProviderClient = laborMarketProviderClientFactory.CreateClient();
+            _searchFilterValidator = searchFilterValidator;
             _skillRepository = skillRepository;
         }
         #endregion
@@ -63,12 +65,10 @@ namespace Yoma.Core.Domain.Lookups.Services
 
         public SkillSearchResults Search(SkillSearchFilter filter)
         {
-            //TODO: model validator
-
             if (filter == null)
                 throw new ArgumentNullException(nameof(filter));
 
-            filter.EnsurePagination();
+            _searchFilterValidator.ValidateAndThrow(filter);
 
             var query = _skillRepository.Query();
             if(!string.IsNullOrEmpty(filter.NameContains))

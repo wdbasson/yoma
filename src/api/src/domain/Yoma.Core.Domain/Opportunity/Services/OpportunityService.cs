@@ -1,16 +1,19 @@
-﻿using Yoma.Core.Domain.Core.Extensions;
+﻿using FluentValidation;
+using Yoma.Core.Domain.Core.Extensions;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Entity.Models;
 using Yoma.Core.Domain.Lookups.Models;
 using Yoma.Core.Domain.Opportunity.Helpers;
 using Yoma.Core.Domain.Opportunity.Interfaces;
 using Yoma.Core.Domain.Opportunity.Models;
+using Yoma.Core.Domain.Opportunity.Validators;
 
 namespace Yoma.Core.Domain.Opportunity.Services
 {
     public class OpportunityService : IOpportunityService
     {
         #region Class Variables
+        private readonly OpportunitySearchFilterValidator _searchFilterValidator;
         private readonly IRepositoryValueContainsWithNavigation<Models.Opportunity> _opportunityRepository;
         private readonly IRepositoryValueContainsWithNavigation<Organization> _organizationRepository;
         private readonly IRepositoryValueContains<Models.Lookups.OpportunityType> _opportunityTypeRepository;
@@ -23,7 +26,8 @@ namespace Yoma.Core.Domain.Opportunity.Services
         #endregion
 
         #region Constructor
-        public OpportunityService(IRepositoryValueContainsWithNavigation<Models.Opportunity> opportunityRepository,
+        public OpportunityService(OpportunitySearchFilterValidator searchFilterValidator,
+            IRepositoryValueContainsWithNavigation<Models.Opportunity> opportunityRepository,
             IRepositoryValueContainsWithNavigation<Organization> organizationRepository,
             IRepositoryValueContains<Models.Lookups.OpportunityType> opportunityTypeRepository,
             IRepositoryValueContains<Models.Lookups.OpportunityCategory> opportunityCategoryLookupRepository,
@@ -33,6 +37,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
             IRepository<OpportunityLanguage> opportunityLanguageRepository,
             IRepository<OpportunitySkill> opportunitySkillRepository)
         {
+            _searchFilterValidator = searchFilterValidator;
             _opportunityRepository = opportunityRepository;
             _organizationRepository = organizationRepository;
             _opportunityTypeRepository = opportunityTypeRepository;
@@ -69,16 +74,22 @@ namespace Yoma.Core.Domain.Opportunity.Services
             if (filter == null)
                 throw new ArgumentNullException(nameof(filter));
 
-            //TODO: model validator
+            _searchFilterValidator.ValidateAndThrow(filter);
 
             var query = _opportunityRepository.Query(true);
 
             //date range
             if (filter.StartDate.HasValue)
+            {
+                filter.StartDate = filter.StartDate.Value.RemoveTime();
                 query = query.Where(o => o.DateCreated >= filter.StartDate.Value);
+            }
 
             if (filter.EndDate.HasValue)
+            {
+                filter.EndDate = filter.EndDate.Value.ToEndOfDay();
                 query = query.Where(o => o.DateCreated <= filter.EndDate.Value);
+            }
 
             //organization (explicitly specified)
             var filterByOrganization = false;
@@ -197,7 +208,6 @@ namespace Yoma.Core.Domain.Opportunity.Services
             //pagination
             if (filter.PaginationEnabled)
             {
-                filter.ValidatePagination();
                 result.TotalCount = query.Count();
                 query = query.Skip((filter.PageNumber.Value - 1) * filter.PageSize.Value).Take(filter.PageSize.Value);
             }
