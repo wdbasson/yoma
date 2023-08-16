@@ -20,7 +20,7 @@ namespace Yoma.Core.Domain.Entity.Services
         private readonly IOrganizationProviderTypeService _providerTypeService;
         private readonly IBlobService _blobService;
         private readonly OrganizationRequestValidator _organizationRequestValidator;
-        private readonly IRepository<Organization> _organizationRepository;
+        private readonly IRepositoryValueContainsWithNavigation<Organization> _organizationRepository;
         private readonly IRepository<OrganizationUser> _organizationUserRepository;
         private readonly IRepository<OrganizationProviderType> _organizationProviderTypeRepository;
         #endregion
@@ -31,7 +31,7 @@ namespace Yoma.Core.Domain.Entity.Services
             IOrganizationProviderTypeService providerTypeService,
             IBlobService blobService,
             OrganizationRequestValidator organizationRequestValidator,
-            IRepository<Organization> organizationRepository,
+            IRepositoryValueContainsWithNavigation<Organization> organizationRepository,
             IRepository<OrganizationUser> organizationUserRepository,
             IRepository<OrganizationProviderType> organizationProviderTypeRepository)
         {
@@ -47,25 +47,27 @@ namespace Yoma.Core.Domain.Entity.Services
         #endregion
 
         #region Public Members
-        public Organization GetById(Guid id)
+        public Organization GetById(Guid id, bool includeChildItems)
         {
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
 
-            var result = _organizationRepository.Query().SingleOrDefault(o => o.Id == id) ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(Organization)} with id '{id}' does not exist");
+            var result = _organizationRepository.Query(includeChildItems).SingleOrDefault(o => o.Id == id) 
+                ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(Organization)} with id '{id}' does not exist");
+
             result.LogoURL = GetS3ObjectURL(result.LogoId);
             result.CompanyRegistrationDocumentURL = GetS3ObjectURL(result.CompanyRegistrationDocumentId);
 
             return result;
         }
 
-        public Organization? GetByNameOrNull(string name)
+        public Organization? GetByNameOrNull(string name, bool includeChildItems)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentNullException(nameof(name));
             name = name.Trim();
 
-            var result = _organizationRepository.Query().SingleOrDefault(o => o.Name == name);
+            var result = _organizationRepository.Query(includeChildItems).SingleOrDefault(o => o.Name == name);
             if (result == null) return result;
 
             result.LogoURL = GetS3ObjectURL(result.LogoId);
@@ -84,9 +86,9 @@ namespace Yoma.Core.Domain.Entity.Services
             // check if user exists
             var isNew = !request.Id.HasValue;
 
-            var result = !request.Id.HasValue ? new Organization { Id = Guid.NewGuid() } : GetById(request.Id.Value);
+            var result = !request.Id.HasValue ? new Organization { Id = Guid.NewGuid() } : GetById(request.Id.Value, true);
 
-            var existingByEmail = GetByNameOrNull(request.Name);
+            var existingByEmail = GetByNameOrNull(request.Name, false);
             if (existingByEmail != null && (isNew || result.Id != existingByEmail.Id))
                 throw new ValidationException($"{nameof(Organization)} with the specified name '{request.Name}' already exists");
 
@@ -119,18 +121,9 @@ namespace Yoma.Core.Domain.Entity.Services
             return result;
         }
 
-        public List<Models.Lookups.OrganizationProviderType> ListProviderTypesById(Guid id)
-        {
-            var org = GetById(id);
-
-            var mappings = _organizationProviderTypeRepository.Query().Where(o => o.OrganizationId == id).ToList();
-
-            return mappings.Select(o => new Models.Lookups.OrganizationProviderType { Id = o.ProviderTypeId, Name = o.ProviderType }).ToList();
-        }
-
         public async Task AssignProviderTypes(Guid id, List<Guid> providerTypeIds)
         {
-            var org = GetById(id);
+            var org = GetById(id, false);
 
             if (providerTypeIds == null || !providerTypeIds.Any())
                 throw new ArgumentNullException(nameof(providerTypeIds));
@@ -157,7 +150,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
         public async Task DeleteProviderTypes(Guid id, List<Guid> providerTypeIds)
         {
-            var org = GetById(id);
+            var org = GetById(id, false);
 
             if (providerTypeIds == null || !providerTypeIds.Any())
                 throw new ArgumentNullException(nameof(providerTypeIds));
@@ -176,7 +169,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
         public async Task<Organization> UpsertLogo(Guid id, IFormFile? file)
         {
-            var result = GetById(id);
+            var result = GetById(id, true);
 
             if (file == null)
                 throw new ArgumentNullException(nameof(file));
@@ -213,7 +206,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
         public async Task<Organization> UpsertRegistrationDocument(Guid id, IFormFile? file)
         {
-            var result = GetById(id);
+            var result = GetById(id, true);
 
             if (file == null)
                 throw new ArgumentNullException(nameof(file));
@@ -250,7 +243,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
         public async Task AssignAdmin(Guid id, Guid userId)
         {
-            var org = GetById(id);
+            var org = GetById(id, false);
             var user = _userService.GetById(userId);
             if (!user.ExternalId.HasValue)
                 throw new InvalidOperationException($"External id expected for user with id '{user.Id}'");
@@ -274,7 +267,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
         public async Task RemoveAdmin(Guid id, Guid userId)
         {
-            var org = GetById(id);
+            var org = GetById(id, false);
 
             var user = _userService.GetById(userId);
             if (!user.ExternalId.HasValue)

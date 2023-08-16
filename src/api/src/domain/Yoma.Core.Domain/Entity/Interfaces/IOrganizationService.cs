@@ -5,11 +5,11 @@ namespace Yoma.Core.Domain.Entity.Interfaces
 {
     public interface IOrganizationService
     {
-        Organization GetById(Guid id);
+        Organization GetById(Guid id, bool includeChildItems);
+
+        Organization? GetByNameOrNull(string name, bool includeChildItems);
 
         Task<Organization> Upsert(OrganizationRequest request);
-
-        List<Models.Lookups.OrganizationProviderType> ListProviderTypesById(Guid id);
 
         Task AssignProviderTypes(Guid id, List<Guid> providerTypeIds);
 

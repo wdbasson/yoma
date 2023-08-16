@@ -18,6 +18,12 @@ namespace Yoma.Core.Domain.Core.Models
             if (!PaginationEnabled)
                 throw new InvalidOperationException("Pagination criteria required");
 
+            ValidatePagination();
+        }
+
+        [MemberNotNull(nameof(PageNumber), nameof(PageSize))]
+        internal void ValidatePagination()
+        {
             if (!PageNumber.HasValue || PageNumber.Value <= 0)
                 throw new InvalidOperationException($"{nameof(PageNumber)} must be greater than 0");
 

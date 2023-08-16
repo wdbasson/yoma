@@ -13,7 +13,7 @@ namespace Yoma.Core.Domain.Lookups.Services
         #region Class Variables
         private readonly ScheduleJobOptions _scheduleJobOptions;
         private readonly ILaborMarketProviderClient _laborMarketProviderClient;
-        private readonly IRepositoryBatched<Skill> _skillRepository;
+        private readonly IRepositoryBatchedWithValueContains<Skill> _skillRepository;
         #endregion
 
         #region Constructor
@@ -21,7 +21,7 @@ namespace Yoma.Core.Domain.Lookups.Services
             IOptions<ScheduleJobOptions> scheduleJobOptions,
             IMemoryCache memoryCache,
             ILaborMarketProviderClientFactory laborMarketProviderClientFactory,
-            IRepositoryBatched<Skill> skillRepository)
+            IRepositoryBatchedWithValueContains<Skill> skillRepository)
         {
             _scheduleJobOptions = scheduleJobOptions.Value;
             _laborMarketProviderClient = laborMarketProviderClientFactory.CreateClient();
@@ -63,6 +63,8 @@ namespace Yoma.Core.Domain.Lookups.Services
 
         public SkillSearchResults Search(SkillSearchFilter filter)
         {
+            //TODO: model validator
+
             if (filter == null)
                 throw new ArgumentNullException(nameof(filter));
 

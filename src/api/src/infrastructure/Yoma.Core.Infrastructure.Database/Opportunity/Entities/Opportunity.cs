@@ -95,5 +95,13 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Entities
         [Required]
         [Column(TypeName = "varchar(320)")]
         public string ModifiedBy { get; set; }
+
+        public ICollection<OpportunityCategory> Categories { get; set; }
+
+        public ICollection<OpportunityCountry> Countries { get; set; }
+
+        public ICollection<OpportunityLanguage> Languages { get; set; }
+
+        public ICollection<OpportunitySkill> Skills { get; set; }
     }
 }

@@ -81,5 +81,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Entities
 
         [Required]
         public DateTimeOffset DateModified { get; set; }
+
+        public ICollection<OrganizationProviderType> ProviderTypes { get; set; }
     }
 }

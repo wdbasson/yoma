@@ -12,13 +12,13 @@ namespace Yoma.Core.Domain.Opportunity.Services.Lookups
         #region Class Variables
         private readonly AppSettings _appSettings;
         private readonly IMemoryCache _memoryCache;
-        private readonly IRepository<OpportunityType> _opportunityTypeRepository;
+        private readonly IRepositoryValueContains<OpportunityType> _opportunityTypeRepository;
         #endregion
 
         #region Constructor
         public OpportunityTypeService(IOptions<AppSettings> appSettings,
             IMemoryCache memoryCache,
-            IRepository<OpportunityType> opportunityTypeRepository)
+            IRepositoryValueContains<OpportunityType> opportunityTypeRepository)
         {
             _appSettings = appSettings.Value;
             _memoryCache = memoryCache;

@@ -20,8 +20,6 @@ using Hangfire.Dashboard.BasicAuthorization;
 using Yoma.Core.Infrastructure.SendGrid;
 using Yoma.Core.Infrastructure.AmazonS3;
 using Yoma.Core.Domain.IdentityProvider.Interfaces;
-using Yoma.Core.Infrastructure.Database.Context;
-using FS.Keycloak.RestApiClient.Client;
 
 namespace Yoma.Core.Api
 {
