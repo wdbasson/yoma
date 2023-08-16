@@ -1,0 +1,245 @@
+version: "3.8"
+services:
+  sqlserver: # Local MSSQL server
+    platform: linux/amd64
+    image: ghcr.io/didx-xyz/mssql-server:2022-latest
+    container_name: sqlserver
+    restart: always
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: "Password1"
+    ports:
+      - "0.0.0.0:1433:1433"
+    volumes:
+      - sqlserver:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/opt/mssql-tools/bin/sqlcmd",
+          "-U",
+          "SA",
+          "-P",
+          "Password1",
+          "-Q",
+          "SELECT 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 9
+      start_period: 30s
+
+  sqlserver-init: # Initialise the local MSSQL server by populating a test user and organisation(s) for local dev
+    image: ${REGISTRY:-local}/sqlserver-init:${IMAGE_TAG:-latest}
+    container_name: sqlserver-init
+    entrypoint: ["/post.sh"]
+    command: ["sqlserver", "sa", "post.sql"]
+    build:
+      context: .
+      dockerfile: ./cicd/dockerfiles/Dockerfile.sqlserver-init
+    restart: "no"
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: "Password1"
+      SQLCMDPASSWORD: "Password1"
+    volumes:
+      - ./cicd/scripts/sqlserver-init/post.sql:/post.sql
+    depends_on:
+      yoma-api-health:
+        condition: service_completed_successfully
+
+  keycloak-init: # Initialise the local Keycloak server by adding the bcrypt & webhook provider
+    image: curlimages/curl
+    container_name: keycloak-init
+    user: root
+    command: |
+      sh -c 'curl -L https://github.com/vymalo/keycloak-webhook/releases/download/v0.3.0/keycloak-webhook-0.3.0-all.jar \
+      -o /opt/keycloak/providers/keycloak-webhook-0.3.0.jar && \
+      chown 1000:1000 /opt/keycloak/providers/keycloak-webhook-0.3.0.jar'
+    volumes:
+      - keycloak:/opt/keycloak/providers
+
+  keycloak-pg:
+    image: postgres
+    container_name: keycloak-pg
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - keycloak-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  keycloak: # Local Keycloak server
+    image: quay.io/keycloak/keycloak:22.0
+    container_name: keycloak
+    environment:
+      WEBHOOK_EVENTS_TAKEN: "LOGIN,REGISTER,LOGOUT,UPDATE_PROFILE"
+      WEBHOOK_HTTP_BASE_PATH: "http://yoma-api:5000/api/v1/keycloak"
+      WEBHOOK_HTTP_AUTH_USERNAME: whAdmin
+      WEBHOOK_HTTP_AUTH_PASSWORD: password
+      KC_DB_URL: jdbc:postgresql://keycloak-pg/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KC_HEALTH_ENABLED: true
+      KC_HOSTNAME: keycloak
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: password
+    ports:
+      - 0.0.0.0:8080:8080
+    command:
+      - "start-dev"
+      - "--db=postgres"
+      - "--features=declarative-user-profile"
+      - "--spi-events-listener-jboss-logging-success-level=info"
+      - "--spi-events-listener-jboss-logging-error-level=warn"
+      # - "--log-level=DEBUG"
+    depends_on:
+      keycloak-init:
+        condition: service_completed_successfully
+      keycloak-pg:
+        condition: service_healthy
+    volumes:
+      - keycloak:/opt/keycloak/providers
+      - ./cicd/themes:/opt/keycloak/themes
+
+  keycloak-health: # Wait for Keycloak to be ready before running keycloak-config service
+    image: curlimages/curl
+    container_name: keycloak-health
+    restart: "no"
+    command: /bin/sh -c "until curl -fsS http://keycloak:8080/health/ready; do sleep 5; done"
+    depends_on:
+      keycloak:
+        condition: service_started
+
+  keycloak-config: # Import Keycloak configuration
+    image: adorsys/keycloak-config-cli:5.8.0-22.0.0
+    container_name: keycloak-config
+    environment:
+      KEYCLOAK_URL: "http://keycloak:8080/"
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: password
+      KEYCLOAK_AVAILABILITYCHECK_ENABLED: "true"
+      KEYCLOAK_AVAILABILITYCHECK_TIMEOUT: "120s"
+      IMPORT_FILES_LOCATIONS: "/config/*.yaml"
+      IMPORT_VALIDATE: "true"
+      LOGGING_LEVEL_ROOT: "INFO"
+      IMPORT_VAR_SUBSTITUTION_ENABLED: "true"
+      IMPORT_CACHE_ENABLED: "false"
+      # SPRING_CONFIG_IMPORT: /secrets/.decrypted~secret.yaml
+      # Templating variables
+      CLIENT_YOMA_API_URL: "http://localhost:5000"
+      CLIENT_YOMA_YOUTH_URL: "http://localhost:3000"
+      CLIENT_YOMA_OP_URL: "http://localhost:3001"
+      CLIENT_YOMA_ADMIN_URL: "http://localhost:3002"
+      CLIENT_ATINGI_URL: "https://sandbox.atingi.org"
+      CLIENT_ATINGI_URL_REDIRECT: "https://keycloak-uat.enovationaws.com/realms/master/broker/yoma-prod/endpoint"
+      CLIENT_ATINGI_URL_POST_LOGOUT_REDIRECT: "https://keycloak-uat.enovationaws.com/realms/master/broker/yoma-prod/endpoint"
+      CLIENT_GOODWALL_URL: "https://www.goodwall.io"
+      CLIENT_GOODWALL_URL_REDIRECT: "goodwallauth://yomaredirect"
+      CLIENT_YOMA_API_SECRET: superSecretYomaApiClientSecret
+      CLIENT_ATINGI_SECRET: superSecretAtingiClientSecret
+      CLIENT_GOODWALL_SECRET: superSecretAtingiClientSecret
+      SA_YOMA_API_PASSWORD: &KCAdminPassword superSecretYomaApiServiceAccountPassword
+      SMTP_PASSWORD: superSecretSmtpPassword
+    volumes:
+      - ./cicd/scripts/keycloak:/config
+      - ./cicd/secrets:/secrets
+    depends_on:
+      keycloak-health:
+        condition: service_completed_successfully
+  #     sops:
+  #       condition: service_completed_successfully
+
+  # sops: # Decrypt secrets
+  #   container_name: sops
+  #   image: mozilla/sops:latest
+  #   command:
+  #     [
+  #       "/bin/sh",
+  #       "-c",
+  #       "sops --config /secrets/.sops.yaml -d /secrets/secret.yaml > /secrets/.decrypted~secret.yaml",
+  #     ]
+  #   volumes:
+  #     - ./cicd/secrets:/secrets
+  #     - ~/.aws:/root/.aws
+
+  keycloak-users:
+    image: curlimages/curl
+    container_name: keycloak-users
+    environment:
+      KC_BASE_URL: http://keycloak:8080
+      KC_REALM: yoma
+      KC_CLIENT_ID: admin-cli
+      KC_ADMIN_USER: sa-yoma-api
+      KC_ADMIN_PASSWORD: *KCAdminPassword
+      KC_ADMIN_REALM: master
+    user: 0:0 # because we need to install jq
+    command:
+      - /bin/sh
+      - -c
+      - /sbin/apk add jq && /bin/sh /scripts/users.sh
+    volumes:
+      - ./cicd/scripts/keycloak/users.sh:/scripts/users.sh
+    depends_on:
+      keycloak-config:
+        condition: service_completed_successfully
+      yoma-api-health:
+        condition: service_completed_successfully
+
+  yoma-api: # Local Yoma API server
+    image: ${REGISTRY:-local}/yoma-api:${IMAGE_TAG:-latest}
+    container_name: yoma-api
+    build:
+      context: .
+      dockerfile: ./cicd/dockerfiles/Dockerfile.yoma-api
+    restart: always
+    environment:
+      ASPNETCORE_ENVIRONMENT: Local
+      ASPNETCORE_URLS: "http://+:5000"
+      ConnectionStrings__SQLConnection: "Data Source=sqlserver,1433;Initial Catalog=yoma-dev;MultipleActiveResultSets=true;User ID=sa;Password=Password1;;TrustServerCertificate=True;Encrypt=False"
+      Logging__LogLevel__Default: "Debug"
+      Logging__LogLevel__Microsoft: "Debug"
+      Logging__LogLevel__Microsoft.Hosting.Lifetime: "Information"
+      Logging__LogLevel__Microsoft.EntityFrameworkCore: "Error"
+      AllowedOrigins: "http://localhost:5000;http://localhost:3000" # can be set to wildcard * to allow all hosts
+    ports:
+      - "0.0.0.0:5000:5000"
+    volumes:
+      - yoma:/root/.aspnet/DataProtection-Keys
+      - ./src/application/Yoma.Core.Api/appsettings.Local.json:/api/appsettings.Local.json
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  yoma-api-health: # Wait for Yoma API Core to be ready. Dependency for sqlserver-init.
+    image: curlimages/curl
+    container_name: yoma-api-health
+    restart: "no"
+    command: /bin/sh -c "until curl -fsS http://yoma-api:5000/index.html; do sleep 5; done"
+    depends_on:
+      yoma-api:
+        condition: service_started
+
+  test-harness-health: # Wait for sqlserver-init to be finished.
+    image: curlimages/curl
+    container_name: test-harness-health
+    restart: "no"
+    command: /bin/sh -c "until curl -fsS http://yoma-api:5000/index.html; do sleep 5; done"
+    depends_on:
+      sqlserver-init:
+        condition: service_completed_successfully
+      keycloak-users:
+        condition: service_completed_successfully
+
+volumes:
+  sqlserver:
+  yoma:
+  keycloak:
+  keycloak-pg:
