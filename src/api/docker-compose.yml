@@ -1,7 +1,8 @@
 version: "3.8"
 services:
   sqlserver: # Local MSSQL server
-    image: ghcr.io/didx-xyz/mssql-server:2022-fts
+    platform: linux/amd64
+    image: ghcr.io/didx-xyz/mssql-server:2022-latest
     container_name: sqlserver
     restart: always
     environment:
@@ -44,7 +45,7 @@ services:
     volumes:
       - ./cicd/scripts/sqlserver-init/post.sql:/post.sql
     depends_on:
-      yoma-api-core-health:
+      yoma-api-health:
         condition: service_completed_successfully
 
   keycloak-init: # Initialise the local Keycloak server by adding the bcrypt & webhook provider
@@ -58,9 +59,9 @@ services:
     volumes:
       - keycloak:/opt/keycloak/providers
 
-  db:
+  keycloak-pg:
     image: postgres
-    container_name: postgres
+    container_name: keycloak-pg
     ports:
       - 5432:5432
     environment:
@@ -68,7 +69,7 @@ services:
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: keycloak
     volumes:
-      - postgres:/var/lib/postgresql/data
+      - keycloak-pg:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "keycloak"]
       interval: 10s
@@ -80,10 +81,10 @@ services:
     container_name: keycloak
     environment:
       WEBHOOK_EVENTS_TAKEN: "LOGIN,REGISTER,LOGOUT,UPDATE_PROFILE"
-      WEBHOOK_HTTP_BASE_PATH: "http://yoma-api-core:5000/api/v1/keycloak"
+      WEBHOOK_HTTP_BASE_PATH: "http://yoma-api:5000/api/v1/keycloak"
       WEBHOOK_HTTP_AUTH_USERNAME: whAdmin
       WEBHOOK_HTTP_AUTH_PASSWORD: password
-      KC_DB_URL: jdbc:postgresql://db/keycloak
+      KC_DB_URL: jdbc:postgresql://keycloak-pg/keycloak
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: keycloak
       KC_HEALTH_ENABLED: true
@@ -102,7 +103,7 @@ services:
     depends_on:
       keycloak-init:
         condition: service_completed_successfully
-      db:
+      keycloak-pg:
         condition: service_healthy
     volumes:
       - keycloak:/opt/keycloak/providers
@@ -189,15 +190,15 @@ services:
     depends_on:
       keycloak-config:
         condition: service_completed_successfully
-      yoma-api-core-health:
+      yoma-api-health:
         condition: service_completed_successfully
 
-  yoma-api-core: # Local Yoma API Core server
-    image: ${REGISTRY:-local}/yoma-api-core:${IMAGE_TAG:-latest}
-    container_name: yoma-api-core
+  yoma-api: # Local Yoma API server
+    image: ${REGISTRY:-local}/yoma-api:${IMAGE_TAG:-latest}
+    container_name: yoma-api
     build:
       context: .
-      dockerfile: ./cicd/dockerfiles/Dockerfile.yoma-api-core
+      dockerfile: ./cicd/dockerfiles/Dockerfile.yoma-api
     restart: always
     environment:
       ASPNETCORE_ENVIRONMENT: Local
@@ -217,20 +218,20 @@ services:
       sqlserver:
         condition: service_healthy
 
-  yoma-api-core-health: # Wait for Yoma API Core to be ready. Dependency for sqlserver-init.
+  yoma-api-health: # Wait for Yoma API Core to be ready. Dependency for sqlserver-init.
     image: curlimages/curl
-    container_name: yoma-api-core-health
+    container_name: yoma-api-health
     restart: "no"
-    command: /bin/sh -c "until curl -fsS http://yoma-api-core:5000/index.html; do sleep 5; done"
+    command: /bin/sh -c "until curl -fsS http://yoma-api:5000/index.html; do sleep 5; done"
     depends_on:
-      yoma-api-core:
+      yoma-api:
         condition: service_started
 
   test-harness-health: # Wait for sqlserver-init to be finished.
     image: curlimages/curl
     container_name: test-harness-health
     restart: "no"
-    command: /bin/sh -c "until curl -fsS http://yoma-api-core:5000/index.html; do sleep 5; done"
+    command: /bin/sh -c "until curl -fsS http://yoma-api:5000/index.html; do sleep 5; done"
     depends_on:
       sqlserver-init:
         condition: service_completed_successfully
@@ -241,4 +242,4 @@ volumes:
   sqlserver:
   yoma:
   keycloak:
-  postgres:
+  keycloak-pg:

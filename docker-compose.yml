@@ -1,0 +1,4 @@
+# https://docs.docker.com/compose/multiple-compose-files/include/
+include:
+  - ./src/api/docker-compose.yml
+  - ./src/web/youth/docker-compose.yml
