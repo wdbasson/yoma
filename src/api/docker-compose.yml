@@ -30,19 +30,22 @@ services:
       start_period: 30s
 
   sqlserver-init: # Initialise the local MSSQL server by populating a test user and organisation(s) for local dev
-    image: ${REGISTRY:-local}/sqlserver-init:${IMAGE_TAG:-latest}
+    platform: linux/amd64
+    image: ghcr.io/didx-xyz/mssql-server:2022-latest
     container_name: sqlserver-init
-    entrypoint: ["/post.sh"]
-    command: ["sqlserver", "sa", "post.sql"]
-    build:
-      context: .
-      dockerfile: ./cicd/dockerfiles/Dockerfile.sqlserver-init
+    entrypoint: /bin/bash
+    command:
+      - /post.sh
+      - sqlserver
+      - sa
+      - post.sql
     restart: "no"
     environment:
       ACCEPT_EULA: Y
       SA_PASSWORD: "Password1"
       SQLCMDPASSWORD: "Password1"
     volumes:
+      - ./cicd/scripts/sqlserver-init/post.sh:/post.sh
       - ./cicd/scripts/sqlserver-init/post.sql:/post.sql
     depends_on:
       yoma-api-health:
