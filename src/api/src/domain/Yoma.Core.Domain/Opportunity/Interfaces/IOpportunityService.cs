@@ -8,7 +8,7 @@ namespace Yoma.Core.Domain.Opportunity.Interfaces
 
         OpportunityInfo GetInfoById(Guid id, bool includeChildren);
 
-        OpportunitySearchResultsInfo SearchInfo(OpportunitySearchFilter filter);
+        OpportunitySearchResultsInfo SearchInfo(OpportunitySearchFilterInfo filter);
 
         OpportunitySearchResults Search(OpportunitySearchFilter filter);
 
@@ -22,9 +22,9 @@ namespace Yoma.Core.Domain.Opportunity.Interfaces
 
         Task DeleteCountries(Guid id, List<Guid> countryIds);
 
-        Task AssignLanguages(Guid id, List<Guid> LanguageIds);
+        Task AssignLanguages(Guid id, List<Guid> languageIds);
 
-        Task DeleteLanguages(Guid id, List<Guid> LanguageIds);
+        Task DeleteLanguages(Guid id, List<Guid> languageIds);
 
         Task AssignSkills(Guid id, List<Guid> skillIds);
 

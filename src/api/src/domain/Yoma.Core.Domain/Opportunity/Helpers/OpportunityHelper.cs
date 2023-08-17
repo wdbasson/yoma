@@ -25,7 +25,6 @@ namespace Yoma.Core.Domain.Opportunity.Helpers
                 CommitmentIntervalCount = value.CommitmentIntervalCount,
                 ParticipantLimit = value.ParticipantLimit,
                 ParticipantCount = value.ParticipantCount,
-                Status = value.Status,
                 Keywords = value.Keywords,
                 DateStart = value.DateStart,
                 DateEnd = value.DateEnd,

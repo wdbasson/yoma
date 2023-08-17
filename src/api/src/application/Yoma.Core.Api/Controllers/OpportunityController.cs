@@ -65,7 +65,7 @@ namespace Yoma.Core.Api.Controllers
         [HttpPost("info/search")]
         [ProducesResponseType(typeof(List<OpportunitySearchResultsInfo>), (int)HttpStatusCode.OK)]
         [AllowAnonymous]
-        public IActionResult SearchInfo([FromBody] OpportunitySearchFilter filter)
+        public IActionResult SearchInfo([FromBody] OpportunitySearchFilterInfo filter)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(SearchInfo));
 

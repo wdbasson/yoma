@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Yoma.Core.Domain.Core.Models
@@ -12,7 +11,9 @@ namespace Yoma.Core.Domain.Core.Models
 
         [JsonIgnore]
         [MemberNotNull(nameof(PageNumber), nameof(PageSize))]
+#pragma warning disable CS8774 // Member must have a non-null value when exiting. Validated by AbstractValidator
         internal bool PaginationEnabled => PageSize.HasValue || PageNumber.HasValue;
+#pragma warning restore CS8774 // Member must have a non-null value when exiting. Validated by AbstractValidator
 
     }
 }

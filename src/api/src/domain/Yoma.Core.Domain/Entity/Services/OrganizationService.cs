@@ -52,7 +52,7 @@ namespace Yoma.Core.Domain.Entity.Services
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
 
-            var result = _organizationRepository.Query(includeChildItems).SingleOrDefault(o => o.Id == id) 
+            var result = _organizationRepository.Query(includeChildItems).SingleOrDefault(o => o.Id == id)
                 ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(Organization)} with id '{id}' does not exist");
 
             result.LogoURL = GetS3ObjectURL(result.LogoId);
@@ -74,6 +74,15 @@ namespace Yoma.Core.Domain.Entity.Services
             result.CompanyRegistrationDocumentURL = GetS3ObjectURL(result.CompanyRegistrationDocumentId);
 
             return result;
+        }
+
+        public List<Organization> Contains(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentNullException(nameof(value));
+            value = value.Trim();
+
+            return _organizationRepository.Contains(_organizationRepository.Query(), value).ToList();
         }
 
         public async Task<Organization> Upsert(OrganizationRequest request)

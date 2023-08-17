@@ -3,7 +3,8 @@ using Yoma.Core.Domain.Core.Models;
 
 namespace Yoma.Core.Domain.Core.Validators
 {
-    public class PaginationFilterValidator : AbstractValidator<PaginationFilter>
+    public class PaginationFilterValidator<TFilter> : AbstractValidator<TFilter>
+        where TFilter : PaginationFilter
     {
         #region Constructor
         public PaginationFilterValidator()

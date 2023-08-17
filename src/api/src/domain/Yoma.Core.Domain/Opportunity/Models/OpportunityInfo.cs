@@ -32,8 +32,6 @@ namespace Yoma.Core.Domain.Opportunity.Models
 
         public int? ParticipantCount { get; set; }
 
-        public string Status { get; set; }
-
         public string? Keywords { get; set; }
 
         public DateTimeOffset DateStart { get; set; }

@@ -1,10 +1,12 @@
 ﻿using FluentValidation;
+using System.Transactions;
 using Yoma.Core.Domain.Core.Extensions;
 using Yoma.Core.Domain.Core.Interfaces;
-using Yoma.Core.Domain.Entity.Models;
-using Yoma.Core.Domain.Lookups.Models;
+using Yoma.Core.Domain.Entity.Interfaces;
+using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Opportunity.Helpers;
 using Yoma.Core.Domain.Opportunity.Interfaces;
+using Yoma.Core.Domain.Opportunity.Interfaces.Lookups;
 using Yoma.Core.Domain.Opportunity.Models;
 using Yoma.Core.Domain.Opportunity.Validators;
 
@@ -13,12 +15,18 @@ namespace Yoma.Core.Domain.Opportunity.Services
     public class OpportunityService : IOpportunityService
     {
         #region Class Variables
+        private readonly IOpportunityStatusService _opportunityStatusService;
+        private readonly IOpportunityCategoryService _opportunityCategoryService;
+        private readonly ICountryService _countryService;
+        private readonly IOrganizationService _organizationService;
+        private readonly IOpportunityTypeService _opportunityTypeService;
+        private readonly ILanguageService _languageService;
+        private readonly ISkillService _skillService;
+
+        private readonly OpportunitySearchFilterInfoValidator _searchFilterInfoValidator;
         private readonly OpportunitySearchFilterValidator _searchFilterValidator;
+        
         private readonly IRepositoryValueContainsWithNavigation<Models.Opportunity> _opportunityRepository;
-        private readonly IRepositoryValueContainsWithNavigation<Organization> _organizationRepository;
-        private readonly IRepositoryValueContains<Models.Lookups.OpportunityType> _opportunityTypeRepository;
-        private readonly IRepositoryValueContains<Models.Lookups.OpportunityCategory> _opportunityCategoryLookupRepository;
-        private readonly IRepositoryBatchedWithValueContains<Skill> _skillRepository;
         private readonly IRepository<OpportunityCategory> _opportunityCategoryRepository;
         private readonly IRepository<OpportunityCountry> _opportunityCountryRepository;
         private readonly IRepository<OpportunityLanguage> _opportunityLanguageRepository;
@@ -26,23 +34,33 @@ namespace Yoma.Core.Domain.Opportunity.Services
         #endregion
 
         #region Constructor
-        public OpportunityService(OpportunitySearchFilterValidator searchFilterValidator,
+        public OpportunityService(IOpportunityStatusService opportunityStatusService,
+            IOpportunityCategoryService opportunityCategoryService,
+            ICountryService countryService,
+            IOrganizationService organizationService,
+            IOpportunityTypeService opportunityTypeService,
+            ILanguageService languageService,
+            ISkillService skillService,
+            OpportunitySearchFilterInfoValidator searchFilterInfoValidator,
+            OpportunitySearchFilterValidator searchFilterValidator,
             IRepositoryValueContainsWithNavigation<Models.Opportunity> opportunityRepository,
-            IRepositoryValueContainsWithNavigation<Organization> organizationRepository,
-            IRepositoryValueContains<Models.Lookups.OpportunityType> opportunityTypeRepository,
-            IRepositoryValueContains<Models.Lookups.OpportunityCategory> opportunityCategoryLookupRepository,
-            IRepositoryBatchedWithValueContains<Skill> skillRepository,
             IRepository<OpportunityCategory> opportunityCategoryRepository,
             IRepository<OpportunityCountry> opportunityCountryRepository,
             IRepository<OpportunityLanguage> opportunityLanguageRepository,
             IRepository<OpportunitySkill> opportunitySkillRepository)
         {
+            _opportunityStatusService = opportunityStatusService;
+            _opportunityCategoryService = opportunityCategoryService;
+            _countryService = countryService;
+            _organizationService = organizationService;
+            _opportunityTypeService = opportunityTypeService;
+            _languageService = languageService;
+            _skillService = skillService;
+
+            _searchFilterInfoValidator = searchFilterInfoValidator;
             _searchFilterValidator = searchFilterValidator;
+            
             _opportunityRepository = opportunityRepository;
-            _organizationRepository = organizationRepository;
-            _opportunityTypeRepository = opportunityTypeRepository;
-            _opportunityCategoryLookupRepository = opportunityCategoryLookupRepository;
-            _skillRepository = skillRepository;
             _opportunityCategoryRepository = opportunityCategoryRepository;
             _opportunityCountryRepository = opportunityCountryRepository;
             _opportunityLanguageRepository = opportunityLanguageRepository;
@@ -67,6 +85,34 @@ namespace Yoma.Core.Domain.Opportunity.Services
             var result = GetById(id, includeChildren);
 
             return result.ToOpportunityInfo();
+        }
+
+        public OpportunitySearchResultsInfo SearchInfo(OpportunitySearchFilterInfo filter)
+        {
+            if (filter == null)
+                throw new ArgumentNullException(nameof(filter));
+
+            _searchFilterInfoValidator.ValidateAndThrow(filter);
+
+            var filterInternal = new OpportunitySearchFilter
+            {
+                // active only
+                StatusIds = new List<Guid> { _opportunityStatusService.GetByName(Status.Active.ToString()).Id },
+                TypeIds = filter.TypeIds,
+                CategoryIds = filter.CategoryIds,
+                LanguageIds = filter.LanguageIds,
+                CountryIds = filter.CountryIds,
+                ValueContains = filter.ValueContains
+            };
+
+            var searchResult = Search(filterInternal);
+            var results = new OpportunitySearchResultsInfo
+            {
+                TotalCount = searchResult.TotalCount,
+                Items = searchResult.Items.Select(o => o.ToOpportunityInfo()).ToList()
+            };
+
+            return results;
         }
 
         public OpportunitySearchResults Search(OpportunitySearchFilter filter)
@@ -162,17 +208,17 @@ namespace Yoma.Core.Domain.Opportunity.Services
                 var predicate = PredicateBuilder.False<Models.Opportunity>();
 
                 //organizations
-                var matchedOrganizationIds = _organizationRepository.Contains(_organizationRepository.Query(), filter.ValueContains).Select(o => o.Id).ToList();
+                var matchedOrganizationIds = _organizationService.Contains(filter.ValueContains).Select(o => o.Id).ToList();
                 organizationIds.AddRange(matchedOrganizationIds.Except(organizationIds));
                 predicate = predicate.Or(o => organizationIds.Contains(o.OrganizationId));
 
                 //types
-                var matchedTypeIds = _opportunityTypeRepository.Contains(_opportunityTypeRepository.Query(), filter.ValueContains).Select(o => o.Id).ToList();
+                var matchedTypeIds = _opportunityTypeService.Contains(filter.ValueContains).Select(o => o.Id).ToList();
                 typeIds.AddRange(matchedTypeIds.Except(typeIds));
                 predicate = predicate.Or(o => matchedTypeIds.Contains(o.TypeId));
 
                 //categories
-                var matchedCategoryIds = _opportunityCategoryLookupRepository.Contains(_opportunityCategoryLookupRepository.Query(), filter.ValueContains).Select(o => o.Id).ToList();
+                var matchedCategoryIds = _opportunityCategoryService.Contains(filter.ValueContains).Select(o => o.Id).ToList();
                 categoryIds.AddRange(matchedCategoryIds.Except(categoryIds));
                 var matchedOpportunities = _opportunityCategoryRepository.Query().Where(o => categoryIds.Contains(o.CategoryId)).Select(o => o.OpportunityId).ToList();
                 predicate = predicate.Or(o => matchedOpportunities.Contains(o.Id));
@@ -181,7 +227,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
                 predicate = _opportunityRepository.Contains(predicate, filter.ValueContains);
 
                 //skills
-                var matchedSkillIds = _skillRepository.Contains(_skillRepository.Query(), filter.ValueContains).Select(o => o.Id).ToList();
+                var matchedSkillIds = _skillService.Contains(filter.ValueContains).Select(o => o.Id).ToList();
                 matchedOpportunities = _opportunitySkillRepository.Query().Where(o => matchedSkillIds.Contains(o.SkillId)).Select(o => o.OpportunityId).ToList();
                 predicate = predicate.Or(o => matchedOpportunities.Contains(o.Id));
 
@@ -202,32 +248,19 @@ namespace Yoma.Core.Domain.Opportunity.Services
                 }
             }
 
-            var result = new OpportunitySearchResults();
+            var results = new OpportunitySearchResults();
             query = query.OrderByDescending(o => o.DateCreated);
 
             //pagination
             if (filter.PaginationEnabled)
             {
-                result.TotalCount = query.Count();
+                results.TotalCount = query.Count();
                 query = query.Skip((filter.PageNumber.Value - 1) * filter.PageSize.Value).Take(filter.PageSize.Value);
             }
 
-            result.Items = query.ToList();
+            results.Items = query.ToList();
 
-            return result;
-        }
-
-        public OpportunitySearchResultsInfo SearchInfo(OpportunitySearchFilter filter)
-        {
-            var searchResult = Search(filter);
-
-            var result = new OpportunitySearchResultsInfo
-            {
-                TotalCount = searchResult.TotalCount,
-                Items = searchResult.Items.Select(o => o.ToOpportunityInfo()).ToList()
-            };
-
-            return result;
+            return results;
         }
 
         public Task<Models.Opportunity> Upsert(OpportunityRequest request)
@@ -235,44 +268,188 @@ namespace Yoma.Core.Domain.Opportunity.Services
             throw new NotImplementedException();
         }
 
-        public Task AssignCategories(Guid id, List<Guid> categoryIds)
+        public async Task AssignCategories(Guid id, List<Guid> categoryIds)
         {
-            throw new NotImplementedException();
+            var opportunity = GetById(id, false);
+
+            if (categoryIds == null || !categoryIds.Any())
+                throw new ArgumentNullException(nameof(categoryIds));
+
+            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+            foreach (var categoryId in categoryIds)
+            {
+                var category = _opportunityCategoryService.GetById(categoryId);
+
+                var item = _opportunityCategoryRepository.Query().SingleOrDefault(o => o.OpportunityId == opportunity.Id && o.CategoryId == category.Id);
+                if (item != null) return;
+
+                item = new OpportunityCategory
+                {
+                    OpportunityId = opportunity.Id,
+                    CategoryId = category.Id
+                };
+
+                await _opportunityCategoryRepository.Create(item);
+            }
+
+            scope.Complete();
         }
 
-        public Task DeleteCountries(Guid id, List<Guid> countryIds)
+        public async Task DeleteCategories(Guid id, List<Guid> categoryIds)
         {
-            throw new NotImplementedException();
+            var opportunity = GetById(id, false);
+
+            if (categoryIds == null || !categoryIds.Any())
+                throw new ArgumentNullException(nameof(categoryIds));
+
+            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+            foreach (var categoryId in categoryIds)
+            {
+                var category = _opportunityCategoryService.GetById(categoryId);
+
+                var item = _opportunityCategoryRepository.Query().SingleOrDefault(o => o.OpportunityId == opportunity.Id && o.CategoryId == category.Id);
+                if (item == null) return;
+
+                await _opportunityCategoryRepository.Delete(item);
+            }
         }
 
-        public Task AssignCountries(Guid id, List<Guid> countryIds)
+        public async Task AssignCountries(Guid id, List<Guid> countryIds)
         {
-            throw new NotImplementedException();
+            var opportunity = GetById(id, false);
+
+            if (countryIds == null || !countryIds.Any())
+                throw new ArgumentNullException(nameof(countryIds));
+
+            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+            foreach (var countryId in countryIds)
+            {
+                var country = _countryService.GetById(countryId);
+
+                var item = _opportunityCountryRepository.Query().SingleOrDefault(o => o.OpportunityId == opportunity.Id && o.CountryId == country.Id);
+                if (item != null) return;
+
+                item = new OpportunityCountry
+                {
+                    OpportunityId = opportunity.Id,
+                    CountryId = country.Id
+                };
+
+                await _opportunityCountryRepository.Create(item);
+            }
+
+            scope.Complete();
         }
 
-        public Task DeleteCategories(Guid id, List<Guid> categoryIds)
+        public async Task DeleteCountries(Guid id, List<Guid> countryIds)
         {
-            throw new NotImplementedException();
+            var opportunity = GetById(id, false);
+
+            if (countryIds == null || !countryIds.Any())
+                throw new ArgumentNullException(nameof(countryIds));
+
+            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+            foreach (var countryId in countryIds)
+            {
+                var country = _countryService.GetById(countryId);
+
+                var item = _opportunityCountryRepository.Query().SingleOrDefault(o => o.OpportunityId == opportunity.Id && o.CountryId == country.Id);
+                if (item == null) return;
+
+                await _opportunityCountryRepository.Delete(item);
+            }
         }
 
-        public Task AssignLanguages(Guid id, List<Guid> LanguageIds)
+        public async Task AssignLanguages(Guid id, List<Guid> languageIds)
         {
-            throw new NotImplementedException();
+            var opportunity = GetById(id, false);
+
+            if (languageIds == null || !languageIds.Any())
+                throw new ArgumentNullException(nameof(languageIds));
+
+            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+            foreach (var languageId in languageIds)
+            {
+                var language = _languageService.GetById(languageId);
+
+                var item = _opportunityLanguageRepository.Query().SingleOrDefault(o => o.OpportunityId == opportunity.Id && o.LanguageId == language.Id);
+                if (item != null) return;
+
+                item = new OpportunityLanguage
+                {
+                    OpportunityId = opportunity.Id,
+                    LanguageId = language.Id
+                };
+
+                await _opportunityLanguageRepository.Create(item);
+            }
+
+            scope.Complete();
         }
 
-        public Task DeleteLanguages(Guid id, List<Guid> LanguageIds)
+        public async Task DeleteLanguages(Guid id, List<Guid> languageIds)
         {
-            throw new NotImplementedException();
+            var opportunity = GetById(id, false);
+
+            if (languageIds == null || !languageIds.Any())
+                throw new ArgumentNullException(nameof(languageIds));
+
+            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+            foreach (var languageId in languageIds)
+            {
+                var language = _languageService.GetById(languageId);
+
+                var item = _opportunityLanguageRepository.Query().SingleOrDefault(o => o.OpportunityId == opportunity.Id && o.LanguageId == language.Id);
+                if (item == null) return;
+
+                await _opportunityLanguageRepository.Delete(item);
+            }
         }
 
-        public Task AssignSkills(Guid id, List<Guid> skillIds)
+        public async Task AssignSkills(Guid id, List<Guid> skillIds)
         {
-            throw new NotImplementedException();
+            var opportunity = GetById(id, false);
+
+            if (skillIds == null || !skillIds.Any())
+                throw new ArgumentNullException(nameof(skillIds));
+
+            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+            foreach (var skillId in skillIds)
+            {
+                var skill = _skillService.GetById(skillId);
+
+                var item = _opportunitySkillRepository.Query().SingleOrDefault(o => o.OpportunityId == opportunity.Id && o.SkillId == skill.Id);
+                if (item != null) return;
+
+                item = new OpportunitySkill
+                {
+                    OpportunityId = opportunity.Id,
+                    SkillId = skill.Id
+                };
+
+                await _opportunitySkillRepository.Create(item);
+            }
+
+            scope.Complete();
         }
 
-        public Task DeleteSkills(Guid id, List<Guid> skillIds)
+        public async Task DeleteSkills(Guid id, List<Guid> skillIds)
         {
-            throw new NotImplementedException();
+            var opportunity = GetById(id, false);
+
+            if (skillIds == null || !skillIds.Any())
+                throw new ArgumentNullException(nameof(skillIds));
+
+            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+            foreach (var skillId in skillIds)
+            {
+                var skill = _skillService.GetById(skillId);
+
+                var item = _opportunitySkillRepository.Query().SingleOrDefault(o => o.OpportunityId == opportunity.Id && o.SkillId == skill.Id);
+                if (item == null) return;
+
+                await _opportunitySkillRepository.Delete(item);
+            }
         }
         #endregion
     }

@@ -1,8 +1,6 @@
-﻿using Yoma.Core.Domain.Core.Models;
-
-namespace Yoma.Core.Domain.Opportunity.Models
+﻿namespace Yoma.Core.Domain.Opportunity.Models
 {
-    public class OpportunitySearchFilter : PaginationFilter
+    public class OpportunitySearchFilter : OpportunitySearchFilterBase
     {
         public DateTimeOffset? StartDate { get; set; }
 
@@ -10,16 +8,6 @@ namespace Yoma.Core.Domain.Opportunity.Models
 
         public Guid? OrganizationId { get; set; }
 
-        public List<Guid>? TypeIds { get; set; }
-
-        public List<Guid>? CategoryIds { get; set; }
-
-        public List<Guid>? LanguageIds { get; set; }
-
-        public List<Guid>? CountryIds { get; set; }
-
         public List<Guid>? StatusIds { get; set; }
-
-        public string? ValueContains { get; set; }
     }
 }

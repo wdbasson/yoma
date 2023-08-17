@@ -9,6 +9,8 @@ namespace Yoma.Core.Domain.Entity.Interfaces
 
         Organization? GetByNameOrNull(string name, bool includeChildItems);
 
+        List<Organization> Contains(string value);
+
         Task<Organization> Upsert(OrganizationRequest request);
 
         Task AssignProviderTypes(Guid id, List<Guid> providerTypeIds);

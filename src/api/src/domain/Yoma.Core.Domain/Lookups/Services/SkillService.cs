@@ -63,6 +63,15 @@ namespace Yoma.Core.Domain.Lookups.Services
             return _skillRepository.Query().SingleOrDefault(o => o.Id == id);
         }
 
+        public List<Skill> Contains(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentNullException(nameof(value));
+            value = value.Trim();
+
+            return _skillRepository.Contains(_skillRepository.Query(), value).ToList();
+        }
+
         public SkillSearchResults Search(SkillSearchFilter filter)
         {
             if (filter == null)
@@ -71,20 +80,20 @@ namespace Yoma.Core.Domain.Lookups.Services
             _searchFilterValidator.ValidateAndThrow(filter);
 
             var query = _skillRepository.Query();
-            if(!string.IsNullOrEmpty(filter.NameContains))
-                query = query.Where(o => o.Name.Contains(filter.NameContains));
+            if (!string.IsNullOrEmpty(filter.NameContains))
+                query = _skillRepository.Contains(query, filter.NameContains);
 
+            var results = new SkillSearchResults();
             query = query.OrderBy(o => o.Name);
 
-            var result = new SkillSearchResults
+            if (filter.PaginationEnabled)
             {
-                TotalCount = query.Count()
-            };
+                results.TotalCount = query.Count();
+                query = query.Skip((filter.PageNumber.Value - 1) * filter.PageSize.Value).Take(filter.PageSize.Value);
+            }
+            results.Items = query.ToList();
 
-            query = query.Skip((filter.PageNumber.Value - 1) * filter.PageSize.Value).Take(filter.PageSize.Value);
-            result.Items = query.ToList();
-
-            return result;
+            return results;
         }
 
         public async Task SeedSkills()

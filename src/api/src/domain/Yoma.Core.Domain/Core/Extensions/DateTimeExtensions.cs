@@ -15,13 +15,13 @@
 
         public static DateTimeOffset RemoveTime(this DateTimeOffset e, TimeSpan? offSet = null)
         {
-            return new DateTimeOffset(new DateTime(e.Year, e.Month, e.Day, 0, 0, 0, 0, DateTimeKind.Utc), offSet.HasValue ? offSet.Value : e.Offset);
+            return new DateTimeOffset(new DateTime(e.Year, e.Month, e.Day, 0, 0, 0, 0, DateTimeKind.Utc), offSet ?? e.Offset);
         }
 
         public static DateTimeOffset? RemoveTime(this DateTimeOffset? e, TimeSpan? offSet = null)
         {
             if (!e.HasValue) return null;
-            return new DateTimeOffset(new DateTime(e.Value.Year, e.Value.Month, e.Value.Day, 0, 0, 0, 0, DateTimeKind.Utc), offSet.HasValue ? offSet.Value : e.Value.Offset);
+            return new DateTimeOffset(new DateTime(e.Value.Year, e.Value.Month, e.Value.Day, 0, 0, 0, 0, DateTimeKind.Utc), offSet ?? e.Value.Offset);
         }
 
         public static DateTime ToEndOfDay(this DateTime e)
@@ -37,13 +37,13 @@
 
         public static DateTimeOffset ToEndOfDay(this DateTimeOffset e, TimeSpan? offSet = null)
         {
-            return new DateTimeOffset(new DateTime(e.Year, e.Month, e.Day, 23, 59, 59, 999, DateTimeKind.Unspecified), offSet.HasValue ? offSet.Value : e.Offset);
+            return new DateTimeOffset(new DateTime(e.Year, e.Month, e.Day, 23, 59, 59, 999, DateTimeKind.Unspecified), offSet ?? e.Offset);
         }
 
         public static DateTimeOffset? ToEndOfDay(this DateTimeOffset? e, TimeSpan? offSet = null)
         {
             if (!e.HasValue) return null;
-            return new DateTimeOffset(new DateTime(e.Value.Year, e.Value.Month, e.Value.Day, 23, 59, 59, 999, DateTimeKind.Unspecified), offSet.HasValue ? offSet.Value : e.Value.Offset);
+            return new DateTimeOffset(new DateTime(e.Value.Year, e.Value.Month, e.Value.Day, 23, 59, 59, 999, DateTimeKind.Unspecified), offSet ?? e.Value.Offset);
         }
 
         /// <summary>

@@ -12,7 +12,7 @@ namespace Yoma.Core.Domain.Opportunity.Services.Lookups
         #region Class Variables
         private readonly AppSettings _appSettings;
         private readonly IMemoryCache _memoryCache;
-        private readonly IRepositoryValueContains<OpportunityCategory> _opportunityCategoryRepository;
+        private readonly IRepository<OpportunityCategory> _opportunityCategoryRepository;
         #endregion
 
         #region Constructor
@@ -54,6 +54,15 @@ namespace Yoma.Core.Domain.Opportunity.Services.Lookups
                 throw new ArgumentNullException(nameof(id));
 
             return List().SingleOrDefault(o => o.Id == id);
+        }
+
+        public List<OpportunityCategory> Contains(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentNullException(nameof(value));
+            value = value.Trim();
+
+            return List().Where(o => o.Name.Contains(value, StringComparison.CurrentCultureIgnoreCase)).ToList();
         }
 
         public List<OpportunityCategory> List()

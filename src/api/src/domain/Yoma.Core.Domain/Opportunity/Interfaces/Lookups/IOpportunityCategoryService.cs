@@ -12,6 +12,8 @@ namespace Yoma.Core.Domain.Opportunity.Interfaces.Lookups
 
         OpportunityCategory? GetByIdOrNull(Guid id);
 
+        List<OpportunityCategory> Contains(string value);
+
         List<OpportunityCategory> List();
     }
 }
