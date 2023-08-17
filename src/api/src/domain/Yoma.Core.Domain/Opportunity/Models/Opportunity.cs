@@ -24,11 +24,15 @@ namespace Yoma.Core.Domain.Opportunity.Models
 
         public decimal? ZltoReward { get; set; }
 
-        public decimal? YomaReward { get; set; }
-
         public decimal? ZltoRewardPool { get; set; }
 
+        public decimal? ZltoRewardCumulative { get; set; }
+
+        public decimal? YomaReward { get; set; }
+
         public decimal? YomaRewardPool { get; set; }
+
+        public decimal? YomaRewardCumulative { get; set; }
 
         public bool VerificationSupported { get; set; }
 
@@ -48,7 +52,7 @@ namespace Yoma.Core.Domain.Opportunity.Models
 
         public Guid StatusId { get; set; }
 
-        public string Status { get; set; }
+        public Status Status { get; set; }
 
         public string? Keywords { get; set; }
 

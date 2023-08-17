@@ -52,8 +52,19 @@ namespace Yoma.Core.Domain.Entity.Services
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
 
-            var result = _organizationRepository.Query(includeChildItems).SingleOrDefault(o => o.Id == id)
+            var result = GetByIdOrNull(id, includeChildItems)
                 ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(Organization)} with id '{id}' does not exist");
+
+            return result;
+        }
+
+        public Organization? GetByIdOrNull(Guid id, bool includeChildItems)
+        {
+            if (id == Guid.Empty)
+                throw new ArgumentNullException(nameof(id));
+
+            var result = _organizationRepository.Query(includeChildItems).SingleOrDefault(o => o.Id == id);
+            if (result == null) return null;
 
             result.LogoURL = GetS3ObjectURL(result.LogoId);
             result.CompanyRegistrationDocumentURL = GetS3ObjectURL(result.CompanyRegistrationDocumentId);
@@ -68,7 +79,7 @@ namespace Yoma.Core.Domain.Entity.Services
             name = name.Trim();
 
             var result = _organizationRepository.Query(includeChildItems).SingleOrDefault(o => o.Name == name);
-            if (result == null) return result;
+            if (result == null) return null;
 
             result.LogoURL = GetS3ObjectURL(result.LogoId);
             result.CompanyRegistrationDocumentURL = GetS3ObjectURL(result.CompanyRegistrationDocumentId);

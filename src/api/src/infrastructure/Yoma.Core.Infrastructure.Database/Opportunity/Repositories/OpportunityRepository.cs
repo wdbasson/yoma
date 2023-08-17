@@ -4,6 +4,7 @@ using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;
 using Yoma.Core.Domain.Core.Extensions;
+using Yoma.Core.Domain.Opportunity;
 
 namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories
 {
@@ -45,7 +46,7 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories
                 ParticipantLimit = entity.ParticipantLimit,
                 ParticipantCount = entity.ParticipantCount,
                 StatusId = entity.StatusId,
-                Status = entity.Status.Name,
+                Status = Enum.Parse<Status>(entity.Status.Name, true),
                 Keywords = entity.Keywords,
                 DateStart = entity.DateStart,
                 DateEnd = entity.DateEnd,

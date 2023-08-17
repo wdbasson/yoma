@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net;
 using Yoma.Core.Domain.Core;
+using Yoma.Core.Domain.Opportunity;
 using Yoma.Core.Domain.Opportunity.Interfaces;
 using Yoma.Core.Domain.Opportunity.Interfaces.Lookups;
 using Yoma.Core.Domain.Opportunity.Models;
@@ -171,11 +172,25 @@ namespace Yoma.Core.Api.Controllers
             _logger.LogInformation("Handling request {requestName} {paramName}: {paramValue}",
                 nameof(Upsert), nameof(request), !request.Id.HasValue ? "insert" : $"update: {request.Id.Value}");
 
-            var result = await _opportunityService.Upsert(request);
+            var result = await _opportunityService.Upsert(request, User.Identity?.Name);
 
             _logger.LogInformation("Request {requestName} handled", nameof(Upsert));
 
             return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
+        [SwaggerOperation(Summary = "Update opportunity status (Active / Inactive / Deleted)")]
+        [HttpPut("{id}/{status}")]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        public async Task<IActionResult> UpdateStatus([FromRoute] Guid id, [FromRoute] Status status)
+        {
+            _logger.LogInformation("Handling request {requestName}", nameof(UpdateStatus));
+
+            await _opportunityService.UpdateStatus(id, status, User.Identity?.Name);
+
+            _logger.LogInformation("Request {requestName} handled", nameof(UpdateStatus));
+
+            return StatusCode((int)HttpStatusCode.OK);
         }
 
         [SwaggerOperation(Summary = "Assign category(ies) to the specified opportunity")]

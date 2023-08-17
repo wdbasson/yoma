@@ -22,15 +22,15 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories.Lookups
             {
                 Id = entity.Id,
                 Name = entity.Name
-            }); ;
+            });
         }
 
-        public Expression<Func<OpportunityType, bool>> Contains(Expression<Func<OpportunityType, bool>> predicate, string value)
+        public static Expression<Func<OpportunityType, bool>> Contains(Expression<Func<OpportunityType, bool>> predicate, string value)
         {
             return predicate.Or(o => o.Name.Contains(value));
         }
 
-        public IQueryable<OpportunityType> Contains(IQueryable<OpportunityType> query, string value)
+        public static IQueryable<OpportunityType> Contains(IQueryable<OpportunityType> query, string value)
         {
             return query.Where(o => o.Name.Contains(value));
         }

@@ -11,5 +11,13 @@
         public string SeedJobTitlesSchedule { get; set; }
 
         public int SeedJobTitlesBatchSize { get; set; }
+
+        public string OpportunityExpirationSchedule { get; set; }
+
+        public string OpportunityExpirationNotificationSchedule { get; set; }
+
+        public int OpportunityExpirationNotificationIntervalInDays { get; set; }
+
+        public int OpportunityExpirationBatchSize { get; set; }
     }
 }

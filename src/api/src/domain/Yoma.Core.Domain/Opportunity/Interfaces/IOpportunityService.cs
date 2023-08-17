@@ -8,11 +8,23 @@ namespace Yoma.Core.Domain.Opportunity.Interfaces
 
         OpportunityInfo GetInfoById(Guid id, bool includeChildren);
 
+        Models.Opportunity? GetByTitleOrNull(string title, bool includeChildItems);
+
+        OpportunityInfo? GetInfoByTitleOrNull(string title, bool includeChildItems);
+
         OpportunitySearchResultsInfo SearchInfo(OpportunitySearchFilterInfo filter);
 
         OpportunitySearchResults Search(OpportunitySearchFilter filter);
 
-        Task<Models.Opportunity> Upsert(OpportunityRequest request);
+        Task<Models.Opportunity> Upsert(OpportunityRequest request, string? username);
+
+        Task IncrementParticipantCount(Guid id, int increment = 1);
+
+        Task UpdateStatus(Guid id, Status status, string? username);
+
+        Task ProcessExpiration();
+
+        Task ExpirationNotifications();
 
         Task AssignCategories(Guid id, List<Guid> categoryIds);
 

@@ -8,8 +8,8 @@ namespace Yoma.Core.Domain.Entity.Validators
     public class UserRequestValidator : AbstractValidator<UserRequest>
     {
         #region Class Variables
-        private ICountryService _countryService;
-        private IGenderService _genderService;
+        private readonly ICountryService _countryService;
+        private readonly IGenderService _genderService;
         #endregion
 
         #region Constructor

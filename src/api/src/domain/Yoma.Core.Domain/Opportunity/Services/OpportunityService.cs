@@ -1,13 +1,16 @@
 ﻿using FluentValidation;
+using Microsoft.Extensions.Options;
 using System.Transactions;
 using Yoma.Core.Domain.Core.Extensions;
 using Yoma.Core.Domain.Core.Interfaces;
+using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Opportunity.Helpers;
 using Yoma.Core.Domain.Opportunity.Interfaces;
 using Yoma.Core.Domain.Opportunity.Interfaces.Lookups;
 using Yoma.Core.Domain.Opportunity.Models;
+using Yoma.Core.Domain.Opportunity.Services.Lookups;
 using Yoma.Core.Domain.Opportunity.Validators;
 
 namespace Yoma.Core.Domain.Opportunity.Services
@@ -15,6 +18,8 @@ namespace Yoma.Core.Domain.Opportunity.Services
     public class OpportunityService : IOpportunityService
     {
         #region Class Variables
+        private readonly ScheduleJobOptions _scheduleJobOptions;
+
         private readonly IOpportunityStatusService _opportunityStatusService;
         private readonly IOpportunityCategoryService _opportunityCategoryService;
         private readonly ICountryService _countryService;
@@ -22,25 +27,39 @@ namespace Yoma.Core.Domain.Opportunity.Services
         private readonly IOpportunityTypeService _opportunityTypeService;
         private readonly ILanguageService _languageService;
         private readonly ISkillService _skillService;
+        private readonly IOpportunityDifficultyService _opportunityDifficultyService;
+        private readonly ITimeIntervalService _timeIntervalService;
 
+        private readonly OpportunityRequestValidator _opportunityRequestValidator;
         private readonly OpportunitySearchFilterInfoValidator _searchFilterInfoValidator;
         private readonly OpportunitySearchFilterValidator _searchFilterValidator;
-        
+
         private readonly IRepositoryValueContainsWithNavigation<Models.Opportunity> _opportunityRepository;
         private readonly IRepository<OpportunityCategory> _opportunityCategoryRepository;
         private readonly IRepository<OpportunityCountry> _opportunityCountryRepository;
         private readonly IRepository<OpportunityLanguage> _opportunityLanguageRepository;
         private readonly IRepository<OpportunitySkill> _opportunitySkillRepository;
+
+        public const string Separator_Keywords = " ";
+        public static readonly Status[] Statuses_Updatable = { Status.Active, Status.Inactive };
+        public static readonly Status[] Statuses_Activatable = { Status.Inactive };
+        public static readonly Status[] Statuses_Deletable = { Status.Active, Status.Inactive };
+        public static readonly Status[] Statuses_DeActivatable = { Status.Active };
+        public static readonly Status[] Statuses_Expirable = { Status.Active, Status.Inactive };
         #endregion
 
         #region Constructor
-        public OpportunityService(IOpportunityStatusService opportunityStatusService,
+        public OpportunityService(IOptions<ScheduleJobOptions> scheduleJobOptions,
+            IOpportunityStatusService opportunityStatusService,
             IOpportunityCategoryService opportunityCategoryService,
             ICountryService countryService,
             IOrganizationService organizationService,
             IOpportunityTypeService opportunityTypeService,
             ILanguageService languageService,
             ISkillService skillService,
+            IOpportunityDifficultyService opportunityDifficultyService,
+            ITimeIntervalService timeIntervalService,
+            OpportunityRequestValidator opportunityRequestValidator,
             OpportunitySearchFilterInfoValidator searchFilterInfoValidator,
             OpportunitySearchFilterValidator searchFilterValidator,
             IRepositoryValueContainsWithNavigation<Models.Opportunity> opportunityRepository,
@@ -49,6 +68,8 @@ namespace Yoma.Core.Domain.Opportunity.Services
             IRepository<OpportunityLanguage> opportunityLanguageRepository,
             IRepository<OpportunitySkill> opportunitySkillRepository)
         {
+            _scheduleJobOptions = scheduleJobOptions.Value;
+
             _opportunityStatusService = opportunityStatusService;
             _opportunityCategoryService = opportunityCategoryService;
             _countryService = countryService;
@@ -56,10 +77,13 @@ namespace Yoma.Core.Domain.Opportunity.Services
             _opportunityTypeService = opportunityTypeService;
             _languageService = languageService;
             _skillService = skillService;
+            _opportunityDifficultyService = opportunityDifficultyService;
+            _timeIntervalService = timeIntervalService;
 
+            _opportunityRequestValidator = opportunityRequestValidator;
             _searchFilterInfoValidator = searchFilterInfoValidator;
             _searchFilterValidator = searchFilterValidator;
-            
+
             _opportunityRepository = opportunityRepository;
             _opportunityCategoryRepository = opportunityCategoryRepository;
             _opportunityCountryRepository = opportunityCountryRepository;
@@ -83,6 +107,26 @@ namespace Yoma.Core.Domain.Opportunity.Services
         public OpportunityInfo GetInfoById(Guid id, bool includeChildren)
         {
             var result = GetById(id, includeChildren);
+
+            return result.ToOpportunityInfo();
+        }
+
+        public Models.Opportunity? GetByTitleOrNull(string title, bool includeChildItems)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+                throw new ArgumentNullException(nameof(title));
+            title = title.Trim();
+
+            var result = _opportunityRepository.Query(includeChildItems).SingleOrDefault(o => o.Title == title);
+            if (result == null) return null;
+
+            return result;
+        }
+
+        public OpportunityInfo? GetInfoByTitleOrNull(string title, bool includeChildItems)
+        {
+            var result = GetByTitleOrNull(title, includeChildItems);
+            if (result == null) return null;
 
             return result.ToOpportunityInfo();
         }
@@ -263,9 +307,170 @@ namespace Yoma.Core.Domain.Opportunity.Services
             return results;
         }
 
-        public Task<Models.Opportunity> Upsert(OpportunityRequest request)
+        public async Task<Models.Opportunity> Upsert(OpportunityRequest request, string? username)
         {
-            throw new NotImplementedException();
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            username = username?.Trim();
+            if (string.IsNullOrEmpty(username))
+                throw new ArgumentNullException(nameof(username));
+
+            _opportunityRequestValidator.ValidateAndThrow(request);
+
+            // check if user exists
+            var isNew = !request.Id.HasValue;
+
+            var result = !request.Id.HasValue ? new Models.Opportunity { Id = Guid.NewGuid() } : GetById(request.Id.Value, true);
+
+            var existingByTitle = GetByTitleOrNull(request.Title, false);
+            if (existingByTitle != null && (isNew || result.Id != existingByTitle.Id))
+                throw new ValidationException($"{nameof(Models.Opportunity)} with the specified name '{request.Title}' already exists");
+
+            result.Title = request.Title;
+            result.Description = request.Description;
+            result.TypeId = request.TypeId;
+            result.Type = _opportunityTypeService.GetById(request.TypeId).Name;
+            result.OrganizationId = request.OrganizationId;
+            result.Organization = _organizationService.GetById(request.OrganizationId, false).Name;
+            result.Instructions = request.Instructions;
+            result.URL = request.URL;
+            result.ZltoReward = request.ZltoReward;
+            result.YomaReward = request.YomaReward;
+            result.ZltoRewardPool = request.ZltoRewardPool;
+            result.YomaRewardPool = request.YomaRewardPool;
+            result.VerificationSupported = request.VerificationSupported;
+            result.DifficultyId = request.DifficultyId;
+            result.Difficulty = _opportunityDifficultyService.GetById(request.DifficultyId).Name;
+            result.CommitmentIntervalId = request.CommitmentIntervalId;
+            result.CommitmentInterval = _timeIntervalService.GetById(request.CommitmentIntervalId).Name;
+            result.CommitmentIntervalCount = request.CommitmentIntervalCount;
+            result.ParticipantLimit = request.ParticipantLimit;
+            result.Keywords = request.Keywords == null ? null : string.Join(Separator_Keywords, request.Keywords);
+            result.DateStart = request.DateStart.RemoveTime();
+            result.DateEnd = !request.DateEnd.HasValue ? null : request.DateEnd.Value.ToEndOfDay();
+
+            if (isNew)
+            {
+                var status = request.PostAsActive ? Status.Active : Status.Inactive;
+                result.StatusId = _opportunityStatusService.GetByName(status.ToString()).Id;
+                result.Status = status;
+                result.CreatedBy = username;
+                result = await _opportunityRepository.Create(result);
+            }
+            else
+            {
+                if (!Statuses_Updatable.Contains(result.Status))
+                    throw new InvalidOperationException($"{nameof(Models.Opportunity)} can no longer be updated (current status '{result.Status}')");
+
+                result.ModifiedBy = username;
+                await _opportunityRepository.Update(result);
+                result.DateModified = DateTimeOffset.Now;
+            }
+
+            return result;
+        }
+
+        public async Task IncrementParticipantCount(Guid id, int increment = 1)
+        {
+            if (increment <= 0)
+                throw new ArgumentOutOfRangeException(nameof(increment));
+
+            var opportunity = GetById(id, false);
+            if (opportunity.Status != Status.Active)
+                throw new InvalidOperationException($"{nameof(Models.Opportunity)} must be active (current status '{opportunity.Status}')");
+
+            if (opportunity.DateStart > DateTimeOffset.Now)
+                throw new InvalidOperationException($"{nameof(Models.Opportunity)} is active but has not started (start date '{opportunity.DateStart}')");
+
+            var count = opportunity.ParticipantCount += increment;
+            if (opportunity.ParticipantLimit.HasValue && count > opportunity.ParticipantLimit)
+                throw new InvalidOperationException($"Increment will exceed limit (current count '{opportunity.ParticipantCount ?? 0}' vs current limit '{opportunity.ParticipantLimit}')");
+
+            opportunity.ParticipantCount = count;
+            //modified by system; ModifiedBy not set
+
+            await _opportunityRepository.Update(opportunity);
+        }
+
+        public async Task UpdateStatus(Guid id, Status status, string? username)
+        {
+            var opportunity = GetById(id, false);
+
+            username = username?.Trim();
+            if (string.IsNullOrEmpty(username))
+                throw new ArgumentNullException(nameof(username));
+
+            switch (status)
+            {
+                case Status.Active:
+                    if (opportunity.Status == Status.Active) return;
+                    if (!Statuses_Activatable.Contains(opportunity.Status))
+                        throw new InvalidOperationException($"{nameof(Models.Opportunity)} can not be activated (current status '{opportunity.Status}')");
+                    break;
+
+                case Status.Inactive:
+                    if (opportunity.Status == Status.Inactive) return;
+                    if (!Statuses_DeActivatable.Contains(opportunity.Status))
+                        throw new InvalidOperationException($"{nameof(Models.Opportunity)} can not be deactivated (current status '{opportunity.Status}')");
+                    break;
+
+                case Status.Deleted:
+                    if (opportunity.Status == Status.Deleted) return;
+                    if (!Statuses_Deletable.Contains(opportunity.Status))
+                        throw new InvalidOperationException($"{nameof(Models.Opportunity)} can not be deleted (current status '{opportunity.Status}')");
+
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(status), $"{nameof(Status)} of '{status}' not supported. Only statuses '{Status.Inactive} and {Status.Deleted} can be explicitly set");
+            }
+
+            var statusId = _opportunityStatusService.GetByName(status.ToString()).Id;
+
+            opportunity.StatusId = statusId;
+            opportunity.Status = status;
+            opportunity.ModifiedBy = username;
+
+            await _opportunityRepository.Update(opportunity);
+        }
+
+        public async Task ProcessExpiration()
+        {
+            var statusExpiredId = _opportunityStatusService.GetByName(Status.Expired.ToString()).Id;
+            var statusExpirableIds = Statuses_Expirable.Select(o => _opportunityStatusService.GetByName(o.ToString()).Id).ToList();
+
+            do
+            {
+                var items = _opportunityRepository.Query().Where(o => statusExpirableIds.Contains(o.StatusId) &&
+                    o.DateEnd.HasValue && o.DateEnd.Value <= DateTimeOffset.Now).OrderBy(o => o.DateEnd).Take(_scheduleJobOptions.OpportunityExpirationBatchSize).ToList();
+                if (!items.Any()) break;
+
+                foreach (var item in items)
+                {
+                    //TODO: email notification to provider
+
+                    item.StatusId = statusExpiredId;
+                    await _opportunityRepository.Update(item);
+                }
+            } while (true);
+        }
+
+        public async Task ExpirationNotifications()
+        {
+            var datetimeFrom = new DateTimeOffset(DateTime.Today);
+            var datetimeTo = datetimeFrom.AddDays(_scheduleJobOptions.OpportunityExpirationNotificationIntervalInDays);
+            var statusExpirableIds = Statuses_Expirable.Select(o => _opportunityStatusService.GetByName(o.ToString()).Id).ToList();
+
+            do
+            {
+                var items = _opportunityRepository.Query().Where(o => statusExpirableIds.Contains(o.StatusId) &&
+                    o.DateEnd.HasValue && o.DateEnd.Value >= datetimeFrom && o.DateEnd.Value <= datetimeTo).OrderBy(o => o.DateEnd).Take(_scheduleJobOptions.OpportunityExpirationBatchSize).ToList();
+                if (!items.Any()) break;
+
+                //TODO: email notification to provider
+
+            } while (true);
         }
 
         public async Task AssignCategories(Guid id, List<Guid> categoryIds)
@@ -274,6 +479,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
 
             if (categoryIds == null || !categoryIds.Any())
                 throw new ArgumentNullException(nameof(categoryIds));
+
+            if (!Statuses_Updatable.Contains(opportunity.Status))
+                throw new InvalidOperationException($"{nameof(Models.Opportunity)} can no longer be updated (current status '{opportunity.Status}')");
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             foreach (var categoryId in categoryIds)
@@ -302,6 +510,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
             if (categoryIds == null || !categoryIds.Any())
                 throw new ArgumentNullException(nameof(categoryIds));
 
+            if (!Statuses_Updatable.Contains(opportunity.Status))
+                throw new InvalidOperationException($"{nameof(Models.Opportunity)} can no longer be updated (current status '{opportunity.Status}')");
+
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             foreach (var categoryId in categoryIds)
             {
@@ -320,6 +531,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
 
             if (countryIds == null || !countryIds.Any())
                 throw new ArgumentNullException(nameof(countryIds));
+
+            if (!Statuses_Updatable.Contains(opportunity.Status))
+                throw new InvalidOperationException($"{nameof(Models.Opportunity)} can no longer be updated (current status '{opportunity.Status}')");
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             foreach (var countryId in countryIds)
@@ -348,6 +562,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
             if (countryIds == null || !countryIds.Any())
                 throw new ArgumentNullException(nameof(countryIds));
 
+            if (!Statuses_Updatable.Contains(opportunity.Status))
+                throw new InvalidOperationException($"{nameof(Models.Opportunity)} can no longer be updated (current status '{opportunity.Status}')");
+
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             foreach (var countryId in countryIds)
             {
@@ -366,6 +583,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
 
             if (languageIds == null || !languageIds.Any())
                 throw new ArgumentNullException(nameof(languageIds));
+
+            if (!Statuses_Updatable.Contains(opportunity.Status))
+                throw new InvalidOperationException($"{nameof(Models.Opportunity)} can no longer be updated (current status '{opportunity.Status}')");
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             foreach (var languageId in languageIds)
@@ -394,6 +614,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
             if (languageIds == null || !languageIds.Any())
                 throw new ArgumentNullException(nameof(languageIds));
 
+            if (!Statuses_Updatable.Contains(opportunity.Status))
+                throw new InvalidOperationException($"{nameof(Models.Opportunity)} can no longer be updated (current status '{opportunity.Status}')");
+
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             foreach (var languageId in languageIds)
             {
@@ -412,6 +635,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
 
             if (skillIds == null || !skillIds.Any())
                 throw new ArgumentNullException(nameof(skillIds));
+
+            if (!Statuses_Updatable.Contains(opportunity.Status))
+                throw new InvalidOperationException($"{nameof(Models.Opportunity)} can no longer be updated (current status '{opportunity.Status}')");
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             foreach (var skillId in skillIds)
@@ -439,6 +665,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
 
             if (skillIds == null || !skillIds.Any())
                 throw new ArgumentNullException(nameof(skillIds));
+
+            if (!Statuses_Updatable.Contains(opportunity.Status))
+                throw new InvalidOperationException($"{nameof(Models.Opportunity)} can no longer be updated (current status '{opportunity.Status}')");
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             foreach (var skillId in skillIds)

@@ -64,6 +64,10 @@ namespace Yoma.Core.Domain
             using var scope = serviceProvider.CreateScope();
             var skillService = scope.ServiceProvider.GetRequiredService<ISkillService>();
             RecurringJob.AddOrUpdate("Skill Reference Seeding", () => skillService.SeedSkills(), options.SeedSkillsSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+            var opportunityService = scope.ServiceProvider.GetRequiredService<IOpportunityService>();
+            RecurringJob.AddOrUpdate("Opportunity Expiration", () => opportunityService.ProcessExpiration(), options.OpportunityExpirationSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+            RecurringJob.AddOrUpdate($"Opportunity Expiration Notifications (with next {options.OpportunityExpirationNotificationIntervalInDays} days)", () => opportunityService.ExpirationNotifications(), options.OpportunityExpirationNotificationSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
         }
         #endregion
     }

@@ -34,12 +34,12 @@
 
         public int? ParticipantLimit { get; set; }
 
-        public int? ParticipantCount { get; set; }
-
-        public string? Keywords { get; set; }
+        public List<string>? Keywords { get; set; }
 
         public DateTimeOffset DateStart { get; set; }
 
         public DateTimeOffset? DateEnd { get; set; }
+
+        public bool PostAsActive { get; set; }
     }
 }

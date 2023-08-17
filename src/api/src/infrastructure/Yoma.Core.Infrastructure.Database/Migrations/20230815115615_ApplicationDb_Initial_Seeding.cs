@@ -986,8 +986,6 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
             {
                     {"B99D26D7-A4B0-4A38-B35D-AE2D379A414E","Active",DateTimeOffset.Now}
                     ,
-                    {"61B0A354-2F42-4140-85F2-4B31BDA214C7","Draft",DateTimeOffset.Now}
-                    ,
                     {"46FD954E-2F0E-4892-83EE-1B967E9B2803","Inactive",DateTimeOffset.Now}
                     ,
                     {"7FD45DD7-89BC-4307-B119-8B166E1B945F","Expired",DateTimeOffset.Now}

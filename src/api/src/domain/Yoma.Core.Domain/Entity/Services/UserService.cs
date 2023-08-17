@@ -52,8 +52,8 @@ namespace Yoma.Core.Domain.Entity.Services
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentNullException(nameof(email));
 
-            var result = GetByEmailOrNull(email) ?? throw new ValidationException($"User with email '{email}' does not exist");
-            result.PhotoURL = GetS3ObjectURL(result.PhotoId);
+            var result = GetByEmailOrNull(email) 
+                ?? throw new ValidationException($"User with email '{email}' does not exist");
 
             return result;
         }
@@ -65,7 +65,7 @@ namespace Yoma.Core.Domain.Entity.Services
             email = email.Trim();
 
             var result = _userRepository.Query(false).SingleOrDefault(o => o.Email == email);
-            if (result == null) return result;
+            if (result == null) return null;
 
             result.PhotoURL = GetS3ObjectURL(result.PhotoId);
 
@@ -77,7 +77,9 @@ namespace Yoma.Core.Domain.Entity.Services
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
 
-            var result = _userRepository.Query(false).SingleOrDefault(o => o.Id == id) ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(User)} with id '{id}' does not exist");
+            var result = _userRepository.Query(false).SingleOrDefault(o => o.Id == id) 
+                ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(User)} with id '{id}' does not exist");
+
             result.PhotoURL = GetS3ObjectURL(result.PhotoId);
 
             return result;
@@ -89,6 +91,8 @@ namespace Yoma.Core.Domain.Entity.Services
                 throw new ArgumentNullException(nameof(request));
 
             await _userProfileRequestValidator.ValidateAndThrowAsync(request);
+
+            if (string.IsNullOrEmpty(request.PhoneNumber)) request.PhoneNumber = null;
 
             var result = GetByEmail(email);
 

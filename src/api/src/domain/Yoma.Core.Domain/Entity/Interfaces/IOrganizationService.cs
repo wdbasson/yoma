@@ -7,6 +7,8 @@ namespace Yoma.Core.Domain.Entity.Interfaces
     {
         Organization GetById(Guid id, bool includeChildItems);
 
+        Organization? GetByIdOrNull(Guid id, bool includeChildItems);
+
         Organization? GetByNameOrNull(string name, bool includeChildItems);
 
         List<Organization> Contains(string value);

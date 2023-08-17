@@ -18,7 +18,7 @@ namespace Yoma.Core.Domain.Opportunity.Services.Lookups
         #region Constructor
         public OpportunityCategoryService(IOptions<AppSettings> appSettings,
             IMemoryCache memoryCache,
-            IRepositoryValueContains<OpportunityCategory> opportunityCategoryRepository)
+            IRepository<OpportunityCategory> opportunityCategoryRepository)
         {
             _appSettings = appSettings.Value;
             _memoryCache = memoryCache;
