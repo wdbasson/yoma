@@ -1,10 +1,14 @@
-﻿using Yoma.Core.Domain.Core.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;
+using Yoma.Core.Domain.Core.Extensions;
+using Yoma.Core.Domain.Opportunity;
 
 namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories
 {
-    public class OpportunityRepository : BaseRepository<Entities.Opportunity>, IRepository<Domain.Opportunity.Models.Opportunity>
+    public class OpportunityRepository : BaseRepository<Entities.Opportunity>, IRepositoryValueContainsWithNavigation<Domain.Opportunity.Models.Opportunity>
     {
         #region Constructor
         public OpportunityRepository(ApplicationDbContext context) : base(context) { }
@@ -13,13 +17,20 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories
         #region Public Members
         public IQueryable<Domain.Opportunity.Models.Opportunity> Query()
         {
+            return Query(false);
+        }
+
+        public IQueryable<Domain.Opportunity.Models.Opportunity> Query(bool includeChildItems)
+        {
             return _context.Opportunity.Select(entity => new Domain.Opportunity.Models.Opportunity()
             {
                 Id = entity.Id,
                 Title = entity.Title,
                 Description = entity.Description,
                 TypeId = entity.TypeId,
+                Type = entity.Type.Name,
                 OrganizationId = entity.OrganizationId,
+                Organization = entity.Organization.Name,
                 Instructions = entity.Instructions,
                 URL = entity.URL,
                 ZltoReward = entity.ZltoReward,
@@ -28,19 +39,42 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories
                 YomaRewardPool = entity.YomaRewardPool,
                 VerificationSupported = entity.VerificationSupported,
                 DifficultyId = entity.DifficultyId,
+                Difficulty = entity.Difficulty.Name,
                 CommitmentIntervalId = entity.CommitmentIntervalId,
+                CommitmentInterval = entity.CommitmentInterval.Name,
                 CommitmentIntervalCount = entity.CommitmentIntervalCount,
                 ParticipantLimit = entity.ParticipantLimit,
                 ParticipantCount = entity.ParticipantCount,
                 StatusId = entity.StatusId,
+                Status = Enum.Parse<Status>(entity.Status.Name, true),
                 Keywords = entity.Keywords,
                 DateStart = entity.DateStart,
                 DateEnd = entity.DateEnd,
                 DateCreated = entity.DateCreated,
                 CreatedBy = entity.CreatedBy,
                 DateModified = entity.DateModified,
-                ModifiedBy = entity.ModifiedBy
+                ModifiedBy = entity.ModifiedBy,
+                Categories = includeChildItems ?
+                    entity.Categories.Select(o => new Domain.Opportunity.Models.Lookups.OpportunityCategory { Id = o.Id, Name = o.Category.Name}).ToList() : null,
+                Countries = includeChildItems ?
+                    entity.Countries.Select(o => new Domain.Lookups.Models.Country 
+                    { Id = o.Id, Name = o.Country.Name, CodeAlpha2 = o.Country.CodeAlpha2, CodeAlpha3 = o.Country.CodeAlpha3, CodeNumeric = o.Country.CodeNumeric }).ToList() : null,
+                Languages = includeChildItems ?
+                    entity.Languages.Select(o => new Domain.Lookups.Models.Language { Id = o.Id, Name = o.Language.Name, CodeAlpha2 = o.Language.CodeAlpha2 }).ToList() : null,
+                Skills = includeChildItems ?
+                    entity.Skills.Select(o => new Domain.Lookups.Models.Skill { Id = o.Id, Name = o.Skill.Name, InfoURL = o.Skill.InfoURL }).ToList() : null
+                    
             });
+        }
+
+        public Expression<Func<Domain.Opportunity.Models.Opportunity, bool>> Contains(Expression<Func<Domain.Opportunity.Models.Opportunity, bool>> predicate, string value)
+        {
+            return predicate.Or(o => o.Title.Contains(value) || (!string.IsNullOrEmpty(o.Keywords) && o.Keywords.Contains(value)) || EF.Functions.FreeText(o.Description, value));
+        }
+
+        public IQueryable<Domain.Opportunity.Models.Opportunity> Contains(IQueryable<Domain.Opportunity.Models.Opportunity> query, string value)
+        {
+            return query.Where(o => o.Title.Contains(value) || (!string.IsNullOrEmpty(o.Keywords) && o.Keywords.Contains(value)) || EF.Functions.FreeText(o.Description, value));
         }
 
         public async Task<Domain.Opportunity.Models.Opportunity> Create(Domain.Opportunity.Models.Opportunity item)
@@ -118,7 +152,6 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories
         {
             throw new NotImplementedException();
         }
-
         #endregion
     }
 }

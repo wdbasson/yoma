@@ -1,11 +1,13 @@
-﻿using Yoma.Core.Domain.Core.Interfaces;
+﻿using System.Linq.Expressions;
+using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;
 using Yoma.Core.Infrastructure.Database.Lookups.Entities;
+using Yoma.Core.Domain.Core.Extensions;
 
 namespace Yoma.Core.Infrastructure.Database.Lookups.Repositories
 {
-    public class SkillRepository : BaseRepository<Skill>, IRepositoryBatched<Domain.Lookups.Models.Skill>
+    public class SkillRepository : BaseRepository<Skill>, IRepositoryBatchedWithValueContains<Domain.Lookups.Models.Skill>
     {
         #region Constructor
         public SkillRepository(ApplicationDbContext context) : base(context)
@@ -25,6 +27,16 @@ namespace Yoma.Core.Infrastructure.Database.Lookups.Repositories
                 DateCreated = entity.DateCreated,
                 DateModified = entity.DateModified
             });
+        }
+
+        public Expression<Func<Domain.Lookups.Models.Skill, bool>> Contains(Expression<Func<Domain.Lookups.Models.Skill, bool>> predicate, string value)
+        {
+            return predicate.Or(o => o.Name.Contains(value));
+        }
+
+        public IQueryable<Domain.Lookups.Models.Skill> Contains(IQueryable<Domain.Lookups.Models.Skill> query, string value)
+        {
+            return query.Where(o => o.Name.Contains(value));
         }
 
         public async Task<Domain.Lookups.Models.Skill> Create(Domain.Lookups.Models.Skill item)

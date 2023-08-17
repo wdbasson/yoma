@@ -55,7 +55,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName}", nameof(Get));
 
-            var result = _userService.GetByEmail(HttpContext.User.Identity?.Name);
+            var result = _userService.GetByEmail(User.Identity?.Name);
 
             _logger.LogInformation("Request {requestName} handled", nameof(Get));
 
@@ -67,9 +67,9 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(User), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpdateProfile([FromBody] UserProfileRequest profile)
         {
-            _logger.LogInformation("Handling request {requestName} (Username: {paramValue}", nameof(UpdateProfile), HttpContext.User.Identity?.Name);
+            _logger.LogInformation("Handling request {requestName} (Username: {paramValue}", nameof(UpdateProfile), User.Identity?.Name);
 
-            var result = await _userService.UpdateProfile(HttpContext.User.Identity?.Name, profile);
+            var result = await _userService.UpdateProfile(User.Identity?.Name, profile);
 
             _logger.LogInformation("Request {requestName} handled", nameof(UpdateProfile));
 
@@ -83,7 +83,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName} ({paramName}: {paramValue})", nameof(UpsertPhoto), nameof(file.Name), file?.Name);
 
-            var result = await _userService.UpsertPhoto(HttpContext.User.Identity?.Name, file);
+            var result = await _userService.UpsertPhoto(User.Identity?.Name, file);
 
             _logger.LogInformation("Request {requestName} handled", nameof(UpsertPhoto));
 

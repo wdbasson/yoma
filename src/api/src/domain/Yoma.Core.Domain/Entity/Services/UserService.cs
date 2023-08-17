@@ -23,7 +23,7 @@ namespace Yoma.Core.Domain.Entity.Services
         private readonly ICountryService _countryService;
         private readonly UserRequestValidator _userValidator;
         private readonly UserProfileRequestValidator _userProfileRequestValidator;
-        private readonly IRepository<User> _userRepository;
+        private readonly IRepositoryWithNavigation<User> _userRepository;
         #endregion
 
         #region Constructor
@@ -34,7 +34,7 @@ namespace Yoma.Core.Domain.Entity.Services
             ICountryService countryService,
             UserRequestValidator userValidator,
             UserProfileRequestValidator userProfileRequestValidator,
-            IRepository<User> userRepository)
+            IRepositoryWithNavigation<User> userRepository)
         {
             _identityProviderClient = identityProviderClientFactory.CreateClient();
             _blobService = blobService;
@@ -52,8 +52,8 @@ namespace Yoma.Core.Domain.Entity.Services
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentNullException(nameof(email));
 
-            var result = GetByEmailOrNull(email) ?? throw new ValidationException($"User with email '{email}' does not exist");
-            result.PhotoURL = GetS3ObjectURL(result.PhotoId);
+            var result = GetByEmailOrNull(email) 
+                ?? throw new ValidationException($"User with email '{email}' does not exist");
 
             return result;
         }
@@ -64,8 +64,8 @@ namespace Yoma.Core.Domain.Entity.Services
                 throw new ArgumentNullException(nameof(email));
             email = email.Trim();
 
-            var result = _userRepository.Query().SingleOrDefault(o => o.Email == email);
-            if (result == null) return result;
+            var result = _userRepository.Query(false).SingleOrDefault(o => o.Email == email);
+            if (result == null) return null;
 
             result.PhotoURL = GetS3ObjectURL(result.PhotoId);
 
@@ -77,7 +77,9 @@ namespace Yoma.Core.Domain.Entity.Services
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
 
-            var result = _userRepository.Query().SingleOrDefault(o => o.Id == id) ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(User)} with id '{id}' does not exist");
+            var result = _userRepository.Query(false).SingleOrDefault(o => o.Id == id) 
+                ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(User)} with id '{id}' does not exist");
+
             result.PhotoURL = GetS3ObjectURL(result.PhotoId);
 
             return result;
@@ -89,6 +91,8 @@ namespace Yoma.Core.Domain.Entity.Services
                 throw new ArgumentNullException(nameof(request));
 
             await _userProfileRequestValidator.ValidateAndThrowAsync(request);
+
+            if (string.IsNullOrEmpty(request.PhoneNumber)) request.PhoneNumber = null;
 
             var result = GetByEmail(email);
 

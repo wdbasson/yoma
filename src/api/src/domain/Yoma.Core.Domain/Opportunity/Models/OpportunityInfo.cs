@@ -2,7 +2,7 @@
 
 namespace Yoma.Core.Domain.Opportunity.Models
 {
-    public class Opportunity
+    public class OpportunityInfo
     {
         public Guid Id { get; set; }
 
@@ -10,11 +10,7 @@ namespace Yoma.Core.Domain.Opportunity.Models
 
         public string Description { get; set; }
 
-        public Guid TypeId { get; set; }
-
         public string Type { get; set; }
-
-        public Guid OrganizationId { get; set; }
 
         public string Organization { get; set; }
 
@@ -24,23 +20,9 @@ namespace Yoma.Core.Domain.Opportunity.Models
 
         public decimal? ZltoReward { get; set; }
 
-        public decimal? ZltoRewardPool { get; set; }
-
-        public decimal? ZltoRewardCumulative { get; set; }
-
         public decimal? YomaReward { get; set; }
 
-        public decimal? YomaRewardPool { get; set; }
-
-        public decimal? YomaRewardCumulative { get; set; }
-
-        public bool VerificationSupported { get; set; }
-
-        public Guid DifficultyId { get; set; }
-
         public string Difficulty { get; set; }
-
-        public Guid CommitmentIntervalId { get; set; }
 
         public string CommitmentInterval { get; set; }
 
@@ -50,23 +32,11 @@ namespace Yoma.Core.Domain.Opportunity.Models
 
         public int? ParticipantCount { get; set; }
 
-        public Guid StatusId { get; set; }
-
-        public Status Status { get; set; }
-
         public string? Keywords { get; set; }
 
         public DateTimeOffset DateStart { get; set; }
 
         public DateTimeOffset? DateEnd { get; set; }
-
-        public DateTimeOffset DateCreated { get; set; }
-
-        public string CreatedBy { get; set; }
-
-        public DateTimeOffset DateModified { get; set; }
-
-        public string ModifiedBy { get; set; }
 
         public List<Lookups.OpportunityCategory>? Categories { get; set; }
 

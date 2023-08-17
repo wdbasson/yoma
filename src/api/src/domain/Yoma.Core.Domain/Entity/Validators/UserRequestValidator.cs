@@ -8,8 +8,8 @@ namespace Yoma.Core.Domain.Entity.Validators
     public class UserRequestValidator : AbstractValidator<UserRequest>
     {
         #region Class Variables
-        private ICountryService _countryService;
-        private IGenderService _genderService;
+        private readonly ICountryService _countryService;
+        private readonly IGenderService _genderService;
         #endregion
 
         #region Constructor
@@ -22,12 +22,12 @@ namespace Yoma.Core.Domain.Entity.Validators
             RuleFor(x => x.Email).NotEmpty().EmailAddress();
             RuleFor(x => x.FirstName).NotEmpty().Length(1, 320);
             RuleFor(x => x.Surname).NotEmpty().Length(1, 320);
-            RuleFor(x => x.PhoneNumber).Length(0, 50).Matches(RegExValidators.PhoneNumber()).WithMessage("'{PropertyName}' is invalid.").When(x => !string.IsNullOrEmpty(x.PhoneNumber));
+            RuleFor(x => x.PhoneNumber).Length(1, 50).Matches(RegExValidators.PhoneNumber()).WithMessage("'{PropertyName}' is invalid.").When(x => !string.IsNullOrEmpty(x.PhoneNumber));
             RuleFor(x => x.CountryId).Must(CountryExists).WithMessage($"Specified country is invalid / does not exist.");
             RuleFor(x => x.CountryOfResidenceId).Must(CountryExists).WithMessage($"Specified country of residence is invalid / does not exist.");
             RuleFor(x => x.GenderId).Must(GenderExists).WithMessage($"Specified gender is invalid / does not exist.");
-            RuleFor(x => x.DateOfBirth).Must(BeNotInFuture).WithMessage("'{PropertyName}' must not be in the future.");
-            RuleFor(x => x.DateLastLogin).Must(BeNotInFuture).WithMessage("'{PropertyName}' must not be in the future.");
+            RuleFor(x => x.DateOfBirth).Must(NotInFuture).WithMessage("'{PropertyName}' is in the future.");
+            RuleFor(x => x.DateLastLogin).Must(NotInFuture).WithMessage("'{PropertyName}' is in the future.");
             //TODO: ExternalId
             //TODO: ZltoWalletId
             //TODO: ZltoWalletCountryId
@@ -36,7 +36,7 @@ namespace Yoma.Core.Domain.Entity.Validators
         #endregion
 
         #region Private Members
-        private bool BeNotInFuture(DateTimeOffset? date)
+        private bool NotInFuture(DateTimeOffset? date)
         {
             if (!date.HasValue) return true;
             return date <= DateTimeOffset.Now;

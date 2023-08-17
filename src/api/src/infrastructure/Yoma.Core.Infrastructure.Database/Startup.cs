@@ -44,10 +44,10 @@ namespace Yoma.Core.Infrastructure.Database
             #region Lookups
             services.AddScoped<IRepository<Domain.Entity.Models.Lookups.OrganizationProviderType>, Entity.Repositories.Lookups.OrganizationProviderTypeRepository>();
             #endregion Lookups
-            services.AddScoped<IRepository<Organization>, OrganizationRepository>();
+            services.AddScoped<IRepositoryValueContainsWithNavigation<Organization>, OrganizationRepository>();
             services.AddScoped<IRepository<OrganizationProviderType>, OrganizationProviderTypeRepository>();
             services.AddScoped<IRepository<OrganizationUser>, OrganizationUserRepository>();
-            services.AddScoped<IRepository<User>, UserRepository>();
+            services.AddScoped<IRepositoryWithNavigation<User>, UserRepository>();
             services.AddScoped<IRepository<UserSkill>, UserSkillRepository>();
             #endregion Entity
 
@@ -55,7 +55,7 @@ namespace Yoma.Core.Infrastructure.Database
             services.AddScoped<IRepository<Country>, CountryRepository>();
             services.AddScoped<IRepository<Gender>, GenderRepository>();
             services.AddScoped<IRepository<Language>, LanguageRepository>();
-            services.AddScoped<IRepositoryBatched<Skill>, SkillRepository>();
+            services.AddScoped<IRepositoryBatchedWithValueContains<Skill>, SkillRepository>();
             services.AddScoped<IRepository<TimeInterval>, TimeIntervalRepository>();
             #endregion Lookups
 
@@ -67,7 +67,7 @@ namespace Yoma.Core.Infrastructure.Database
             services.AddScoped<IRepository<Domain.Opportunity.Models.Lookups.OpportunityType>, Opportunity.Repositories.Lookups.OpportunityTypeRepository>();
             #endregion
 
-            services.AddScoped<IRepository<Domain.Opportunity.Models.Opportunity>, OpportunityRepository>();
+            services.AddScoped<IRepositoryValueContainsWithNavigation<Domain.Opportunity.Models.Opportunity>, OpportunityRepository>();
             services.AddScoped<IRepository<OpportunityCategory>, OpportunityCategoryRepository>();
             services.AddScoped<IRepository<OpportunityCountry>, OpportunityCountryRepository>();
             services.AddScoped<IRepository<OpportunityLanguage>, OpportunityLanguageRepository>();

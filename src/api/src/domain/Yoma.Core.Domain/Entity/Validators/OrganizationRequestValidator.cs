@@ -18,16 +18,17 @@ namespace Yoma.Core.Domain.Entity.Validators
 
             RuleFor(x => x.Name).NotEmpty().Length(1, 255);
             RuleFor(x => x.WebsiteURL).Length(1, 2048).Must(ValidURL).WithMessage("'{PropertyName}' is invalid.");
-            RuleFor(x => x.PrimaryContactName).Length(0, 255);
-            RuleFor(x => x.PrimaryContactEmail).Length(0, 320).EmailAddress();
-            RuleFor(x => x.PrimaryContactPhone).Length(0, 50).Matches(RegExValidators.PhoneNumber()).WithMessage("'{PropertyName}' is invalid.").When(x => !string.IsNullOrEmpty(x.PrimaryContactPhone));
-            RuleFor(x => x.VATIN).Length(0, 255); RuleFor(x => x.TaxNumber).Length(0, 255);
-            RuleFor(x => x.RegistrationNumber).Length(0, 255);
-            RuleFor(x => x.City).Length(0, 50);
+            RuleFor(x => x.PrimaryContactName).Length(1, 255).When(x => !string.IsNullOrEmpty(x.PrimaryContactName));
+            RuleFor(x => x.PrimaryContactEmail).Length(1, 320).EmailAddress().When(x => !string.IsNullOrEmpty(x.PrimaryContactEmail));
+            RuleFor(x => x.PrimaryContactPhone).Length(1, 50).Matches(RegExValidators.PhoneNumber()).WithMessage("'{PropertyName}' is invalid.").When(x => !string.IsNullOrEmpty(x.PrimaryContactPhone));
+            RuleFor(x => x.VATIN).Length(1, 255).When(x => !string.IsNullOrEmpty(x.VATIN));
+            RuleFor(x => x.TaxNumber).Length(1, 255).When(x => !string.IsNullOrEmpty(x.TaxNumber));
+            RuleFor(x => x.RegistrationNumber).Length(1, 255).When(x => !string.IsNullOrEmpty(x.RegistrationNumber));
+            RuleFor(x => x.City).Length(1, 50).When(x => !string.IsNullOrEmpty(x.City));
             RuleFor(x => x.CountryId).Must(CountryExists).WithMessage($"Specified country is invalid / does not exist.");
-            RuleFor(x => x.StreetAddress).Length(0, 500);
-            RuleFor(x => x.Province).Length(0, 255);
-            RuleFor(x => x.PostalCode).Length(0, 10);
+            RuleFor(x => x.StreetAddress).Length(1, 500).When(x => !string.IsNullOrEmpty(x.StreetAddress));
+            RuleFor(x => x.Province).Length(1, 255).When(x => !string.IsNullOrEmpty(x.Province));
+            RuleFor(x => x.PostalCode).Length(1, 10).When(x => !string.IsNullOrEmpty(x.PostalCode));
         }
         #endregion
 

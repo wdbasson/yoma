@@ -53,5 +53,7 @@
         public DateTimeOffset DateCreated { get; set; }
 
         public DateTimeOffset DateModified { get; set; }
+
+        public List<Lookups.OrganizationProviderType>? ProviderTypes { get; set; }
     }
 }

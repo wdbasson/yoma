@@ -10,19 +10,10 @@ namespace Yoma.Core.Domain.Core.Models
         public int? PageSize { get; set; }
 
         [JsonIgnore]
-        internal bool PaginationEnabled => PageSize.HasValue || PageNumber.HasValue;
-
         [MemberNotNull(nameof(PageNumber), nameof(PageSize))]
-        internal void EnsurePagination()
-        {
-            if (!PaginationEnabled)
-                throw new InvalidOperationException("Pagination criteria required");
+#pragma warning disable CS8774 // Member must have a non-null value when exiting. Validated by AbstractValidator
+        internal bool PaginationEnabled => PageSize.HasValue || PageNumber.HasValue;
+#pragma warning restore CS8774 // Member must have a non-null value when exiting. Validated by AbstractValidator
 
-            if (!PageNumber.HasValue || PageNumber.Value <= 0)
-                throw new InvalidOperationException($"{nameof(PageNumber)} must be greater than 0");
-
-            if (!PageSize.HasValue || PageSize.Value <= 0)
-                throw new InvalidOperationException($"{nameof(PageNumber)} must be greater than 0");
-        }
     }
 }

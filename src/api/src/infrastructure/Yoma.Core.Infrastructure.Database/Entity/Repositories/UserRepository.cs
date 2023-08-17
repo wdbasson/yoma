@@ -5,7 +5,7 @@ using Yoma.Core.Infrastructure.Database.Entity.Entities;
 
 namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
 {
-    public class UserRepository : BaseRepository<User>, IRepository<Domain.Entity.Models.User>
+    public class UserRepository : BaseRepository<User>, IRepositoryWithNavigation<Domain.Entity.Models.User>
     {
         #region Constructor
         public UserRepository(ApplicationDbContext context) : base(context) { }
@@ -13,6 +13,11 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
 
         #region Public Members
         public IQueryable<Domain.Entity.Models.User> Query()
+        {
+            return Query(false);
+        }
+
+        public IQueryable<Domain.Entity.Models.User> Query(bool includeChildItems)
         {
             return _context.User.Select(entity => new Domain.Entity.Models.User()
             {

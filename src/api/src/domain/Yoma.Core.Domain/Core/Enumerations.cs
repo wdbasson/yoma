@@ -18,8 +18,8 @@ namespace Yoma.Core.Domain.Core
     [Flags]
     public enum ReferenceDataType
     {
-        None = 0,
-        Lookups = 1 //lookup entities i.e. countries; reference data store in lookup db namespace
+        None,
+        Lookups //lookup entities i.e. countries; reference data store in lookup db namespace
     }
 
     public enum FileTypeEnum

@@ -1,11 +1,13 @@
-﻿using Yoma.Core.Domain.Core.Interfaces;
+﻿using System.Linq.Expressions;
+using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;
 using Yoma.Core.Infrastructure.Database.Entity.Entities;
+using Yoma.Core.Domain.Core.Extensions;
 
 namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
 {
-    public class OrganizationRepository : BaseRepository<Organization>, IRepository<Domain.Entity.Models.Organization>
+    public class OrganizationRepository : BaseRepository<Organization>, IRepositoryValueContainsWithNavigation<Domain.Entity.Models.Organization>
     {
         #region Constructor
         public OrganizationRepository(ApplicationDbContext context) : base(context) { }
@@ -13,6 +15,11 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
 
         #region Public Members
         public IQueryable<Domain.Entity.Models.Organization> Query()
+        {
+            return Query(false);
+        }
+
+        public IQueryable<Domain.Entity.Models.Organization> Query(bool includeChildItems)
         {
             return _context.Organization.Select(entity => new Domain.Entity.Models.Organization()
             {
@@ -40,7 +47,19 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
                 CompanyRegistrationDocumentId = entity.CompanyRegistrationDocumentId,
                 DateCreated = entity.DateCreated,
                 DateModified = entity.DateModified,
-            });
+                ProviderTypes = includeChildItems ? 
+                    entity.ProviderTypes.Select(o => new Domain.Entity.Models.Lookups.OrganizationProviderType { Id = o.Id, Name = o.ProviderType.Name }).ToList() : null
+            }); 
+        }
+
+        public Expression<Func<Domain.Entity.Models.Organization, bool>> Contains(Expression<Func<Domain.Entity.Models.Organization, bool>> predicate, string value)
+        {
+            return predicate.Or(o => o.Name.Contains(value));
+        }
+
+        public IQueryable<Domain.Entity.Models.Organization> Contains(IQueryable<Domain.Entity.Models.Organization> query, string value)
+        {
+            return query.Where(o => o.Name.Contains(value));
         }
 
         public async Task<Domain.Entity.Models.Organization> Create(Domain.Entity.Models.Organization item)

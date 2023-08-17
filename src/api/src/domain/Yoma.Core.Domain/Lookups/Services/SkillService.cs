@@ -1,10 +1,11 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using FluentValidation;
 using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.LaborMarketProvider.Interfaces;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Lookups.Models;
+using Yoma.Core.Domain.Lookups.Validators;
 
 namespace Yoma.Core.Domain.Lookups.Services
 {
@@ -13,18 +14,19 @@ namespace Yoma.Core.Domain.Lookups.Services
         #region Class Variables
         private readonly ScheduleJobOptions _scheduleJobOptions;
         private readonly ILaborMarketProviderClient _laborMarketProviderClient;
-        private readonly IRepositoryBatched<Skill> _skillRepository;
+        private readonly SkillSearchFilterValidator _searchFilterValidator;
+        private readonly IRepositoryBatchedWithValueContains<Skill> _skillRepository;
         #endregion
 
         #region Constructor
-        public SkillService(IOptions<AppSettings> appSettings,
-            IOptions<ScheduleJobOptions> scheduleJobOptions,
-            IMemoryCache memoryCache,
+        public SkillService(IOptions<ScheduleJobOptions> scheduleJobOptions,
             ILaborMarketProviderClientFactory laborMarketProviderClientFactory,
-            IRepositoryBatched<Skill> skillRepository)
+            SkillSearchFilterValidator searchFilterValidator,
+            IRepositoryBatchedWithValueContains<Skill> skillRepository)
         {
             _scheduleJobOptions = scheduleJobOptions.Value;
             _laborMarketProviderClient = laborMarketProviderClientFactory.CreateClient();
+            _searchFilterValidator = searchFilterValidator;
             _skillRepository = skillRepository;
         }
         #endregion
@@ -61,28 +63,37 @@ namespace Yoma.Core.Domain.Lookups.Services
             return _skillRepository.Query().SingleOrDefault(o => o.Id == id);
         }
 
+        public List<Skill> Contains(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentNullException(nameof(value));
+            value = value.Trim();
+
+            return _skillRepository.Contains(_skillRepository.Query(), value).ToList();
+        }
+
         public SkillSearchResults Search(SkillSearchFilter filter)
         {
             if (filter == null)
                 throw new ArgumentNullException(nameof(filter));
 
-            filter.EnsurePagination();
+            _searchFilterValidator.ValidateAndThrow(filter);
 
             var query = _skillRepository.Query();
-            if(!string.IsNullOrEmpty(filter.NameContains))
-                query = query.Where(o => o.Name.Contains(filter.NameContains));
+            if (!string.IsNullOrEmpty(filter.NameContains))
+                query = _skillRepository.Contains(query, filter.NameContains);
 
+            var results = new SkillSearchResults();
             query = query.OrderBy(o => o.Name);
 
-            var result = new SkillSearchResults
+            if (filter.PaginationEnabled)
             {
-                TotalCount = query.Count()
-            };
+                results.TotalCount = query.Count();
+                query = query.Skip((filter.PageNumber.Value - 1) * filter.PageSize.Value).Take(filter.PageSize.Value);
+            }
+            results.Items = query.ToList();
 
-            query = query.Skip((filter.PageNumber.Value - 1) * filter.PageSize.Value).Take(filter.PageSize.Value);
-            result.Items = query.ToList();
-
-            return result;
+            return results;
         }
 
         public async Task SeedSkills()

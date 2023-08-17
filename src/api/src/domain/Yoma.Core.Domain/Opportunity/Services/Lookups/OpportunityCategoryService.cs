@@ -56,6 +56,15 @@ namespace Yoma.Core.Domain.Opportunity.Services.Lookups
             return List().SingleOrDefault(o => o.Id == id);
         }
 
+        public List<OpportunityCategory> Contains(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentNullException(nameof(value));
+            value = value.Trim();
+
+            return List().Where(o => o.Name.Contains(value, StringComparison.CurrentCultureIgnoreCase)).ToList();
+        }
+
         public List<OpportunityCategory> List()
         {
             if (!_appSettings.CacheEnabledByReferenceDataTypes.HasFlag(Core.ReferenceDataType.Lookups))

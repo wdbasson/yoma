@@ -42,13 +42,19 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Entities
         public decimal? ZltoReward { get; set; }
 
         [Column(TypeName = "decimal(8,2)")]
-        public decimal? YomaReward { get; set; }
-
-        [Column(TypeName = "decimal(8,2)")]
         public decimal? ZltoRewardPool { get; set; }
 
         [Column(TypeName = "decimal(8,2)")]
+        public decimal? ZltoRewardCumulative { get; set; }
+
+        [Column(TypeName = "decimal(8,2)")]
+        public decimal? YomaReward { get; set; }
+
+        [Column(TypeName = "decimal(8,2)")]
         public decimal? YomaRewardPool { get; set; }
+
+        [Column(TypeName = "decimal(8,2)")]
+        public decimal? YomaRewardCumulative { get; set; }
 
         [Required]
         public bool VerificationSupported { get; set; }
@@ -95,5 +101,13 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Entities
         [Required]
         [Column(TypeName = "varchar(320)")]
         public string ModifiedBy { get; set; }
+
+        public ICollection<OpportunityCategory> Categories { get; set; }
+
+        public ICollection<OpportunityCountry> Countries { get; set; }
+
+        public ICollection<OpportunityLanguage> Languages { get; set; }
+
+        public ICollection<OpportunitySkill> Skills { get; set; }
     }
 }

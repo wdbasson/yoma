@@ -50,7 +50,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName} {paramName}: {paramValue})", nameof(GetById), nameof(id), id);
 
-            var result = _organizationService.GetById(id);
+            var result = _organizationService.GetById(id, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(GetById));
 
@@ -87,31 +87,16 @@ namespace Yoma.Core.Api.Controllers
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "List the provider types for specified organization")]
-        [HttpGet("{id}/providerType")]
-        [ProducesResponseType(typeof(List<Domain.Entity.Models.Lookups.OrganizationProviderType>), (int)HttpStatusCode.OK)]
-        public IActionResult ListProviderTypesById([FromRoute] Guid id)
-        {
-            _logger.LogInformation("Handling request {requestName} {paramName}: {paramValue})", nameof(ListProviderTypesById), nameof(id), id);
-
-            var result = _organizationService.ListProviderTypesById(id);
-
-            _logger.LogInformation("Request {requestName} handled", nameof(ListProviderTypesById));
-
-            return StatusCode((int)HttpStatusCode.OK, result);
-        }
-
         [SwaggerOperation(Summary = "Assign provider type(s) to the specified organization")]
         [HttpPut("{id}/assign/providerTypes")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
-        public async Task<IActionResult> AssignProviderType([FromRoute] Guid id, [FromBody] List<Guid> providerTypeIds)
+        public async Task<IActionResult> AssignProviderTypes([FromRoute] Guid id, [FromBody] List<Guid> providerTypeIds)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})",
-                nameof(AssignProviderType), nameof(id), id, nameof(providerTypeIds), providerTypeIds);
+            _logger.LogInformation("Handling request {requestName}", nameof(AssignProviderTypes));
 
             await _organizationService.AssignProviderTypes(id, providerTypeIds);
 
-            _logger.LogInformation("Request {requestName} handled", nameof(AssignProviderType));
+            _logger.LogInformation("Request {requestName} handled", nameof(AssignProviderTypes));
 
             return StatusCode((int)HttpStatusCode.OK);
         }
@@ -122,8 +107,7 @@ namespace Yoma.Core.Api.Controllers
         [Authorize(Roles = Constants.Role_Admin)]
         public async Task<IActionResult> DeleteProviderType([FromRoute] Guid id, [FromBody] List<Guid> providerTypeIds)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})",
-             nameof(DeleteProviderType), nameof(id), id, nameof(providerTypeIds), providerTypeIds);
+            _logger.LogInformation("Handling request {requestName}",nameof(DeleteProviderType));
 
             await _organizationService.DeleteProviderTypes(id, providerTypeIds);
 

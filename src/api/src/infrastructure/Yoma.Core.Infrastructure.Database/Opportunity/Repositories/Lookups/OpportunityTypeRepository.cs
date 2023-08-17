@@ -2,6 +2,8 @@
 using Yoma.Core.Domain.Opportunity.Models.Lookups;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;
+using Yoma.Core.Domain.Core.Extensions;
+using System.Linq.Expressions;
 
 namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories.Lookups
 {
@@ -20,7 +22,17 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories.Lookups
             {
                 Id = entity.Id,
                 Name = entity.Name
-            }); ;
+            });
+        }
+
+        public static Expression<Func<OpportunityType, bool>> Contains(Expression<Func<OpportunityType, bool>> predicate, string value)
+        {
+            return predicate.Or(o => o.Name.Contains(value));
+        }
+
+        public static IQueryable<OpportunityType> Contains(IQueryable<OpportunityType> query, string value)
+        {
+            return query.Where(o => o.Name.Contains(value));
         }
 
         public Task<OpportunityType> Create(OpportunityType item)
