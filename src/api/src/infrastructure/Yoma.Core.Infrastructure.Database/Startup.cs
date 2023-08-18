@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -23,7 +23,7 @@ namespace Yoma.Core.Infrastructure.Database
         public static string Configuration_ConnectionString(this IConfiguration configuration)
         {
             var result = configuration.GetConnectionString(ConnectionStrings_SQLConnection);
-            if(string.IsNullOrEmpty(result))
+            if (string.IsNullOrEmpty(result))
                 throw new InvalidOperationException($"Failed to retrieve configuration section 'ConnectionStrings.{ConnectionStrings_SQLConnection}'");
 
             return result;

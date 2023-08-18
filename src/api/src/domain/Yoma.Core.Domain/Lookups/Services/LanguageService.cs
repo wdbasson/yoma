@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
@@ -16,7 +16,7 @@ namespace Yoma.Core.Domain.Lookups.Services
         #endregion
 
         #region Constructor
-        public LanguageService(IOptions<AppSettings> appSettings, 
+        public LanguageService(IOptions<AppSettings> appSettings,
             IMemoryCache memoryCache,
             IRepository<Language> languageRepository)
         {

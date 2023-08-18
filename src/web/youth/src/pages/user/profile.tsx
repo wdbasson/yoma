@@ -11,6 +11,7 @@ const UserProfile: NextPageWithLayout = () => {
     required: true,
     onUnauthenticated() {
       // user is not authenticated, redirect to sign-in page
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       signIn(env.NEXT_PUBLIC_KEYCLOAK_DEFAULT_PROVIDER);
     },
   });
@@ -88,9 +89,7 @@ const Settings: NextPageWithLayout = () => {
 };
 
 UserProfile.getLayout = function getLayout(page: ReactElement) {
-  return (
-    <MainBackButton rightMenuChildren={<Settings />}>{page}</MainBackButton>
-  );
+  return <MainBackButton rightMenuChildren={<Settings />}>{page}</MainBackButton>;
 };
 
 export default UserProfile;

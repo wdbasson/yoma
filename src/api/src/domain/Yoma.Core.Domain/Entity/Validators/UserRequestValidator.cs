@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Yoma.Core.Domain.Core.Validators;
 using Yoma.Core.Domain.Entity.Models;
 using Yoma.Core.Domain.Lookups.Interfaces;
@@ -56,4 +56,3 @@ namespace Yoma.Core.Domain.Entity.Validators
         #endregion
     }
 }
-

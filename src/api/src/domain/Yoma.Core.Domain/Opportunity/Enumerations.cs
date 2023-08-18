@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Opportunity
+namespace Yoma.Core.Domain.Opportunity
 {
     public enum Status
     {

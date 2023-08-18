@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Yoma.Core.Domain.Core.Validators;
 using Yoma.Core.Domain.Opportunity.Models;
 

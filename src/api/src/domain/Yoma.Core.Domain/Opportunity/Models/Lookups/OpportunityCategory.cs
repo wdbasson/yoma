@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Opportunity.Models.Lookups
+namespace Yoma.Core.Domain.Opportunity.Models.Lookups
 {
     public class OpportunityCategory
     {

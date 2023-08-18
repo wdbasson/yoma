@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Yoma.Core.Domain.Exceptions;
 using System.ComponentModel.DataAnnotations;
 using Yoma.Core.Domain.Core.Models;
@@ -39,7 +39,7 @@ namespace Yoma.Core.Api.Middleware
                     context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
                     if (!validationException.Errors.Any()) break;
-                    
+
                     errorResponse = validationException.Errors.Select(o => new ErrorResponseItem() { Type = ex.GetType().Name, Message = o.ErrorMessage }).ToList();
                     return context.Response.WriteAsJsonAsync(errorResponse);
 

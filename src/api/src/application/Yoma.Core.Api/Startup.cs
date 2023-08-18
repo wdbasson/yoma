@@ -1,4 +1,4 @@
-﻿using Yoma.Core.Domain.Core.Helpers;
+using Yoma.Core.Domain.Core.Helpers;
 using Yoma.Core.Infrastructure.Database;
 using Yoma.Core.Domain;
 using Yoma.Core.Domain.Core.Models;
@@ -281,4 +281,3 @@ namespace Yoma.Core.Api
         #endregion
     }
 }
-

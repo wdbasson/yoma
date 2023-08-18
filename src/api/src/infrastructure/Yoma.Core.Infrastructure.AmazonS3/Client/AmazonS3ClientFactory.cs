@@ -1,4 +1,4 @@
-﻿using Amazon.S3;
+using Amazon.S3;
 using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.BlobProvider.Interfaces;
 using Yoma.Core.Infrastructure.AmazonS3.Models;
@@ -23,7 +23,7 @@ namespace Yoma.Core.Infrastructure.AmazonS3.Client
         #region Public Members
         public IBlobProviderClient CreateClient()
         {
-            return new AmazonS3Client(_client, _options);   
+            return new AmazonS3Client(_client, _options);
         }
         #endregion
     }

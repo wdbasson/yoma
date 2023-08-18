@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using SendGrid;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.EmailProvider.Interfaces;

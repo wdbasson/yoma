@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.EmailProvider.Models
+namespace Yoma.Core.Domain.EmailProvider.Models
 {
     public class EmailOrganizationDeclinedData : EmailDataBase
     {

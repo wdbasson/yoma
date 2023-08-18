@@ -16,24 +16,19 @@ export const ApiErrors: Props = ({ error }) => {
             return (
               <>
                 <div className="mb-4 flex flex-row items-center text-sm font-bold">
-                  <IoMdAlert className="mr-2 text-xl text-yellow-400" /> Access
-                  Denied
+                  <IoMdAlert className="mr-2 text-xl text-yellow-400" /> Access Denied
                 </div>
-                <p className="text-sm">
-                  Your session has expired. Please sign-in and try again.
-                </p>
+                <p className="text-sm">Your session has expired. Please sign-in and try again.</p>
               </>
             );
           case 403:
             return (
               <>
                 <div className="mb-4 flex flex-row items-center text-sm font-bold">
-                  <IoMdAlert className="mr-2 text-xl text-yellow-400" /> Access
-                  Denied
+                  <IoMdAlert className="mr-2 text-xl text-yellow-400" /> Access Denied
                 </div>
                 <p className="text-sm">
-                  You don&apos;t have access to perform this action. Please
-                  contact us to request access.
+                  You don&apos;t have access to perform this action. Please contact us to request access.
                 </p>
               </>
             );
@@ -41,13 +36,9 @@ export const ApiErrors: Props = ({ error }) => {
             return (
               <>
                 <div className="mb-4 flex flex-row items-center text-sm font-bold">
-                  <IoMdAlert className="mr-2 text-xl text-red-400" /> Access
-                  Denied
+                  <IoMdAlert className="mr-2 text-xl text-red-400" /> Access Denied
                 </div>
-                <p className="text-sm">
-                  An unknown error has occurred. Please contact us or try again
-                  later. ☹️
-                </p>
+                <p className="text-sm">An unknown error has occurred. Please contact us or try again later. ☹️</p>
               </>
             );
           default:
@@ -57,10 +48,7 @@ export const ApiErrors: Props = ({ error }) => {
                   <div className="mb-4 flex flex-row items-center text-sm font-bold">
                     <IoMdAlert className="mr-2 text-xl text-red-400" /> Error
                   </div>
-                  <p className="text-sm">
-                    An unknown error has occurred. Please contact us or try
-                    again later. ☹️
-                  </p>
+                  <p className="text-sm">An unknown error has occurred. Please contact us or try again later. ☹️</p>
                 </>
               );
             }
@@ -76,8 +64,7 @@ export const ApiErrors: Props = ({ error }) => {
               return (
                 <>
                   <div className="mb-4 flex flex-row items-center text-sm font-bold">
-                    <IoMdAlert className="mr-2 text-xl text-red-400" /> The
-                    following errors occurred:
+                    <IoMdAlert className="mr-2 text-xl text-red-400" /> The following errors occurred:
                   </div>
                   <ul className="list-disc">
                     {customErrors?.map((error) => (

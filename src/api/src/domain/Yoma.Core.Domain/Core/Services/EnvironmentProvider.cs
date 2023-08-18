@@ -1,4 +1,4 @@
-﻿using Yoma.Core.Domain.Core.Helpers;
+using Yoma.Core.Domain.Core.Helpers;
 using Yoma.Core.Domain.Core.Interfaces;
 
 namespace Yoma.Core.Domain.Core.Services

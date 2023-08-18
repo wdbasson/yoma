@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using Yoma.Core.Infrastructure.Database.Core.Entities;
@@ -57,7 +57,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Entities
 
         [Column(TypeName = "varchar(MAX)")]
         public string? Biography { get; set; }
-        
+
         [Required]
         public bool Approved { get; set; }
 

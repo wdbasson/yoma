@@ -1,4 +1,4 @@
-﻿using Yoma.Core.Domain.Opportunity.Models.Lookups;
+using Yoma.Core.Domain.Opportunity.Models.Lookups;
 
 namespace Yoma.Core.Domain.Opportunity.Interfaces.Lookups
 {

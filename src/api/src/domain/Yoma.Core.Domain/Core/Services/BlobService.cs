@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using System.Transactions;
 using Yoma.Core.Domain.BlobProvider.Interfaces;
 using Yoma.Core.Domain.Core.Helpers;
@@ -75,7 +75,7 @@ namespace Yoma.Core.Domain.Core.Services
             var item = GetById(id);
 
             using var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
-            
+
             await _blobObjectRepository.Delete(item);
             await _blobProviderClient.Delete(item.Key);
 

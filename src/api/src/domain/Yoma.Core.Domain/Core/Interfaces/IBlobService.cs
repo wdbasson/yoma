@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Yoma.Core.Domain.Core.Models;
 
 namespace Yoma.Core.Domain.Core.Interfaces

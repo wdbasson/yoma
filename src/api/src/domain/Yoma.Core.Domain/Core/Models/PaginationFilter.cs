@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Yoma.Core.Domain.Core.Models

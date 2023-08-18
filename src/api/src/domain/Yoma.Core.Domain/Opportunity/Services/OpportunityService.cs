@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Microsoft.Extensions.Options;
 using System.Transactions;
 using Yoma.Core.Domain.Core.Extensions;

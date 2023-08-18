@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Entity.Models
+namespace Yoma.Core.Domain.Entity.Models
 {
     public class User
 
@@ -48,4 +48,3 @@
         #endregion
     }
 }
-

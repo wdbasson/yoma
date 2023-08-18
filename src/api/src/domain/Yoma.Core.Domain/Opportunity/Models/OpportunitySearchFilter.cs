@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Opportunity.Models
+namespace Yoma.Core.Domain.Opportunity.Models
 {
     public class OpportunitySearchFilter : OpportunitySearchFilterBase
     {

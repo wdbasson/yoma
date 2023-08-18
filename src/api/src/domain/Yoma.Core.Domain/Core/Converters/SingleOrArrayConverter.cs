@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Yoma.Core.Domain.Core.Converters
-{ 
+{
     public class SingleOrArrayConverter<T> : JsonConverter
     {
         #region Public Properties

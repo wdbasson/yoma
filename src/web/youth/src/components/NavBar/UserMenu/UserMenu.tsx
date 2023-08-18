@@ -25,7 +25,7 @@ export const UserMenu: React.FC = () => {
         <div className="gl-border-dark gl-border-hover-white relative h-11 w-11 cursor-pointer overflow-hidden rounded-full border-2 hover:border-white">
           {/* NO IMAGE */}
           {/* {!userCompanyImageUrl && ( */}
-          <IoMdPerson className="animate-in slide-in-from-top-4 absolute -left-1 h-12 w-12 text-gray-400" />
+          <IoMdPerson className="absolute -left-1 h-12 w-12 text-gray-400 animate-in slide-in-from-top-4" />
           {/* )} */}
 
           {/* EXISTING IMAGE */}
@@ -76,17 +76,13 @@ export const UserMenu: React.FC = () => {
       >
         <div>
           <Link href="/user/profile">
-            <button
-              className={`${styles.userMenuLink} rounded-l-2xl rounded-r-2xl rounded-bl-none rounded-br-none`}
-            >
+            <button className={`${styles.userMenuLink} rounded-l-2xl rounded-r-2xl rounded-bl-none rounded-br-none`}>
               Account settings
             </button>
           </Link>
 
           <Link href="/user/rewards">
-            <button className={`${styles.userMenuLink} rounded-none`}>
-              My rewards
-            </button>
+            <button className={`${styles.userMenuLink} rounded-none`}>My rewards</button>
           </Link>
 
           {/* <Link href="/user/saved">
@@ -97,7 +93,7 @@ export const UserMenu: React.FC = () => {
                 </a>
               </Link> */}
 
-          {/* <Link href="/user/notifications"> 
+          {/* <Link href="/user/notifications">
               <button className={`${styles.userMenuLink} rounded-none`}>
                 Inbox
                 {alertCount !== null && alertCount > 0 && (
@@ -105,13 +101,11 @@ export const UserMenu: React.FC = () => {
                     {alertCount}
                   </div>
                 )}
-              </button> 
+              </button>
           </Link> */}
 
           <Link href="/user/emailSettings">
-            <button className={`${styles.userMenuLink} rounded-none`}>
-              Email settings
-            </button>
+            <button className={`${styles.userMenuLink} rounded-none`}>Email settings</button>
           </Link>
 
           {/* {userRoles?.find((x) => x.name === "Seller") && (

@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Keycloak.Models
+namespace Yoma.Core.Domain.Keycloak.Models
 {
     public class KeycloakWebhookRequest
     {

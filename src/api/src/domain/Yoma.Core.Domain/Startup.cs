@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Hangfire;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Yoma.Core.Domain.LaborMarketProvider.Interfaces;
 using Yoma.Core.Infrastructure.Emsi.Client;

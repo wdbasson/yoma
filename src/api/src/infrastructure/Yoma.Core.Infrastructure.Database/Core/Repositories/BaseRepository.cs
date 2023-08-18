@@ -1,10 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Entities;
 
 namespace Yoma.Core.Infrastructure.Database.Core.Repositories
 {
-    public abstract class BaseRepository<TEntity> 
+    public abstract class BaseRepository<TEntity>
        where TEntity : BaseEntity<Guid>
     {
         #region Class Variables

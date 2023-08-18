@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Infrastructure.AmazonS3.Models
+namespace Yoma.Core.Infrastructure.AmazonS3.Models
 {
     public class AWSS3Options
     {

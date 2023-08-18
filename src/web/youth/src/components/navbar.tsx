@@ -53,47 +53,33 @@ export const Navbar: React.FC = () => {
               </Link>
 
               <Link href="/opportunities">
-                <button className={`${styles.borderDarkButton} rounded-none`}>
-                  Opportunities
-                </button>
+                <button className={`${styles.borderDarkButton} rounded-none`}>Opportunities</button>
               </Link>
 
               <Link href="/marketplace">
-                <button
-                  className={`${styles.borderDarkButton} rounded-none rounded-bl-2xl rounded-br-2xl`}
-                >
+                <button className={`${styles.borderDarkButton} rounded-none rounded-bl-2xl rounded-br-2xl`}>
                   Marketplace
                 </button>
               </Link>
 
               <Link href="/faq">
-                <button
-                  className={`${styles.borderDarkButton} rounded-none rounded-bl-2xl rounded-br-2xl`}
-                >
-                  FAQ
-                </button>
+                <button className={`${styles.borderDarkButton} rounded-none rounded-bl-2xl rounded-br-2xl`}>FAQ</button>
               </Link>
 
               <Link href="/howToYoma">
-                <button
-                  className={`${styles.borderDarkButton} rounded-none rounded-bl-2xl rounded-br-2xl`}
-                >
+                <button className={`${styles.borderDarkButton} rounded-none rounded-bl-2xl rounded-br-2xl`}>
                   How to Yoma
                 </button>
               </Link>
 
               <Link href="/feedback">
-                <button
-                  className={`${styles.borderDarkButton} rounded-none rounded-bl-2xl rounded-br-2xl`}
-                >
+                <button className={`${styles.borderDarkButton} rounded-none rounded-bl-2xl rounded-br-2xl`}>
                   Feedback
                 </button>
               </Link>
 
               <Link href="/localisation">
-                <button
-                  className={`${styles.borderDarkButton} rounded-none rounded-bl-2xl rounded-br-2xl`}
-                >
+                <button className={`${styles.borderDarkButton} rounded-none rounded-bl-2xl rounded-br-2xl`}>
                   Localisation
                 </button>
               </Link>
@@ -165,9 +151,9 @@ export const Navbar: React.FC = () => {
             )} */}
           </ul>
         </div>
-        {/* <div 
+        {/* <div
             className="navbar-center hidden md:flex"
-          > 
+          >
           </div> */}
         <div className="navbar-end gap-5">
           {/* SEARCH */}

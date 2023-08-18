@@ -1,4 +1,4 @@
-﻿using Yoma.Core.Domain.Core.Interfaces;
+using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Entity.Extensions;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Models;
@@ -52,7 +52,7 @@ namespace Yoma.Core.Domain.Entity.Services
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentNullException(nameof(email));
 
-            var result = GetByEmailOrNull(email) 
+            var result = GetByEmailOrNull(email)
                 ?? throw new ValidationException($"User with email '{email}' does not exist");
 
             return result;
@@ -77,7 +77,7 @@ namespace Yoma.Core.Domain.Entity.Services
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
 
-            var result = _userRepository.Query(false).SingleOrDefault(o => o.Id == id) 
+            var result = _userRepository.Query(false).SingleOrDefault(o => o.Id == id)
                 ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(User)} with id '{id}' does not exist");
 
             result.PhotoURL = GetS3ObjectURL(result.PhotoId);
@@ -197,7 +197,7 @@ namespace Yoma.Core.Domain.Entity.Services
         {
             var result = GetByEmail(email);
 
-            if(file == null)
+            if (file == null)
                 throw new ArgumentNullException(nameof(file));
 
             var currentPhotoId = result.PhotoId;

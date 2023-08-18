@@ -1,4 +1,4 @@
-﻿using SendGrid;
+using SendGrid;
 using SendGrid.Helpers.Mail;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.EmailProvider;

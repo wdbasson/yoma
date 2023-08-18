@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Infrastructure.SendGrid.Models
+namespace Yoma.Core.Infrastructure.SendGrid.Models
 {
     public class SendGridOptions
     {
