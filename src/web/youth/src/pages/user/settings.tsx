@@ -15,6 +15,7 @@ import MainBackButtonLayout from "~/components/Layout/MainBackButton";
 import { ApiErrors } from "~/components/apiErrors";
 import { type NextPageWithLayout } from "../_app";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getServerSideProps(context: any) {
   const queryClient = new QueryClient();
 
@@ -42,7 +43,7 @@ const Settings: NextPageWithLayout = () => {
     required: true,
     onUnauthenticated() {
       // user is not authenticated, redirect to sign-in page
-      signIn(env.NEXT_PUBLIC_KEYCLOAK_DEFAULT_PROVIDER);
+      signIn(env.NEXT_PUBLIC_KEYCLOAK_DEFAULT_PROVIDER); // eslint-disable-line @typescript-eslint/no-floating-promises
     },
   });
 
@@ -123,7 +124,7 @@ const Settings: NextPageWithLayout = () => {
 
       // update session
       await update({
-        ...data.session?.user,
+        ...data.session?.user, // eslint-disable-line @typescript-eslint/no-unsafe-member-access
         name: data.displayName, // eslint-disable-line @typescript-eslint/no-unsafe-assignment
         email: data.email, // eslint-disable-line @typescript-eslint/no-unsafe-assignment
         profile: data,

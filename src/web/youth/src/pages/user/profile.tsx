@@ -11,6 +11,7 @@ const UserProfile: NextPageWithLayout = () => {
     required: true,
     onUnauthenticated() {
       // user is not authenticated, redirect to sign-in page
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       signIn(env.NEXT_PUBLIC_KEYCLOAK_DEFAULT_PROVIDER);
     },
   });
