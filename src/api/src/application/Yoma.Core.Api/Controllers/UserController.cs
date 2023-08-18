@@ -9,6 +9,10 @@ using Yoma.Core.Domain.Entity.Models;
 
 namespace Yoma.Core.Api.Controllers
 {
+    /* TODO:
+        - Search
+    */
+
     [Route("api/v3/user")]
     [ApiController]
     [Authorize(Policy = Common.Constants.Authorization_Policy)]
@@ -37,7 +41,7 @@ namespace Yoma.Core.Api.Controllers
         [Authorize(Roles = Constants.Role_Admin)]
         public IActionResult GetById([FromRoute] Guid id)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName}: {paramValue})", nameof(GetById), nameof(id), id);
+            _logger.LogInformation("Handling request {requestName}", nameof(GetById));
 
             var result = _userService.GetById(id);
 
@@ -67,7 +71,7 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(User), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpdateProfile([FromBody] UserProfileRequest profile)
         {
-            _logger.LogInformation("Handling request {requestName} (Username: {paramValue}", nameof(UpdateProfile), User.Identity?.Name);
+            _logger.LogInformation("Handling request {requestName}", nameof(UpdateProfile));
 
             var result = await _userService.UpdateProfile(User.Identity?.Name, profile);
 
@@ -81,7 +85,7 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(User), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpsertPhoto([Required] IFormFile file)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName}: {paramValue})", nameof(UpsertPhoto), nameof(file.Name), file?.Name);
+            _logger.LogInformation("Handling request {requestName}", nameof(UpsertPhoto));
 
             var result = await _userService.UpsertPhoto(User.Identity?.Name, file);
 

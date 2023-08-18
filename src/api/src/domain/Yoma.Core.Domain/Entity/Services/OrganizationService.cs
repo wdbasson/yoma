@@ -2,12 +2,14 @@
 using Microsoft.AspNetCore.Http;
 using System.Transactions;
 using Yoma.Core.Domain.Core;
+using Yoma.Core.Domain.Core.Helpers;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Interfaces.Lookups;
 using Yoma.Core.Domain.Entity.Models;
 using Yoma.Core.Domain.Entity.Validators;
+using Yoma.Core.Domain.Exceptions;
 using Yoma.Core.Domain.IdentityProvider.Interfaces;
 
 namespace Yoma.Core.Domain.Entity.Services
@@ -15,6 +17,7 @@ namespace Yoma.Core.Domain.Entity.Services
     public class OrganizationService : IOrganizationService
     {
         #region Class Variables
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IUserService _userService;
         private readonly IIdentityProviderClient _identityProviderClient;
         private readonly IOrganizationProviderTypeService _providerTypeService;
@@ -26,7 +29,8 @@ namespace Yoma.Core.Domain.Entity.Services
         #endregion
 
         #region Constructor
-        public OrganizationService(IUserService userService,
+        public OrganizationService(IHttpContextAccessor httpContextAccessor,
+            IUserService userService,
             IIdentityProviderClientFactory identityProviderClientFactory,
             IOrganizationProviderTypeService providerTypeService,
             IBlobService blobService,
@@ -35,6 +39,7 @@ namespace Yoma.Core.Domain.Entity.Services
             IRepository<OrganizationUser> organizationUserRepository,
             IRepository<OrganizationProviderType> organizationProviderTypeRepository)
         {
+            _httpContextAccessor = httpContextAccessor;
             _userService = userService;
             _identityProviderClient = identityProviderClientFactory.CreateClient();
             _providerTypeService = providerTypeService;
@@ -302,6 +307,50 @@ namespace Yoma.Core.Domain.Entity.Services
             await _identityProviderClient.RemoveRoles(user.ExternalId.Value, new List<string> { Constants.Role_OrganizationAdmin });
 
             scope.Complete();
+        }
+
+        public bool IsAdmin(Guid id, bool throwUnauthorized)
+        {
+            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false));
+            var org = GetById(id, false);
+
+            var result = _organizationUserRepository.Query().SingleOrDefault(o => o.OrganizationId == org.Id && o.UserId == user.Id) != null;
+            if(!result && throwUnauthorized)
+                throw new SecurityException("Unauthorized");
+            return result;
+        }
+
+        public bool IsAdminsOf(List<Guid> ids, bool throwUnauthorized)
+        {
+            if (!ids.Any()) throw new ArgumentNullException(nameof(ids));
+
+            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false));
+            var orgIds = _organizationUserRepository.Query().Where(o => o.UserId == user.Id).Select(o => o.OrganizationId).ToList();
+
+            var result = ids.Except(orgIds).Any();
+            if (!result && throwUnauthorized)
+                throw new SecurityException("Unauthorized");
+
+            return result;
+        }
+
+        public List<User> ListAdmins(Guid id)
+        {
+            var org = GetById(id, false);
+            var adminIds = _organizationUserRepository.Query().Where(o => o.OrganizationId == org.Id).Select(o => o.UserId).ToList();
+
+            var results = new List<User>();
+            adminIds.ForEach(o => results.Add(_userService.GetById(o)));
+            return results;
+        }
+
+        public List<Organization> ListAdminsOf()
+        {
+            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false));
+            var orgIds = _organizationUserRepository.Query().Where(o => o.UserId == user.Id).Select(o => o.OrganizationId).ToList();
+
+            var results = _organizationRepository.Query().Where(o => orgIds.Contains(o.Id)).ToList();
+            return results;
         }
         #endregion
 

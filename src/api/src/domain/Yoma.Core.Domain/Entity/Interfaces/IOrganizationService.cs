@@ -23,8 +23,16 @@ namespace Yoma.Core.Domain.Entity.Interfaces
 
         Task<Organization> UpsertRegistrationDocument(Guid id, IFormFile? file);
 
-        Task AssignAdmin(Guid organizationId, Guid userId);
+        bool IsAdmin(Guid id, bool throwUnauthorized);
 
-        Task RemoveAdmin(Guid organizationId, Guid userId);
+        bool IsAdminsOf(List<Guid> ids, bool throwUnauthorized);
+
+        List<User> ListAdmins(Guid id);
+
+        List<Organization> ListAdminsOf();
+
+        Task AssignAdmin(Guid id, Guid userId);
+
+        Task RemoveAdmin(Guid id, Guid userId);
     }
 }

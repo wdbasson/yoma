@@ -14,7 +14,8 @@ namespace Yoma.Core.Api.Controllers
         - User organization registration (User role only)
         - Approve / Declined
         - Request verification
-        - Search (by admin and / or name)
+        - Search
+        - Organization Admin authorization
     */
 
     [Route("api/v3/organization")]
@@ -48,7 +49,7 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
         public IActionResult GetById([FromRoute] Guid id)
         {
-            _logger.LogInformation("Handling request {requestName} {paramName}: {paramValue})", nameof(GetById), nameof(id), id);
+            _logger.LogInformation("Handling request {requestName}", nameof(GetById));
 
             var result = _organizationService.GetById(id, true);
 
@@ -63,8 +64,7 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> Upsert([FromBody] OrganizationRequest request)
         {
-            _logger.LogInformation("Handling request {requestName} {paramName}: {paramValue}",
-                nameof(Upsert), nameof(request), !request.Id.HasValue ? "insert" : $"update: {request.Id.Value}");
+            _logger.LogInformation("Handling request {requestName}", nameof(Upsert));
 
             var result = await _organizationService.Upsert(request);
 
@@ -121,7 +121,7 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpsertLogo([FromRoute] Guid id, [Required] IFormFile file)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName}: {paramValue})", nameof(UpsertLogo), nameof(file.Name), file?.Name);
+            _logger.LogInformation("Handling request {requestName}", nameof(UpsertLogo));
 
             var result = await _organizationService.UpsertLogo(id, file);
 
@@ -135,7 +135,7 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpsertRegistrationDocument([FromRoute] Guid id, [Required] IFormFile file)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName}: {paramValue})", nameof(UpsertRegistrationDocument), nameof(file.Name), file?.Name);
+            _logger.LogInformation("Handling request {requestName}", nameof(UpsertRegistrationDocument));
 
             var result = await _organizationService.UpsertRegistrationDocument(id, file);
 
@@ -150,8 +150,7 @@ namespace Yoma.Core.Api.Controllers
         [Authorize(Roles = Constants.Role_Admin)]
         public IActionResult AssignAdmin([FromRoute] Guid id, [FromRoute] Guid userId)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})", 
-                nameof(AssignAdmin), nameof(id), id, nameof(userId), userId);
+            _logger.LogInformation("Handling request {requestName}", nameof(AssignAdmin));
 
             var result = _organizationService.AssignAdmin(id, userId);
 
@@ -166,8 +165,7 @@ namespace Yoma.Core.Api.Controllers
         [Authorize(Roles = Constants.Role_Admin)]
         public IActionResult RemoveAdmin([FromRoute] Guid id, [FromRoute] Guid userId)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})",
-                nameof(RemoveAdmin), nameof(id), id, nameof(userId), userId);
+            _logger.LogInformation("Handling request {requestName}", nameof(RemoveAdmin));
 
 
             var result = _organizationService.RemoveAdmin(id, userId);

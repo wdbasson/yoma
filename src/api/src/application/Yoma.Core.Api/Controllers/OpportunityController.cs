@@ -11,6 +11,10 @@ using Yoma.Core.Domain.Opportunity.Models.Lookups;
 
 namespace Yoma.Core.Api.Controllers
 {
+    /* TODO:
+        - Organization Admin authorization
+    */
+
     [Route("api/v3/opportunity")]
     [ApiController]
     [Authorize(Policy = Common.Constants.Authorization_Policy, Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
@@ -142,7 +146,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName}", nameof(GetById));
 
-            var result = _opportunityService.GetById(id, true);
+            var result = _opportunityService.GetById(id, true, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(GetById));
 
@@ -157,7 +161,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName}", nameof(SearchInfo));
 
-            var result = _opportunityService.Search(filter);
+            var result = _opportunityService.Search(filter, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(SearchInfo));
 
@@ -169,10 +173,9 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(Opportunity), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> Upsert([FromBody] OpportunityRequest request)
         {
-            _logger.LogInformation("Handling request {requestName} {paramName}: {paramValue}",
-                nameof(Upsert), nameof(request), !request.Id.HasValue ? "insert" : $"update: {request.Id.Value}");
+            _logger.LogInformation("Handling request {requestName}", nameof(Upsert));
 
-            var result = await _opportunityService.Upsert(request, User.Identity?.Name);
+            var result = await _opportunityService.Upsert(request, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(Upsert));
 
@@ -186,7 +189,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName}", nameof(UpdateStatus));
 
-            await _opportunityService.UpdateStatus(id, status, User.Identity?.Name);
+            await _opportunityService.UpdateStatus(id, status, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(UpdateStatus));
 
@@ -200,7 +203,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName}", nameof(AssignCategories));
 
-            await _opportunityService.AssignCategories(id, categoryIds);
+            await _opportunityService.AssignCategories(id, categoryIds, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(AssignCategories));
 
@@ -214,7 +217,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName}", nameof(DeleteCategories));
 
-            await _opportunityService.DeleteCategories(id, categoryIds);
+            await _opportunityService.DeleteCategories(id, categoryIds, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(DeleteCategories));
 
@@ -228,7 +231,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName}", nameof(AssignCountries));
 
-            await _opportunityService.AssignCountries(id, countryIds);
+            await _opportunityService.AssignCountries(id, countryIds, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(AssignCountries));
 
@@ -242,7 +245,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName}", nameof(DeleteCountries));
 
-            await _opportunityService.DeleteCountries(id, countryIds);
+            await _opportunityService.DeleteCountries(id, countryIds, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(DeleteCountries));
 
@@ -256,7 +259,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName}", nameof(AssignLanguages));
 
-            await _opportunityService.AssignLanguages(id, languageIds);
+            await _opportunityService.AssignLanguages(id, languageIds, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(AssignLanguages));
 
@@ -270,7 +273,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName}", nameof(DeleteLanguages));
 
-            await _opportunityService.DeleteLanguages(id, languageIds);
+            await _opportunityService.DeleteLanguages(id, languageIds, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(DeleteLanguages));
 
@@ -284,7 +287,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName}", nameof(AssignSkills));
 
-            await _opportunityService.AssignSkills(id, skillIds);
+            await _opportunityService.AssignSkills(id, skillIds, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(AssignSkills));
 
@@ -298,7 +301,7 @@ namespace Yoma.Core.Api.Controllers
         {
             _logger.LogInformation("Handling request {requestName}", nameof(DeleteSkills));
 
-            await _opportunityService.DeleteSkills(id, skillIds);
+            await _opportunityService.DeleteSkills(id, skillIds, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(DeleteSkills));
 

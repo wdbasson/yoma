@@ -54,6 +54,7 @@ namespace Yoma.Core.Domain
             services.AddScoped<IOpportunityTypeService, OpportunityTypeService>();
             #endregion Lookups
             services.AddScoped<IOpportunityService, OpportunityService>();
+            services.AddScoped<IOpportunityBackgroundService, OpportunityBackgroundService>();
             #endregion Opportunity
         }
 
@@ -65,9 +66,9 @@ namespace Yoma.Core.Domain
             var skillService = scope.ServiceProvider.GetRequiredService<ISkillService>();
             RecurringJob.AddOrUpdate("Skill Reference Seeding", () => skillService.SeedSkills(), options.SeedSkillsSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 
-            var opportunityService = scope.ServiceProvider.GetRequiredService<IOpportunityService>();
-            RecurringJob.AddOrUpdate("Opportunity Expiration", () => opportunityService.ProcessExpiration(), options.OpportunityExpirationSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
-            RecurringJob.AddOrUpdate($"Opportunity Expiration Notifications (with next {options.OpportunityExpirationNotificationIntervalInDays} days)", () => opportunityService.ExpirationNotifications(), options.OpportunityExpirationNotificationSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+            var opportunityBackgroundService = scope.ServiceProvider.GetRequiredService<IOpportunityBackgroundService>();
+            RecurringJob.AddOrUpdate("Opportunity Expiration", () => opportunityBackgroundService.ProcessExpiration(), options.OpportunityExpirationSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+            RecurringJob.AddOrUpdate($"Opportunity Expiration Notifications (with next {options.OpportunityExpirationNotificationIntervalInDays} days)", () => opportunityBackgroundService.ExpirationNotifications(), options.OpportunityExpirationNotificationSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
         }
         #endregion
     }

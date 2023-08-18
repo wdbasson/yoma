@@ -48,6 +48,7 @@ namespace Yoma.Core.Api.Middleware
                     context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                     break;
                 case SecurityException:
+                case System.Security.SecurityException:
                     context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                     break;
                 case DataCollisionException:

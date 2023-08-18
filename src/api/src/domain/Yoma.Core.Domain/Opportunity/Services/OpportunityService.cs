@@ -1,7 +1,9 @@
 ﻿using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System.Transactions;
 using Yoma.Core.Domain.Core.Extensions;
+using Yoma.Core.Domain.Core.Helpers;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Entity.Interfaces;
@@ -10,7 +12,6 @@ using Yoma.Core.Domain.Opportunity.Helpers;
 using Yoma.Core.Domain.Opportunity.Interfaces;
 using Yoma.Core.Domain.Opportunity.Interfaces.Lookups;
 using Yoma.Core.Domain.Opportunity.Models;
-using Yoma.Core.Domain.Opportunity.Services.Lookups;
 using Yoma.Core.Domain.Opportunity.Validators;
 
 namespace Yoma.Core.Domain.Opportunity.Services
@@ -18,7 +19,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
     public class OpportunityService : IOpportunityService
     {
         #region Class Variables
-        private readonly ScheduleJobOptions _scheduleJobOptions;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         private readonly IOpportunityStatusService _opportunityStatusService;
         private readonly IOpportunityCategoryService _opportunityCategoryService;
@@ -40,16 +41,16 @@ namespace Yoma.Core.Domain.Opportunity.Services
         private readonly IRepository<OpportunityLanguage> _opportunityLanguageRepository;
         private readonly IRepository<OpportunitySkill> _opportunitySkillRepository;
 
-        public const string Separator_Keywords = " ";
-        public static readonly Status[] Statuses_Updatable = { Status.Active, Status.Inactive };
-        public static readonly Status[] Statuses_Activatable = { Status.Inactive };
-        public static readonly Status[] Statuses_Deletable = { Status.Active, Status.Inactive };
-        public static readonly Status[] Statuses_DeActivatable = { Status.Active };
-        public static readonly Status[] Statuses_Expirable = { Status.Active, Status.Inactive };
+        public const string Keywords_Separator = ",";
+        public const int Keywords_CombinedMaxLenght = 500;
+        private static readonly Status[] Statuses_Updatable = { Status.Active, Status.Inactive };
+        private static readonly Status[] Statuses_Activatable = { Status.Inactive };
+        private static readonly Status[] Statuses_Deletable = { Status.Active, Status.Inactive };
+        private static readonly Status[] Statuses_DeActivatable = { Status.Active };
         #endregion
 
         #region Constructor
-        public OpportunityService(IOptions<ScheduleJobOptions> scheduleJobOptions,
+        public OpportunityService(IHttpContextAccessor httpContextAccessor,
             IOpportunityStatusService opportunityStatusService,
             IOpportunityCategoryService opportunityCategoryService,
             ICountryService countryService,
@@ -68,7 +69,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
             IRepository<OpportunityLanguage> opportunityLanguageRepository,
             IRepository<OpportunitySkill> opportunitySkillRepository)
         {
-            _scheduleJobOptions = scheduleJobOptions.Value;
+            _httpContextAccessor = httpContextAccessor;
 
             _opportunityStatusService = opportunityStatusService;
             _opportunityCategoryService = opportunityCategoryService;
@@ -93,7 +94,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
         #endregion
 
         #region Public Members
-        public Models.Opportunity GetById(Guid id, bool includeChildren)
+        public Models.Opportunity GetById(Guid id, bool includeChildren, bool ensureOrganizationAuthorization)
         {
             if (id == Guid.Empty)
                 throw new ArgumentNullException(nameof(id));
@@ -101,12 +102,15 @@ namespace Yoma.Core.Domain.Opportunity.Services
             var result = _opportunityRepository.Query(includeChildren).SingleOrDefault(o => o.Id == id)
                 ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(Models.Opportunity)} with id '{id}' does not exist");
 
+            if (ensureOrganizationAuthorization)
+                _organizationService.IsAdmin(result.OrganizationId, true);
+
             return result;
         }
 
         public OpportunityInfo GetInfoById(Guid id, bool includeChildren)
         {
-            var result = GetById(id, includeChildren);
+            var result = GetById(id, includeChildren, false);
 
             return result.ToOpportunityInfo();
         }
@@ -149,7 +153,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
                 ValueContains = filter.ValueContains
             };
 
-            var searchResult = Search(filterInternal);
+            var searchResult = Search(filterInternal, false);
             var results = new OpportunitySearchResultsInfo
             {
                 TotalCount = searchResult.TotalCount,
@@ -159,13 +163,21 @@ namespace Yoma.Core.Domain.Opportunity.Services
             return results;
         }
 
-        public OpportunitySearchResults Search(OpportunitySearchFilter filter)
+        public OpportunitySearchResults Search(OpportunitySearchFilter filter, bool ensureOrganizationAuthorization)
         {
             if (filter == null)
                 throw new ArgumentNullException(nameof(filter));
 
             _searchFilterValidator.ValidateAndThrow(filter);
 
+            if (ensureOrganizationAuthorization)
+            {
+                if (filter.OrganizationIds != null) //specified; ensure authorized
+                    _organizationService.IsAdminsOf(filter.OrganizationIds, true);
+                else //none specified; ensure search only spans authorized organizations
+                    filter.OrganizationIds = _organizationService.ListAdminsOf().Select(o => o.Id).ToList();
+            }
+            
             var query = _opportunityRepository.Query(true);
 
             //date range
@@ -184,10 +196,14 @@ namespace Yoma.Core.Domain.Opportunity.Services
             //organization (explicitly specified)
             var filterByOrganization = false;
             var organizationIds = new List<Guid>();
-            if (filter.OrganizationId.HasValue)
+            if (filter.OrganizationIds != null)
             {
-                filterByOrganization = true;
-                organizationIds.Add(filter.OrganizationId.Value);
+                filter.OrganizationIds = filter.OrganizationIds.Distinct().ToList();
+                if (filter.OrganizationIds.Any())
+                {
+                    filterByOrganization = true;
+                    organizationIds.AddRange(filter.OrganizationIds);
+                }
             }
 
             //types (explicitly specified)
@@ -253,9 +269,17 @@ namespace Yoma.Core.Domain.Opportunity.Services
 
                 //organizations
                 var matchedOrganizationIds = _organizationService.Contains(filter.ValueContains).Select(o => o.Id).ToList();
-                organizationIds.AddRange(matchedOrganizationIds.Except(organizationIds));
-                predicate = predicate.Or(o => organizationIds.Contains(o.OrganizationId));
-
+                if (ensureOrganizationAuthorization)
+                {
+                    organizationIds = organizationIds.Intersect(matchedOrganizationIds).ToList(); //organizationIds == authorized organizations; only include matched authorized organizations
+                    predicate = predicate.And(o => organizationIds.Contains(o.OrganizationId));
+                }
+                else
+                {
+                    organizationIds.AddRange(matchedOrganizationIds.Except(organizationIds));
+                    predicate = predicate.Or(o => organizationIds.Contains(o.OrganizationId));
+                }
+        
                 //types
                 var matchedTypeIds = _opportunityTypeService.Contains(filter.ValueContains).Select(o => o.Id).ToList();
                 typeIds.AddRange(matchedTypeIds.Except(typeIds));
@@ -307,21 +331,22 @@ namespace Yoma.Core.Domain.Opportunity.Services
             return results;
         }
 
-        public async Task<Models.Opportunity> Upsert(OpportunityRequest request, string? username)
+        public async Task<Models.Opportunity> Upsert(OpportunityRequest request, bool ensureOrganizationAuthorization)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            username = username?.Trim();
-            if (string.IsNullOrEmpty(username))
-                throw new ArgumentNullException(nameof(username));
+            var username = HttpContextAccessorHelper.GetUsername(_httpContextAccessor, !ensureOrganizationAuthorization);
 
             _opportunityRequestValidator.ValidateAndThrow(request);
 
             // check if user exists
             var isNew = !request.Id.HasValue;
 
-            var result = !request.Id.HasValue ? new Models.Opportunity { Id = Guid.NewGuid() } : GetById(request.Id.Value, true);
+            if (!isNew && ensureOrganizationAuthorization)
+                _organizationService.IsAdmin(request.OrganizationId,true);
+
+            var result = !request.Id.HasValue ? new Models.Opportunity { Id = Guid.NewGuid() } : GetById(request.Id.Value, true, false);
 
             var existingByTitle = GetByTitleOrNull(request.Title, false);
             if (existingByTitle != null && (isNew || result.Id != existingByTitle.Id))
@@ -346,7 +371,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
             result.CommitmentInterval = _timeIntervalService.GetById(request.CommitmentIntervalId).Name;
             result.CommitmentIntervalCount = request.CommitmentIntervalCount;
             result.ParticipantLimit = request.ParticipantLimit;
-            result.Keywords = request.Keywords == null ? null : string.Join(Separator_Keywords, request.Keywords);
+            result.Keywords = request.Keywords == null ? null : string.Join(Keywords_Separator, request.Keywords);
             result.DateStart = request.DateStart.RemoveTime();
             result.DateEnd = !request.DateEnd.HasValue ? null : request.DateEnd.Value.ToEndOfDay();
 
@@ -376,7 +401,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
             if (increment <= 0)
                 throw new ArgumentOutOfRangeException(nameof(increment));
 
-            var opportunity = GetById(id, false);
+            var opportunity = GetById(id, false, false);
             if (opportunity.Status != Status.Active)
                 throw new InvalidOperationException($"{nameof(Models.Opportunity)} must be active (current status '{opportunity.Status}')");
 
@@ -388,18 +413,16 @@ namespace Yoma.Core.Domain.Opportunity.Services
                 throw new InvalidOperationException($"Increment will exceed limit (current count '{opportunity.ParticipantCount ?? 0}' vs current limit '{opportunity.ParticipantLimit}')");
 
             opportunity.ParticipantCount = count;
-            //modified by system; ModifiedBy not set
+            //modifiedBy preserved
 
             await _opportunityRepository.Update(opportunity);
         }
 
-        public async Task UpdateStatus(Guid id, Status status, string? username)
+        public async Task UpdateStatus(Guid id, Status status, bool ensureOrganizationAuthorization)
         {
-            var opportunity = GetById(id, false);
+            var opportunity = GetById(id, false, ensureOrganizationAuthorization);
 
-            username = username?.Trim();
-            if (string.IsNullOrEmpty(username))
-                throw new ArgumentNullException(nameof(username));
+            var username = HttpContextAccessorHelper.GetUsername(_httpContextAccessor, !ensureOrganizationAuthorization);
 
             switch (status)
             {
@@ -435,47 +458,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
             await _opportunityRepository.Update(opportunity);
         }
 
-        public async Task ProcessExpiration()
+        public async Task AssignCategories(Guid id, List<Guid> categoryIds, bool ensureOrganizationAuthorization)
         {
-            var statusExpiredId = _opportunityStatusService.GetByName(Status.Expired.ToString()).Id;
-            var statusExpirableIds = Statuses_Expirable.Select(o => _opportunityStatusService.GetByName(o.ToString()).Id).ToList();
-
-            do
-            {
-                var items = _opportunityRepository.Query().Where(o => statusExpirableIds.Contains(o.StatusId) &&
-                    o.DateEnd.HasValue && o.DateEnd.Value <= DateTimeOffset.Now).OrderBy(o => o.DateEnd).Take(_scheduleJobOptions.OpportunityExpirationBatchSize).ToList();
-                if (!items.Any()) break;
-
-                foreach (var item in items)
-                {
-                    //TODO: email notification to provider
-
-                    item.StatusId = statusExpiredId;
-                    await _opportunityRepository.Update(item);
-                }
-            } while (true);
-        }
-
-        public async Task ExpirationNotifications()
-        {
-            var datetimeFrom = new DateTimeOffset(DateTime.Today);
-            var datetimeTo = datetimeFrom.AddDays(_scheduleJobOptions.OpportunityExpirationNotificationIntervalInDays);
-            var statusExpirableIds = Statuses_Expirable.Select(o => _opportunityStatusService.GetByName(o.ToString()).Id).ToList();
-
-            do
-            {
-                var items = _opportunityRepository.Query().Where(o => statusExpirableIds.Contains(o.StatusId) &&
-                    o.DateEnd.HasValue && o.DateEnd.Value >= datetimeFrom && o.DateEnd.Value <= datetimeTo).OrderBy(o => o.DateEnd).Take(_scheduleJobOptions.OpportunityExpirationBatchSize).ToList();
-                if (!items.Any()) break;
-
-                //TODO: email notification to provider
-
-            } while (true);
-        }
-
-        public async Task AssignCategories(Guid id, List<Guid> categoryIds)
-        {
-            var opportunity = GetById(id, false);
+            var opportunity = GetById(id, false, ensureOrganizationAuthorization);
 
             if (categoryIds == null || !categoryIds.Any())
                 throw new ArgumentNullException(nameof(categoryIds));
@@ -503,9 +488,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
             scope.Complete();
         }
 
-        public async Task DeleteCategories(Guid id, List<Guid> categoryIds)
+        public async Task DeleteCategories(Guid id, List<Guid> categoryIds, bool ensureOrganizationAuthorization)
         {
-            var opportunity = GetById(id, false);
+            var opportunity = GetById(id, false, ensureOrganizationAuthorization);
 
             if (categoryIds == null || !categoryIds.Any())
                 throw new ArgumentNullException(nameof(categoryIds));
@@ -525,9 +510,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
             }
         }
 
-        public async Task AssignCountries(Guid id, List<Guid> countryIds)
+        public async Task AssignCountries(Guid id, List<Guid> countryIds, bool ensureOrganizationAuthorization)
         {
-            var opportunity = GetById(id, false);
+            var opportunity = GetById(id, false, ensureOrganizationAuthorization);
 
             if (countryIds == null || !countryIds.Any())
                 throw new ArgumentNullException(nameof(countryIds));
@@ -555,9 +540,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
             scope.Complete();
         }
 
-        public async Task DeleteCountries(Guid id, List<Guid> countryIds)
+        public async Task DeleteCountries(Guid id, List<Guid> countryIds, bool ensureOrganizationAuthorization)
         {
-            var opportunity = GetById(id, false);
+            var opportunity = GetById(id, false, ensureOrganizationAuthorization);
 
             if (countryIds == null || !countryIds.Any())
                 throw new ArgumentNullException(nameof(countryIds));
@@ -577,9 +562,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
             }
         }
 
-        public async Task AssignLanguages(Guid id, List<Guid> languageIds)
+        public async Task AssignLanguages(Guid id, List<Guid> languageIds, bool ensureOrganizationAuthorization)
         {
-            var opportunity = GetById(id, false);
+            var opportunity = GetById(id, false, ensureOrganizationAuthorization);
 
             if (languageIds == null || !languageIds.Any())
                 throw new ArgumentNullException(nameof(languageIds));
@@ -607,9 +592,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
             scope.Complete();
         }
 
-        public async Task DeleteLanguages(Guid id, List<Guid> languageIds)
+        public async Task DeleteLanguages(Guid id, List<Guid> languageIds, bool ensureOrganizationAuthorization)
         {
-            var opportunity = GetById(id, false);
+            var opportunity = GetById(id, false, ensureOrganizationAuthorization);
 
             if (languageIds == null || !languageIds.Any())
                 throw new ArgumentNullException(nameof(languageIds));
@@ -629,9 +614,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
             }
         }
 
-        public async Task AssignSkills(Guid id, List<Guid> skillIds)
+        public async Task AssignSkills(Guid id, List<Guid> skillIds, bool ensureOrganizationAuthorization)
         {
-            var opportunity = GetById(id, false);
+            var opportunity = GetById(id, false, ensureOrganizationAuthorization);
 
             if (skillIds == null || !skillIds.Any())
                 throw new ArgumentNullException(nameof(skillIds));
@@ -659,9 +644,9 @@ namespace Yoma.Core.Domain.Opportunity.Services
             scope.Complete();
         }
 
-        public async Task DeleteSkills(Guid id, List<Guid> skillIds)
+        public async Task DeleteSkills(Guid id, List<Guid> skillIds, bool ensureOrganizationAuthorization)
         {
-            var opportunity = GetById(id, false);
+            var opportunity = GetById(id, false, ensureOrganizationAuthorization);
 
             if (skillIds == null || !skillIds.Any())
                 throw new ArgumentNullException(nameof(skillIds));
