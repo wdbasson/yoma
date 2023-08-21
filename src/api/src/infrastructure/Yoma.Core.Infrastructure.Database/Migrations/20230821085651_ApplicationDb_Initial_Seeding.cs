@@ -16,6 +16,21 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
 
             #region Entity
             migrationBuilder.InsertData(
+            table: "OrganizationStatus",
+            columns: new[] { "Id", "Name", "DateCreated" },
+            values: new object[,]
+            {
+                    {"88D1F51E-C0E4-4547-9EEE-6923C009980F","Inactive",DateTimeOffset.Now}
+                    ,
+                    {"5C381E21-9EB9-4F0E-8548-847E537BB61E","Active",DateTimeOffset.Now}
+                    ,
+                    {"1901628B-2B0C-4E34-8684-7A991EAA21F9","Declined",DateTimeOffset.Now}
+                    ,
+                    {"CCA1F97F-A848-4E11-A8EA-A1E0CDD4149F","Deleted",DateTimeOffset.Now}
+            },
+            schema: "entity");
+
+            migrationBuilder.InsertData(
             table: "OrganizationProviderType",
             columns: new[] { "Id", "Name", "DateCreated" },
             values: new object[,]

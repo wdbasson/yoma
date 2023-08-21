@@ -1,5 +1,6 @@
 using FluentValidation;
 using Yoma.Core.Domain.Entity.Interfaces;
+using Yoma.Core.Domain.Entity.Services;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Opportunity.Interfaces.Lookups;
 using Yoma.Core.Domain.Opportunity.Models;
@@ -31,7 +32,7 @@ namespace Yoma.Core.Domain.Opportunity.Validators
             RuleFor(x => x.Title).NotEmpty().Length(1, 255);
             RuleFor(x => x.Description).NotEmpty();
             RuleFor(x => x.TypeId).NotEmpty().Must(TypeExists).WithMessage($"Specified type is invalid / does not exist.");
-            RuleFor(x => x.OrganizationId).NotEmpty().Must(OrganizationExistsAndActive).WithMessage($"Specified organization has been deactivated / does not exist.");
+            RuleFor(x => x.OrganizationId).NotEmpty().Must(OrganizationExistsAndUpdatable).WithMessage($"Specified organization has been declined / deleted or does not exist.");
             //instructions (varchar(max); auto trimmed
             RuleFor(x => x.URL).Length(1, 2048).Must(ValidURL).When(x => string.IsNullOrEmpty(x.URL)).WithMessage("'{PropertyName}' is invalid.");
             RuleFor(x => x.ZltoReward).GreaterThan(0).When(x => x.ZltoReward.HasValue).WithMessage("'{PropertyName}' must be greater than 0");
@@ -67,10 +68,11 @@ namespace Yoma.Core.Domain.Opportunity.Validators
             return _timeIntervalService.GetByIdOrNull(typeId) != null;
         }
 
-        private bool OrganizationExistsAndActive(Guid organizationId)
+        private bool OrganizationExistsAndUpdatable(Guid organizationId)
         {
             var org = _organizationService.GetByIdOrNull(organizationId, false);
-            return org != null && org.Active;
+            if (org == null) return false;
+            return OrganizationService.Statuses_Updatable.Contains(org.Status);
         }
 
         private bool ValidURL(string? url)

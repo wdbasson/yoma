@@ -22,7 +22,6 @@ namespace Yoma.Core.Api.Controllers
         private readonly IOpportunityService _opportunityService;
         private readonly IOpportunityCategoryService _opportunityCategoryService;
         private readonly IOpportunityDifficultyService _opportunityDifficultyService;
-        private readonly IOpportunityStatusService _opportunityStatusService;
         private readonly IOpportunityTypeService _opportunityTypeService;
         #endregion
 
@@ -32,7 +31,6 @@ namespace Yoma.Core.Api.Controllers
             IOpportunityService opportunityService,
             IOpportunityCategoryService opportunityCategoryService,
             IOpportunityDifficultyService opportunityDifficultyService,
-            IOpportunityStatusService opportunityStatusService,
             IOpportunityTypeService opportunityTypeService
             )
         {
@@ -40,7 +38,6 @@ namespace Yoma.Core.Api.Controllers
             _opportunityService = opportunityService;
             _opportunityCategoryService = opportunityCategoryService;
             _opportunityDifficultyService = opportunityDifficultyService;
-            _opportunityStatusService = opportunityStatusService;
             _opportunityTypeService = opportunityTypeService;
         }
         #endregion
@@ -103,20 +100,6 @@ namespace Yoma.Core.Api.Controllers
             var result = _opportunityDifficultyService.List();
 
             _logger.LogInformation("Request {requestName} handled", nameof(ListOpportunityDifficulties));
-
-            return StatusCode((int)HttpStatusCode.OK, result);
-        }
-
-        [SwaggerOperation(Summary = "Return a list of opportunity statuses")]
-        [HttpGet("status")]
-        [ProducesResponseType(typeof(List<OpportunityStatus>), (int)HttpStatusCode.OK)]
-        public IActionResult ListOpportunityStatuses()
-        {
-            _logger.LogInformation("Handling request {requestName}", nameof(ListOpportunityStatuses));
-
-            var result = _opportunityStatusService.List();
-
-            _logger.LogInformation("Request {requestName} handled", nameof(ListOpportunityStatuses));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }

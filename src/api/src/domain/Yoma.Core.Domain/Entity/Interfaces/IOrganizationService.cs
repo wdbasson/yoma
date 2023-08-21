@@ -15,6 +15,8 @@ namespace Yoma.Core.Domain.Entity.Interfaces
 
         Task<Organization> Upsert(OrganizationRequest request, bool ensureOrganizationAuthorization);
 
+        Task UpdateStatus(Guid id, OrganizationStatus status, bool ensureOrganizationAuthorization);
+
         Task AssignProviderTypes(Guid id, List<Guid> providerTypeIds, bool ensureOrganizationAuthorization);
 
         Task DeleteProviderTypes(Guid id, List<Guid> providerTypeIds, bool ensureOrganizationAuthorization);

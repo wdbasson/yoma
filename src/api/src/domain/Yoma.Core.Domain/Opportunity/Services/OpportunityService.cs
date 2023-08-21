@@ -14,6 +14,7 @@ using Yoma.Core.Domain.Opportunity.Validators;
 
 namespace Yoma.Core.Domain.Opportunity.Services
 {
+    //TODO: Background status changes
     public class OpportunityService : IOpportunityService
     {
         #region Class Variables

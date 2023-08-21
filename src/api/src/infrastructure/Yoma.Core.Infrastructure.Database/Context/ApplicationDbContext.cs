@@ -19,6 +19,8 @@ namespace Yoma.Core.Infrastructure.Database.Context
 
         #region Entity
         #region Lookups
+        public DbSet<Entity.Entities.Lookups.OrganizationStatus> OrganizationStatus { get; set; }
+
         public DbSet<Entity.Entities.Lookups.OrganizationProviderType> OrganizationProviderType { get; set; }
         #endregion Lookups
 

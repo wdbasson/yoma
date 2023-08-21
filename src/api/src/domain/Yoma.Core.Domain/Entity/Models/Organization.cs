@@ -34,13 +34,11 @@ namespace Yoma.Core.Domain.Entity.Models
 
         public string? Biography { get; set; }
 
-        public bool Approved { get; set; }
+        public Guid StatusId { get; set; }
 
-        public DateTimeOffset? DateApproved { get; set; }
+        public OrganizationStatus Status { get; set; }
 
-        public bool Active { get; set; }
-
-        public DateTimeOffset? DateDeactivated { get; set; }
+        public DateTimeOffset DateStatusModified { get; set; }
 
         public Guid? LogoId { get; set; }
 

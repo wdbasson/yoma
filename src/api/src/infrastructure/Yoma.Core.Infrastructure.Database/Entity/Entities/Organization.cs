@@ -3,12 +3,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using Yoma.Core.Infrastructure.Database.Core.Entities;
 using Yoma.Core.Infrastructure.Database.Lookups.Entities;
+using Yoma.Core.Domain.Entity.Models.Lookups;
 
 namespace Yoma.Core.Infrastructure.Database.Entity.Entities
 {
     [Table("Organization", Schema = "entity")]
     [Index(nameof(Name), IsUnique = true)]
-    [Index(nameof(Approved), nameof(Active), nameof(DateModified), nameof(DateCreated))]
+    [Index(nameof(StatusId), nameof(DateStatusModified), nameof(DateModified), nameof(DateCreated))]
     public class Organization : BaseEntity<Guid>
     {
         [Required]
@@ -59,14 +60,11 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Entities
         public string? Biography { get; set; }
 
         [Required]
-        public bool Approved { get; set; }
+        [ForeignKey("StatusId")]
+        public Guid StatusId { get; set; }
+        public OrganizationStatus Status { get; set; }
 
-        public DateTimeOffset? DateApproved { get; set; }
-
-        [Required]
-        public bool Active { get; set; }
-
-        public DateTimeOffset? DateDeactivated { get; set; }
+        public DateTimeOffset? DateStatusModified { get; set; }
 
         [ForeignKey(nameof(LogoId))]
         public Guid? LogoId { get; set; }
