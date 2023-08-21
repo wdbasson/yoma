@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using System.Transactions;
 using Yoma.Core.Domain.Core.Extensions;
@@ -175,7 +175,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
                 else //none specified; ensure search only spans authorized organizations
                     filter.OrganizationIds = _organizationService.ListAdminsOf().Select(o => o.Id).ToList();
             }
-            
+
             var query = _opportunityRepository.Query(true);
 
             //date range
@@ -277,7 +277,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
                     organizationIds.AddRange(matchedOrganizationIds.Except(organizationIds));
                     predicate = predicate.Or(o => organizationIds.Contains(o.OrganizationId));
                 }
-        
+
                 //types
                 var matchedTypeIds = _opportunityTypeService.Contains(filter.ValueContains).Select(o => o.Id).ToList();
                 typeIds.AddRange(matchedTypeIds.Except(typeIds));

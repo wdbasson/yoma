@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Yoma.Core.Domain.Exceptions;
 
 namespace Yoma.Core.Domain.Core.Helpers

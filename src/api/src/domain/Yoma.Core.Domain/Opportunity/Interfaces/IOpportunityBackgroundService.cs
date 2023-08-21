@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Opportunity.Interfaces
+namespace Yoma.Core.Domain.Opportunity.Interfaces
 {
     public interface IOpportunityBackgroundService
     {

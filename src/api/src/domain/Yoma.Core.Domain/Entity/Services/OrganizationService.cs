@@ -118,7 +118,7 @@ namespace Yoma.Core.Domain.Entity.Services
             var result = !request.Id.HasValue ? new Organization { Id = Guid.NewGuid() } : GetById(request.Id.Value, true, ensureOrganizationAuthorization);
 
             if (!isNew && isUserOnly)
-                    throw new SecurityException("Unauthorized: Updates are not permitted for an authenticated user who solely holds the 'User' role");
+                throw new SecurityException("Unauthorized: Updates are not permitted for an authenticated user who solely holds the 'User' role");
 
             var existingByEmail = GetByNameOrNull(request.Name, false);
             if (existingByEmail != null && (isNew || result.Id != existingByEmail.Id))
