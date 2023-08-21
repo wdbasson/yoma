@@ -11,7 +11,7 @@ using Yoma.Core.Domain.IdentityProvider.Interfaces;
 
 namespace Yoma.Core.Api.Controllers
 {
-    [Route("api/v1/keycloak")] //TODO: pending new keycloak instance (v3 route)
+    [Route("api/v3/keycloak")]
     [ApiController]
     [AllowAnonymous]
     [ApiExplorerSettings(IgnoreApi = true)]
@@ -199,7 +199,7 @@ namespace Yoma.Core.Api.Controllers
                     break;
 
                 default: //event not supported
-                    _logger.LogError($"Failed to retrieve the Keycloak user with username '{payload?.details.username}'");
+                    _logger.LogError("Failed to retrieve the Keycloak user with username '{username}'", payload?.details.username);
                     return;
             }
 

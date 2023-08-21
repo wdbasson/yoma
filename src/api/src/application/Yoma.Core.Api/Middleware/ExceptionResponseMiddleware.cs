@@ -27,7 +27,7 @@ namespace Yoma.Core.Api.Middleware
             }
         }
 
-        private Task HandleExceptionAsync(HttpContext context, Exception ex)
+        private static Task HandleExceptionAsync(HttpContext context, Exception ex)
         {
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError; //default
 

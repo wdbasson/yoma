@@ -1,11 +1,9 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 using System.Transactions;
 using Yoma.Core.Domain.Core.Extensions;
 using Yoma.Core.Domain.Core.Helpers;
 using Yoma.Core.Domain.Core.Interfaces;
-using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Lookups.Interfaces;
 using Yoma.Core.Domain.Opportunity.Helpers;
@@ -344,7 +342,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
             var isNew = !request.Id.HasValue;
 
             if (!isNew && ensureOrganizationAuthorization)
-                _organizationService.IsAdmin(request.OrganizationId,true);
+                _organizationService.IsAdmin(request.OrganizationId, true);
 
             var result = !request.Id.HasValue ? new Models.Opportunity { Id = Guid.NewGuid() } : GetById(request.Id.Value, true, false);
 
@@ -357,7 +355,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
             result.TypeId = request.TypeId;
             result.Type = _opportunityTypeService.GetById(request.TypeId).Name;
             result.OrganizationId = request.OrganizationId;
-            result.Organization = _organizationService.GetById(request.OrganizationId, false).Name;
+            result.Organization = _organizationService.GetById(request.OrganizationId, false, false).Name;
             result.Instructions = request.Instructions;
             result.URL = request.URL;
             result.ZltoReward = request.ZltoReward;

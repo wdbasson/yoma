@@ -11,10 +11,6 @@ using Yoma.Core.Domain.Opportunity.Models.Lookups;
 
 namespace Yoma.Core.Api.Controllers
 {
-    /* TODO:
-        - Organization Admin authorization
-    */
-
     [Route("api/v3/opportunity")]
     [ApiController]
     [Authorize(Policy = Common.Constants.Authorization_Policy, Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
