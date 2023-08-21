@@ -5,7 +5,7 @@ namespace Yoma.Core.Domain.Entity.Interfaces
 {
     public interface IOrganizationService
     {
-        Organization GetById(Guid id, bool includeChildItems);
+        Organization GetById(Guid id, bool includeChildItems, bool ensureOrganizationAuthorization);
 
         Organization? GetByIdOrNull(Guid id, bool includeChildItems);
 
@@ -13,18 +13,26 @@ namespace Yoma.Core.Domain.Entity.Interfaces
 
         List<Organization> Contains(string value);
 
-        Task<Organization> Upsert(OrganizationRequest request);
+        Task<Organization> Upsert(OrganizationRequest request, bool ensureOrganizationAuthorization);
 
-        Task AssignProviderTypes(Guid id, List<Guid> providerTypeIds);
+        Task AssignProviderTypes(Guid id, List<Guid> providerTypeIds, bool ensureOrganizationAuthorization);
 
-        Task DeleteProviderTypes(Guid id, List<Guid> providerTypeIds);
+        Task DeleteProviderTypes(Guid id, List<Guid> providerTypeIds, bool ensureOrganizationAuthorization);
 
-        Task<Organization> UpsertLogo(Guid id, IFormFile? file);
+        Task<Organization> UpsertLogo(Guid id, IFormFile? file, bool ensureOrganizationAuthorization);
 
-        Task<Organization> UpsertRegistrationDocument(Guid id, IFormFile? file);
+        Task<Organization> UpsertRegistrationDocument(Guid id, IFormFile? file, bool ensureOrganizationAuthorization);
 
-        Task AssignAdmin(Guid organizationId, Guid userId);
+        bool IsAdmin(Guid id, bool throwUnauthorized);
 
-        Task RemoveAdmin(Guid organizationId, Guid userId);
+        bool IsAdminsOf(List<Guid> ids, bool throwUnauthorized);
+
+        List<User> ListAdmins(Guid id, bool ensureOrganizationAuthorization);
+
+        List<Organization> ListAdminsOf();
+
+        Task AssignAdmin(Guid id, Guid userId, bool ensureOrganizationAuthorization);
+
+        Task RemoveAdmin(Guid id, Guid userId, bool ensureOrganizationAuthorization);
     }
 }

@@ -6,7 +6,7 @@ namespace Yoma.Core.Domain.Opportunity.Models
 
         public DateTimeOffset? EndDate { get; set; }
 
-        public Guid? OrganizationId { get; set; }
+        public List<Guid>? OrganizationIds { get; set; }
 
         public List<Guid>? StatusIds { get; set; }
     }

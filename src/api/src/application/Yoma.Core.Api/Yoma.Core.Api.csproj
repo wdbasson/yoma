@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Controllers\UserController.cs~RF1c89474e.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\..\..\.editorconfig" Link=".editorconfig" />
   </ItemGroup>
 

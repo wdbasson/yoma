@@ -11,15 +11,14 @@ using Yoma.Core.Domain.Entity.Models;
 namespace Yoma.Core.Api.Controllers
 {
     /* TODO:
-        - User organization registration (User role only)
         - Approve / Declined
         - Request verification
-        - Search (by admin and / or name)
+        - Search
     */
 
     [Route("api/v3/organization")]
     [ApiController]
-    [Authorize(Policy = Common.Constants.Authorization_Policy, Roles = $"{Constants.Role_Admin},{Constants.Role_OrganizationAdmin}")]
+    [Authorize(Policy = Common.Constants.Authorization_Policy, Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
     [SwaggerTag("(by default, Admin or Organization Admin roles required)")]
     public class OrganizationController : Controller
     {
@@ -48,25 +47,25 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
         public IActionResult GetById([FromRoute] Guid id)
         {
-            _logger.LogInformation("Handling request {requestName} {paramName}: {paramValue})", nameof(GetById), nameof(id), id);
+            _logger.LogInformation("Handling request {requestName}", nameof(GetById));
 
-            var result = _organizationService.GetById(id, true);
+            var result = _organizationService.GetById(id, true, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(GetById));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Insert or update an organization (User, Admin or Organization Admin role required)",
-            Description = "Newly created organization defaults to an unapproved (unverified) state. A user can only create an organization and is automatically assigned the role of Organization Admin.")]
+        [SwaggerOperation(Summary = "Insert or update an organization (User, Admin or Organization Admin role required)", 
+            Description = "The newly created organization defaults to an unapproved (unverified) state. When the authenticated user solely holds the 'User' role, an organization can be created, and the user is automatically designated the role of an 'Organization Admin'.")]
         [HttpPost()]
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
+        [Authorize(Roles = $"{Constants.Role_User}, {Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
         public async Task<IActionResult> Upsert([FromBody] OrganizationRequest request)
         {
-            _logger.LogInformation("Handling request {requestName} {paramName}: {paramValue}",
-                nameof(Upsert), nameof(request), !request.Id.HasValue ? "insert" : $"update: {request.Id.Value}");
+            _logger.LogInformation("Handling request {requestName}", nameof(Upsert));
 
-            var result = await _organizationService.Upsert(request);
+            var result = await _organizationService.Upsert(request, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(Upsert));
 
@@ -88,28 +87,27 @@ namespace Yoma.Core.Api.Controllers
         }
 
         [SwaggerOperation(Summary = "Assign provider type(s) to the specified organization")]
-        [HttpPut("{id}/assign/providerTypes")]
+        [HttpPut("{id}/providerTypes/assign")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
         public async Task<IActionResult> AssignProviderTypes([FromRoute] Guid id, [FromBody] List<Guid> providerTypeIds)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(AssignProviderTypes));
 
-            await _organizationService.AssignProviderTypes(id, providerTypeIds);
+            await _organizationService.AssignProviderTypes(id, providerTypeIds, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(AssignProviderTypes));
 
             return StatusCode((int)HttpStatusCode.OK);
         }
 
-        [SwaggerOperation(Summary = "Remove provider type(s) from the specified organization (Admin role required)")]
-        [HttpDelete("{id}/remove/providerTypes")]
+        [SwaggerOperation(Summary = "Remove provider type(s) from the specified organization")]
+        [HttpDelete("{id}/providerTypes/remove")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
-        [Authorize(Roles = Constants.Role_Admin)]
         public async Task<IActionResult> DeleteProviderType([FromRoute] Guid id, [FromBody] List<Guid> providerTypeIds)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(DeleteProviderType));
 
-            await _organizationService.DeleteProviderTypes(id, providerTypeIds);
+            await _organizationService.DeleteProviderTypes(id, providerTypeIds, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(DeleteProviderType));
 
@@ -121,9 +119,9 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpsertLogo([FromRoute] Guid id, [Required] IFormFile file)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName}: {paramValue})", nameof(UpsertLogo), nameof(file.Name), file?.Name);
+            _logger.LogInformation("Handling request {requestName}", nameof(UpsertLogo));
 
-            var result = await _organizationService.UpsertLogo(id, file);
+            var result = await _organizationService.UpsertLogo(id, file, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(UpsertLogo));
 
@@ -135,44 +133,68 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpsertRegistrationDocument([FromRoute] Guid id, [Required] IFormFile file)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName}: {paramValue})", nameof(UpsertRegistrationDocument), nameof(file.Name), file?.Name);
+            _logger.LogInformation("Handling request {requestName}", nameof(UpsertRegistrationDocument));
 
-            var result = await _organizationService.UpsertRegistrationDocument(id, file);
+            var result = await _organizationService.UpsertRegistrationDocument(id, file, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(UpsertRegistrationDocument));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Assign the specified user as organization administrator (Admin role required)")]
-        [HttpPut("{id}/assign/{userId}/admin")]
+        [SwaggerOperation(Summary = "Assign the specified user as organization administrator")]
+        [HttpPut("{id}/admin/{userId}/assign")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
-        [Authorize(Roles = Constants.Role_Admin)]
         public IActionResult AssignAdmin([FromRoute] Guid id, [FromRoute] Guid userId)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})",
-                nameof(AssignAdmin), nameof(id), id, nameof(userId), userId);
+            _logger.LogInformation("Handling request {requestName}", nameof(AssignAdmin));
 
-            var result = _organizationService.AssignAdmin(id, userId);
+            var result = _organizationService.AssignAdmin(id, userId, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(AssignAdmin));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
 
-        [SwaggerOperation(Summary = "Remove the specified user as organization administrator (Admin role required)")]
-        [HttpDelete("{id}/remove/{userId}/admin")]
+        [SwaggerOperation(Summary = "Remove the specified user as organization administrator")]
+        [HttpDelete("{id}/admin/{userId}/remove")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
-        [Authorize(Roles = Constants.Role_Admin)]
         public IActionResult RemoveAdmin([FromRoute] Guid id, [FromRoute] Guid userId)
         {
-            _logger.LogInformation("Handling request {requestName} ({paramName1}: {paramValue1} | {paramName2}: {paramValue2})",
-                nameof(RemoveAdmin), nameof(id), id, nameof(userId), userId);
+            _logger.LogInformation("Handling request {requestName}", nameof(RemoveAdmin));
 
-
-            var result = _organizationService.RemoveAdmin(id, userId);
+            var result = _organizationService.RemoveAdmin(id, userId, true);
 
             _logger.LogInformation("Request {requestName} handled", nameof(RemoveAdmin));
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
+        [SwaggerOperation(Summary = "Return a list of administrators for the specified organization")]
+        [HttpGet("{id}/admin")]
+        [ProducesResponseType(typeof(List<Domain.Entity.Models.Lookups.OrganizationProviderType>), (int)HttpStatusCode.OK)]
+        public IActionResult ListAdmins([FromRoute] Guid id)
+        {
+            _logger.LogInformation("Handling request {requestName}", nameof(ListAdmins));
+
+            var result = _organizationService.ListAdmins(id, true);
+
+            _logger.LogInformation("Request {requestName} handled", nameof(ListAdmins));
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
+        [SwaggerOperation(Summary = "Return a list of organizations the authenticated user administrates (Organization Admin role required)")]
+        [HttpGet("admin")]
+        [ProducesResponseType(typeof(List<Domain.Entity.Models.Lookups.OrganizationProviderType>), (int)HttpStatusCode.OK)]
+        [Authorize(Roles = Constants.Role_OrganizationAdmin)]
+        public IActionResult ListAdminsOf([FromRoute] Guid id)
+        {
+            _logger.LogInformation("Handling request {requestName}", nameof(ListAdminsOf));
+
+            var result = _organizationService.ListAdminsOf();
+
+            _logger.LogInformation("Request {requestName} handled", nameof(ListAdminsOf));
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }

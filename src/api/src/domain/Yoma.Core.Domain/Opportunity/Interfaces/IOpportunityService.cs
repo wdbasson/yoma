@@ -4,7 +4,7 @@ namespace Yoma.Core.Domain.Opportunity.Interfaces
 {
     public interface IOpportunityService
     {
-        Models.Opportunity GetById(Guid id, bool includeChildren);
+        Models.Opportunity GetById(Guid id, bool includeChildren, bool ensureOrganizationAuthorization);
 
         OpportunityInfo GetInfoById(Guid id, bool includeChildren);
 
@@ -14,32 +14,28 @@ namespace Yoma.Core.Domain.Opportunity.Interfaces
 
         OpportunitySearchResultsInfo SearchInfo(OpportunitySearchFilterInfo filter);
 
-        OpportunitySearchResults Search(OpportunitySearchFilter filter);
+        OpportunitySearchResults Search(OpportunitySearchFilter filter, bool ensureOrganizationAuthorization);
 
-        Task<Models.Opportunity> Upsert(OpportunityRequest request, string? username);
+        Task<Models.Opportunity> Upsert(OpportunityRequest request, bool ensureOrganizationAuthorization);
 
         Task IncrementParticipantCount(Guid id, int increment = 1);
 
-        Task UpdateStatus(Guid id, Status status, string? username);
+        Task UpdateStatus(Guid id, Status status, bool ensureOrganizationAuthorization);
 
-        Task ProcessExpiration();
+        Task AssignCategories(Guid id, List<Guid> categoryIds, bool ensureOrganizationAuthorization);
 
-        Task ExpirationNotifications();
+        Task DeleteCategories(Guid id, List<Guid> categoryIds, bool ensureOrganizationAuthorization);
 
-        Task AssignCategories(Guid id, List<Guid> categoryIds);
+        Task AssignCountries(Guid id, List<Guid> countryIds, bool ensureOrganizationAuthorization);
 
-        Task DeleteCategories(Guid id, List<Guid> categoryIds);
+        Task DeleteCountries(Guid id, List<Guid> countryIds, bool ensureOrganizationAuthorization);
 
-        Task AssignCountries(Guid id, List<Guid> countryIds);
+        Task AssignLanguages(Guid id, List<Guid> languageIds, bool ensureOrganizationAuthorization);
 
-        Task DeleteCountries(Guid id, List<Guid> countryIds);
+        Task DeleteLanguages(Guid id, List<Guid> languageIds, bool ensureOrganizationAuthorization);
 
-        Task AssignLanguages(Guid id, List<Guid> languageIds);
+        Task AssignSkills(Guid id, List<Guid> skillIds, bool ensureOrganizationAuthorization);
 
-        Task DeleteLanguages(Guid id, List<Guid> languageIds);
-
-        Task AssignSkills(Guid id, List<Guid> skillIds);
-
-        Task DeleteSkills(Guid id, List<Guid> skillIds);
+        Task DeleteSkills(Guid id, List<Guid> skillIds, bool ensureOrganizationAuthorization);
     }
 }

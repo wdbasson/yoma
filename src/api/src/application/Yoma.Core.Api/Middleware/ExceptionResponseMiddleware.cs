@@ -27,7 +27,7 @@ namespace Yoma.Core.Api.Middleware
             }
         }
 
-        private Task HandleExceptionAsync(HttpContext context, Exception ex)
+        private static Task HandleExceptionAsync(HttpContext context, Exception ex)
         {
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError; //default
 
@@ -48,6 +48,7 @@ namespace Yoma.Core.Api.Middleware
                     context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                     break;
                 case SecurityException:
+                case System.Security.SecurityException:
                     context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                     break;
                 case DataCollisionException:

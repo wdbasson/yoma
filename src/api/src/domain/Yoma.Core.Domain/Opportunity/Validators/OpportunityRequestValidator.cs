@@ -44,8 +44,8 @@ namespace Yoma.Core.Domain.Opportunity.Validators
             RuleFor(x => x.CommitmentIntervalId).NotEmpty().Must(TimeIntervalExists).WithMessage($"Specified time interval is invalid / does not exist.");
             RuleFor(x => x.CommitmentIntervalCount).Must(x => x.HasValue && x > 0).When(x => x.CommitmentIntervalCount.HasValue).WithMessage("'{PropertyName}' must be greater than 0");
             RuleFor(x => x.ParticipantLimit).Must(x => x.HasValue && x > 0).When(x => x.ParticipantLimit.HasValue).WithMessage("'{PropertyName}' must be greater than 0");
-            RuleFor(x => x.Keywords).Must(x => x == null || x.All(x => !string.IsNullOrWhiteSpace(x))).WithMessage("{PropertyName} contains empty value(s).");
-            RuleFor(model => model.Keywords).Must(list => list == null || CalculateCombinedLength(list) >= 1 && CalculateCombinedLength(list) <= 500).WithMessage("The combined length of keywords must be between 1 and 500 characters.");
+            RuleFor(x => x.Keywords).Must(keywords => keywords == null || keywords.All(x => !string.IsNullOrWhiteSpace(x) && !x.Contains(OpportunityService.Keywords_Separator))).WithMessage("{PropertyName} contains empty value(s) or keywords with ',' character.");
+            RuleFor(model => model.Keywords).Must(list => list == null || CalculateCombinedLength(list) >= 1 && CalculateCombinedLength(list) <= OpportunityService.Keywords_CombinedMaxLenght).WithMessage("The combined length of keywords must be between 1 and 500 characters.");
             RuleFor(x => x.DateStart).NotEmpty();
             RuleFor(model => model.DateEnd).GreaterThanOrEqualTo(model => model.DateStart).When(model => model.DateEnd.HasValue).WithMessage("{PropertyName} is earlier than the Start Date.");
         }
@@ -83,7 +83,7 @@ namespace Yoma.Core.Domain.Opportunity.Validators
         {
             if (list == null) return 0;
 
-            return string.Join(OpportunityService.Separator_Keywords, list).Length;
+            return string.Join(OpportunityService.Keywords_Separator, list).Length;
         }
         #endregion
     }
