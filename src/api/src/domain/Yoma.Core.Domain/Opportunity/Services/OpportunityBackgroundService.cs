@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Opportunity.Interfaces;
@@ -16,12 +16,12 @@ namespace Yoma.Core.Domain.Opportunity.Services
         #endregion
 
         #region Constructor
-        public OpportunityBackgroundService(IOptions<ScheduleJobOptions> scheduleJobOptions, 
+        public OpportunityBackgroundService(IOptions<ScheduleJobOptions> scheduleJobOptions,
             IOpportunityStatusService opportunityStatusService,
             IRepositoryValueContainsWithNavigation<Models.Opportunity> opportunityRepository)
         {
             _scheduleJobOptions = scheduleJobOptions.Value;
-            _opportunityStatusService = opportunityStatusService;   
+            _opportunityStatusService = opportunityStatusService;
             _opportunityRepository = opportunityRepository;
         }
         #endregion
