@@ -18,7 +18,7 @@ namespace Yoma.Core.Api.Controllers
 
     [Route("api/v3/organization")]
     [ApiController]
-    [Authorize(Policy = Common.Constants.Authorization_Policy, Roles = $"{Constants.Role_Admin},{Constants.Role_OrganizationAdmin}")]
+    [Authorize(Policy = Common.Constants.Authorization_Policy, Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
     [SwaggerTag("(by default, Admin or Organization Admin roles required)")]
     public class OrganizationController : Controller
     {
@@ -60,7 +60,7 @@ namespace Yoma.Core.Api.Controllers
             Description = "The newly created organization defaults to an unapproved (unverified) state. When the authenticated user solely holds the 'User' role, an organization can be created, and the user is automatically designated the role of an 'Organization Admin'.")]
         [HttpPost()]
         [ProducesResponseType(typeof(Organization), (int)HttpStatusCode.OK)]
-        //by default, all authenticated user's has the 'User' role; not explicitly authorized
+        [Authorize(Roles = $"{Constants.Role_User}, {Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
         public async Task<IActionResult> Upsert([FromBody] OrganizationRequest request)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(Upsert));
@@ -187,7 +187,7 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Return a list of organizations the authenticated user administrates (Organization Admin role required)")]
         [HttpGet("admin")]
         [ProducesResponseType(typeof(List<Domain.Entity.Models.Lookups.OrganizationProviderType>), (int)HttpStatusCode.OK)]
-        [Authorize(Policy = Common.Constants.Authorization_Policy, Roles = Constants.Role_OrganizationAdmin)]
+        [Authorize(Roles = Constants.Role_OrganizationAdmin)]
         public IActionResult ListAdminsOf([FromRoute] Guid id)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(ListAdminsOf));

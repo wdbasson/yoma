@@ -15,7 +15,8 @@ namespace Yoma.Core.Api.Controllers
 
     [Route("api/v3/user")]
     [ApiController]
-    [Authorize(Policy = Common.Constants.Authorization_Policy)]
+    [Authorize(Policy = Common.Constants.Authorization_Policy, Roles = $"{Constants.Role_User}, {Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+    [SwaggerTag("(by default, User, Admin or Organization Admin roles required)")]
     public class UserController : Controller
     {
         #region Class Variables
