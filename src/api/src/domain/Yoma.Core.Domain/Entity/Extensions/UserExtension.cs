@@ -1,4 +1,4 @@
-﻿using Yoma.Core.Domain.Entity.Models;
+using Yoma.Core.Domain.Entity.Models;
 
 namespace Yoma.Core.Domain.Entity.Extensions
 {

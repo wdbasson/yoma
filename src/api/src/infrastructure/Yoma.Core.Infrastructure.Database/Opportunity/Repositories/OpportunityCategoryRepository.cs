@@ -1,4 +1,4 @@
-﻿using Yoma.Core.Domain.Core.Interfaces;
+using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Opportunity.Models;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;
@@ -27,7 +27,7 @@ namespace Yoma.Core.Infrastructure.Database.Opportunity.Repositories
         public async Task<OpportunityCategory> Create(OpportunityCategory item)
         {
             item.DateCreated = DateTimeOffset.Now;
-            
+
             var entity = new Entities.OpportunityCategory
             {
                 Id = item.Id,

@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Core.Helpers
+namespace Yoma.Core.Domain.Core.Helpers
 {
     public static class EnvironmentHelper
     {

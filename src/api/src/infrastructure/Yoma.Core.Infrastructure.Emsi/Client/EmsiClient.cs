@@ -1,4 +1,4 @@
-﻿using Flurl.Http;
+using Flurl.Http;
 using Yoma.Core.Infrastructure.Emsi.Models;
 using Yoma.Core.Domain.Core.Extensions;
 using Flurl;

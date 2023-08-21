@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Yoma.Core.Domain.Core.Models;
 
 namespace Yoma.Core.Domain.Core.Validators

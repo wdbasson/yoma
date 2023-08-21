@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Api.Middleware
+namespace Yoma.Core.Api.Middleware
 {
     public class ExceptionLogMiddleware
     {
@@ -22,6 +22,6 @@
                 _logger.LogError(ex, "An internal server error occurred");
                 throw;
             }
-        } 
+        }
     }
 }

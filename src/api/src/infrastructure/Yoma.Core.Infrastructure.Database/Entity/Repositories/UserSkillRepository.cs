@@ -1,4 +1,4 @@
-﻿using Yoma.Core.Domain.Core.Interfaces;
+using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;
 using Yoma.Core.Infrastructure.Database.Entity.Entities;
@@ -17,7 +17,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
             return _context.UserSkills.Select(entity => new Domain.Entity.Models.UserSkill
             {
                 Id = entity.Id,
-                UserId = entity.UserId, 
+                UserId = entity.UserId,
                 SkillId = entity.SkillId,
                 Skill = entity.Skill.Name,
                 DateCreated = entity.DateCreated
@@ -27,14 +27,14 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
         public async Task<Domain.Entity.Models.UserSkill> Create(Domain.Entity.Models.UserSkill item)
         {
             item.DateCreated = DateTimeOffset.Now;
-      
+
             var entity = new UserSkill
             {
                 Id = item.Id,
                 UserId = item.UserId,
                 SkillId = item.SkillId,
                 DateCreated = item.DateCreated,
-             
+
             };
 
             _context.UserSkills.Add(entity);

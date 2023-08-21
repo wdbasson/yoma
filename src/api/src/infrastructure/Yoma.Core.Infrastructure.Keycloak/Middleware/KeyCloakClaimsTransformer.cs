@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Newtonsoft.Json;
 using System.Security.Claims;
 
@@ -10,8 +10,8 @@ namespace Yoma.Core.Infrastructure.Keycloak.Middleware
 
         public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
         {
-            if(principal == null)
-                throw new ArgumentNullException(nameof(principal)); 
+            if (principal == null)
+                throw new ArgumentNullException(nameof(principal));
 
             var claimsIdentity = principal.Identity as ClaimsIdentity ?? throw new ArgumentNullException($"{nameof(principal)}.{principal.Identity}");
 

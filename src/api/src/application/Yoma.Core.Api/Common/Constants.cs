@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Api.Common
+namespace Yoma.Core.Api.Common
 {
     public class Constants
     {

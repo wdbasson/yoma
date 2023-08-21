@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.LaborMarketProvider.Interfaces;
 using Yoma.Core.Infrastructure.Emsi.Models;
 

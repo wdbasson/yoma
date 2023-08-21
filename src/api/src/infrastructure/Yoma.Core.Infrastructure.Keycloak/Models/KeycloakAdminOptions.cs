@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Infrastructure.Keycloak.Models
+namespace Yoma.Core.Infrastructure.Keycloak.Models
 {
     public class KeycloakAdminOptions
     {

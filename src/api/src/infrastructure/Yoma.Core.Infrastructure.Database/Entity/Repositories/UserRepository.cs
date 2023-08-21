@@ -1,4 +1,4 @@
-﻿using Yoma.Core.Domain.Core.Interfaces;
+using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;
 using Yoma.Core.Infrastructure.Database.Entity.Entities;
@@ -46,7 +46,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
 
         public async Task<Domain.Entity.Models.User> Create(Domain.Entity.Models.User item)
         {
-            if(item == null)
+            if (item == null)
                 throw new ArgumentNullException(nameof(item));
 
             item.DateCreated = DateTimeOffset.Now;

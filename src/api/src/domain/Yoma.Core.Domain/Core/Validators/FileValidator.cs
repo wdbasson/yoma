@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Yoma.Core.Domain.Core.Helpers;
 using Yoma.Core.Domain.Exceptions;
 
@@ -35,7 +35,7 @@ namespace Yoma.Core.Domain.Core.Validators
 
         public void Validate(IFormFile file)
         {
-            if(file == null)
+            if (file == null)
                 throw new ArgumentNullException(nameof(file));
 
             if (!extensions.Contains(FileHelper.GetExtension(file), StringComparer.InvariantCultureIgnoreCase))

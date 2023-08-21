@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Infrastructure.Emsi.Models
+namespace Yoma.Core.Infrastructure.Emsi.Models
 {
     public class EmsiOptions
     {
@@ -10,6 +10,6 @@
 
         public string ClientId { get; set; }
 
-        public string ClientSecret { get; set; }    
+        public string ClientSecret { get; set; }
     }
 }

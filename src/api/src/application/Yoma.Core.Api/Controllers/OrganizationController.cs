@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel.DataAnnotations;
@@ -105,7 +105,7 @@ namespace Yoma.Core.Api.Controllers
         [ProducesResponseType((int)HttpStatusCode.OK)]
         public async Task<IActionResult> DeleteProviderType([FromRoute] Guid id, [FromBody] List<Guid> providerTypeIds)
         {
-            _logger.LogInformation("Handling request {requestName}",nameof(DeleteProviderType));
+            _logger.LogInformation("Handling request {requestName}", nameof(DeleteProviderType));
 
             await _organizationService.DeleteProviderTypes(id, providerTypeIds, true);
 

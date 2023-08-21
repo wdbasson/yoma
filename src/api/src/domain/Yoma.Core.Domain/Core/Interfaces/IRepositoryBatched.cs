@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.Core.Interfaces
+namespace Yoma.Core.Domain.Core.Interfaces
 {
     public interface IRepositoryBatched<T> : IRepository<T>
         where T : class

@@ -1,4 +1,4 @@
-﻿using Keycloak.AuthServices.Authentication;
+using Keycloak.AuthServices.Authentication;
 using Keycloak.AuthServices.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
@@ -39,7 +39,7 @@ namespace Yoma.Core.Infrastructure.Keycloak
         public static IIdentityProviderAuthOptions Configuration_IdentityProviderAuthenticationOptions(this IConfiguration configuration)
         {
             var authenticationOptions = AuthenticationOptions(configuration);
-;          
+
             var tokenUri = authenticationOptions.AuthServerUrl
                 .AppendPathSegment("realms")
                 .AppendPathSegment(authenticationOptions.Realm)
@@ -75,7 +75,7 @@ namespace Yoma.Core.Infrastructure.Keycloak
         private static KeycloakProtectionClientOptions ProtectionClientOptions(IConfiguration configuration)
         {
             var protectionClientOptions = configuration
-              .GetSection(KeycloakProtectionClientOptions.Section).Get<KeycloakProtectionClientOptions>() 
+              .GetSection(KeycloakProtectionClientOptions.Section).Get<KeycloakProtectionClientOptions>()
               ?? throw new InvalidOperationException($"Failed to retrieve config section '{KeycloakProtectionClientOptions.Section}.{nameof(KeycloakProtectionClientOptions)}'");
             return protectionClientOptions;
         }

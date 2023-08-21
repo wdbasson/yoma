@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Yoma.Core.Infrastructure.Emsi.Models
 {
@@ -17,9 +17,9 @@ namespace Yoma.Core.Infrastructure.Emsi.Models
         public DateTimeOffset Date { get; } = DateTimeOffset.Now;
 
         [JsonIgnore]
-        public DateTimeOffset DateExpire 
+        public DateTimeOffset DateExpire
         {
             get { return Date.AddSeconds(Expires_in - 5); }
-        } 
+        }
     }
 }

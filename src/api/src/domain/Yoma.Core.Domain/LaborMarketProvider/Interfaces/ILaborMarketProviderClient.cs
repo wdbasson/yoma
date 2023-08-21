@@ -1,4 +1,4 @@
-﻿using Yoma.Core.Domain.LaborMarketProvider.Models;
+using Yoma.Core.Domain.LaborMarketProvider.Models;
 
 namespace Yoma.Core.Domain.LaborMarketProvider.Interfaces
 {

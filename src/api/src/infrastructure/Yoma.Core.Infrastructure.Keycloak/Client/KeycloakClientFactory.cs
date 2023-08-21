@@ -1,4 +1,4 @@
-﻿using Keycloak.AuthServices.Authentication;
+using Keycloak.AuthServices.Authentication;
 using Microsoft.Extensions.Options;
 using Yoma.Core.Domain.IdentityProvider.Interfaces;
 using Yoma.Core.Infrastructure.Keycloak.Models;

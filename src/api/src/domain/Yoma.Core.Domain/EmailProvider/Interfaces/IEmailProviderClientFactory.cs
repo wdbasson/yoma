@@ -1,4 +1,4 @@
-﻿namespace Yoma.Core.Domain.EmailProvider.Interfaces
+namespace Yoma.Core.Domain.EmailProvider.Interfaces
 {
     public interface IEmailProviderClientFactory
     {
