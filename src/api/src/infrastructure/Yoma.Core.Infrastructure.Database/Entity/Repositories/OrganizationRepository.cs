@@ -4,6 +4,7 @@ using Yoma.Core.Infrastructure.Database.Context;
 using Yoma.Core.Infrastructure.Database.Core.Repositories;
 using Yoma.Core.Infrastructure.Database.Entity.Entities;
 using Yoma.Core.Domain.Core.Extensions;
+using Yoma.Core.Domain.Entity;
 
 namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
 {
@@ -39,10 +40,8 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
                 PostalCode = entity.PostalCode,
                 Tagline = entity.Tagline,
                 Biography = entity.Biography,
-                Approved = entity.Approved,
-                DateApproved = entity.DateApproved,
-                Active = entity.Active,
-                DateDeactivated = entity.DateDeactivated,
+                StatusId = entity.StatusId,
+                Status = Enum.Parse<OrganizationStatus>(entity.Status.Name, true),
                 LogoId = entity.LogoId,
                 CompanyRegistrationDocumentId = entity.CompanyRegistrationDocumentId,
                 DateCreated = entity.DateCreated,
@@ -66,6 +65,7 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
         {
             item.DateCreated = DateTimeOffset.Now;
             item.DateModified = DateTimeOffset.Now;
+            item.DateStatusModified = DateTimeOffset.Now;
 
             var entity = new Organization
             {
@@ -85,10 +85,8 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
                 PostalCode = item.PostalCode,
                 Tagline = item.Tagline,
                 Biography = item.Biography,
-                Approved = item.Approved,
-                DateApproved = item.DateApproved,
-                Active = item.Active,
-                DateDeactivated = item.DateDeactivated,
+                StatusId = item.StatusId,
+                DateStatusModified = item.DateStatusModified,
                 LogoId = item.LogoId,
                 CompanyRegistrationDocumentId = item.CompanyRegistrationDocumentId,
                 DateCreated = item.DateCreated,
@@ -121,10 +119,9 @@ namespace Yoma.Core.Infrastructure.Database.Entity.Repositories
             entity.PostalCode = item.PostalCode;
             entity.Tagline = item.Tagline;
             entity.Biography = item.Biography;
-            entity.Approved = item.Approved;
-            entity.DateApproved = item.DateApproved;
-            entity.Active = item.Active;
-            entity.DateDeactivated = item.DateDeactivated;
+            if (entity.StatusId != item.StatusId)
+                entity.DateStatusModified = DateTimeOffset.Now;
+            entity.StatusId = item.StatusId;
             entity.LogoId = item.LogoId;
             entity.CompanyRegistrationDocumentId = item.CompanyRegistrationDocumentId;
             entity.DateModified = DateTimeOffset.Now;

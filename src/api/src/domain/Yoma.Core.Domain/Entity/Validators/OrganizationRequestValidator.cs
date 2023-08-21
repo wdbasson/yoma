@@ -16,6 +16,7 @@ namespace Yoma.Core.Domain.Entity.Validators
         {
             _countryService = countryService;
 
+            RuleFor(x => x.Id).NotEmpty().When(x => x.Id.HasValue).WithMessage("{PropertyName} contains empty value.");
             RuleFor(x => x.Name).NotEmpty().Length(1, 255);
             RuleFor(x => x.WebsiteURL).Length(1, 2048).Must(ValidURL).WithMessage("'{PropertyName}' is invalid.");
             RuleFor(x => x.PrimaryContactName).Length(1, 255).When(x => !string.IsNullOrEmpty(x.PrimaryContactName));

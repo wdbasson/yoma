@@ -11,27 +11,37 @@ using Yoma.Core.Domain.Entity.Models;
 using Yoma.Core.Domain.Entity.Validators;
 using Yoma.Core.Domain.Exceptions;
 using Yoma.Core.Domain.IdentityProvider.Interfaces;
+using Yoma.Core.Domain.Opportunity;
 
 namespace Yoma.Core.Domain.Entity.Services
 {
+    //TODO: Background status changes
     public class OrganizationService : IOrganizationService
     {
         #region Class Variables
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IUserService _userService;
         private readonly IIdentityProviderClient _identityProviderClient;
+        private readonly IOrganizationStatusService _organizationStatusService;
         private readonly IOrganizationProviderTypeService _providerTypeService;
         private readonly IBlobService _blobService;
         private readonly OrganizationRequestValidator _organizationRequestValidator;
         private readonly IRepositoryValueContainsWithNavigation<Organization> _organizationRepository;
         private readonly IRepository<OrganizationUser> _organizationUserRepository;
         private readonly IRepository<OrganizationProviderType> _organizationProviderTypeRepository;
+
+        public static readonly OrganizationStatus[] Statuses_Updatable = { OrganizationStatus.Active, OrganizationStatus.Inactive };
+        private static readonly OrganizationStatus[] Statuses_Activatable = { OrganizationStatus.Inactive };
+        private static readonly OrganizationStatus[] Statuses_Deletable = { OrganizationStatus.Active, OrganizationStatus.Inactive, OrganizationStatus.Declined };
+        private static readonly OrganizationStatus[] Statuses_DeActivatable = { OrganizationStatus.Active, OrganizationStatus.Declined };
+        private static readonly OrganizationStatus[] Statuses_Declinable = { OrganizationStatus.Inactive };
         #endregion
 
         #region Constructor
         public OrganizationService(IHttpContextAccessor httpContextAccessor,
             IUserService userService,
             IIdentityProviderClientFactory identityProviderClientFactory,
+            IOrganizationStatusService organizationStatusService,
             IOrganizationProviderTypeService providerTypeService,
             IBlobService blobService,
             OrganizationRequestValidator organizationRequestValidator,
@@ -42,6 +52,7 @@ namespace Yoma.Core.Domain.Entity.Services
             _httpContextAccessor = httpContextAccessor;
             _userService = userService;
             _identityProviderClient = identityProviderClientFactory.CreateClient();
+            _organizationStatusService = organizationStatusService;
             _providerTypeService = providerTypeService;
             _blobService = blobService;
             _organizationRequestValidator = organizationRequestValidator;
@@ -118,7 +129,7 @@ namespace Yoma.Core.Domain.Entity.Services
             var result = !request.Id.HasValue ? new Organization { Id = Guid.NewGuid() } : GetById(request.Id.Value, true, ensureOrganizationAuthorization);
 
             if (!isNew && isUserOnly)
-                    throw new SecurityException("Unauthorized: Updates are not permitted for an authenticated user who solely holds the 'User' role");
+                throw new SecurityException("Unauthorized: Updates are not permitted for an authenticated user who solely holds the 'User' role");
 
             var existingByEmail = GetByNameOrNull(request.Name, false);
             if (existingByEmail != null && (isNew || result.Id != existingByEmail.Id))
@@ -139,11 +150,12 @@ namespace Yoma.Core.Domain.Entity.Services
             result.PostalCode = request.PostalCode;
             result.Tagline = request.Tagline;
             result.Biography = request.Biography;
-            if (isNew) result.Approved = false; //new organization defaults to unapproved
-            result.Active = true;
 
             if (isNew)
             {
+                var statusInactive = _organizationStatusService.GetByName(OrganizationStatus.Inactive.ToString());
+                result.StatusId = statusInactive.Id; //new organization defaults to inactive / unapproved
+
                 using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
                 result = await _organizationRepository.Create(result);
                 if (isUserOnly)
@@ -155,11 +167,60 @@ namespace Yoma.Core.Domain.Entity.Services
             }
             else
             {
+                if (!Statuses_Updatable.Contains(result.Status))
+                    throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{result.Status}')");
+
                 await _organizationRepository.Update(result);
                 result.DateModified = DateTimeOffset.Now;
             }
 
             return result;
+        }
+
+        public async Task UpdateStatus(Guid id, OrganizationStatus status, bool ensureOrganizationAuthorization)
+        {
+            var org = GetById(id, false, ensureOrganizationAuthorization);
+
+            var username = HttpContextAccessorHelper.GetUsername(_httpContextAccessor, !ensureOrganizationAuthorization);
+
+            switch (status)
+            {
+                case OrganizationStatus.Active:
+                    if (org.Status == OrganizationStatus.Active) return;
+                    if (!Statuses_Activatable.Contains(org.Status))
+                        throw new InvalidOperationException($"{nameof(Organization)} can not be activated (current status '{org.Status}')");
+                    //TODO: Send email
+                    break;
+
+                case OrganizationStatus.Inactive:
+                    if (org.Status == OrganizationStatus.Inactive) return;
+                    if (!Statuses_DeActivatable.Contains(org.Status))
+                        throw new InvalidOperationException($"{nameof(Organization)} can not be deactivated (current status '{org.Status}')");
+                    break;
+
+                case OrganizationStatus.Declined:
+                    if (org.Status == OrganizationStatus.Deleted) return;
+                    if (!Statuses_Declinable.Contains(org.Status))
+                        throw new InvalidOperationException($"{nameof(Organization)} can not be deleted (current status '{org.Status}')");
+                    //TODO: Send email
+                    break;
+
+                case OrganizationStatus.Deleted:
+                    if (org.Status == OrganizationStatus.Deleted) return;
+                    if (!Statuses_Deletable.Contains(org.Status))
+                        throw new InvalidOperationException($"{nameof(Organization)} can not be deleted (current status '{org.Status}')");
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(status), $"{nameof(Status)} of '{status}' not supported. Only statuses '{Status.Inactive} and {Status.Deleted} can be explicitly set");
+            }
+
+            var statusId = _organizationStatusService.GetByName(status.ToString()).Id;
+
+            org.StatusId = statusId;
+            org.Status = status;
+           
+            await _organizationRepository.Update(org);
         }
 
         public async Task AssignProviderTypes(Guid id, List<Guid> providerTypeIds, bool ensureOrganizationAuthorization)
@@ -168,6 +229,9 @@ namespace Yoma.Core.Domain.Entity.Services
 
             if (providerTypeIds == null || !providerTypeIds.Any())
                 throw new ArgumentNullException(nameof(providerTypeIds));
+
+            if (!Statuses_Updatable.Contains(org.Status))
+                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{org.Status}')");
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             foreach (var typeId in providerTypeIds)
@@ -196,6 +260,9 @@ namespace Yoma.Core.Domain.Entity.Services
             if (providerTypeIds == null || !providerTypeIds.Any())
                 throw new ArgumentNullException(nameof(providerTypeIds));
 
+            if (!Statuses_Updatable.Contains(org.Status))
+                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{org.Status}')");
+
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             foreach (var typeId in providerTypeIds)
             {
@@ -214,6 +281,9 @@ namespace Yoma.Core.Domain.Entity.Services
 
             if (file == null)
                 throw new ArgumentNullException(nameof(file));
+
+            if (!Statuses_Updatable.Contains(result.Status))
+                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{result.Status}')");
 
             var currentLogoId = result.LogoId;
 
@@ -252,6 +322,9 @@ namespace Yoma.Core.Domain.Entity.Services
             if (file == null)
                 throw new ArgumentNullException(nameof(file));
 
+            if (!Statuses_Updatable.Contains(result.Status))
+                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{result.Status}')");
+
             var currentDocumentId = result.CompanyRegistrationDocumentId;
 
             using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
@@ -289,6 +362,9 @@ namespace Yoma.Core.Domain.Entity.Services
             if (!user.ExternalId.HasValue)
                 throw new InvalidOperationException($"External id expected for user with id '{user.Id}'");
 
+            if (!Statuses_Updatable.Contains(org.Status))
+                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{org.Status}')");
+
             var item = _organizationUserRepository.Query().SingleOrDefault(o => o.OrganizationId == id && o.UserId == userId);
             if (item != null) return;
 
@@ -313,6 +389,9 @@ namespace Yoma.Core.Domain.Entity.Services
             var user = _userService.GetById(userId);
             if (!user.ExternalId.HasValue)
                 throw new InvalidOperationException($"External id expected for user with id '{user.Id}'");
+
+            if (!Statuses_Updatable.Contains(org.Status))
+                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{org.Status}')");
 
             var item = _organizationUserRepository.Query().SingleOrDefault(o => o.OrganizationId == id && o.UserId == userId);
             if (item == null) return;

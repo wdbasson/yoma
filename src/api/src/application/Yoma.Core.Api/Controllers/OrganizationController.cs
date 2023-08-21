@@ -4,6 +4,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using Yoma.Core.Domain.Core;
+using Yoma.Core.Domain.Entity;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Interfaces.Lookups;
 using Yoma.Core.Domain.Entity.Models;
@@ -11,8 +12,6 @@ using Yoma.Core.Domain.Entity.Models;
 namespace Yoma.Core.Api.Controllers
 {
     /* TODO:
-        - Approve / Declined
-        - Request verification
         - Search
     */
 
@@ -70,6 +69,20 @@ namespace Yoma.Core.Api.Controllers
             _logger.LogInformation("Request {requestName} handled", nameof(Upsert));
 
             return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
+        [SwaggerOperation(Summary = "Update organization status (Active / Inactive / Declined / Deleted)")]
+        [HttpPut("{id}/{status}")]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        public async Task<IActionResult> UpdateStatus([FromRoute] Guid id, [FromRoute] OrganizationStatus status)
+        {
+            _logger.LogInformation("Handling request {requestName}", nameof(UpdateStatus));
+
+            await _organizationService.UpdateStatus(id, status, true);
+
+            _logger.LogInformation("Request {requestName} handled", nameof(UpdateStatus));
+
+            return StatusCode((int)HttpStatusCode.OK);
         }
 
         [SwaggerOperation(Summary = "Return a list of provider types")]

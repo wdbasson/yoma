@@ -42,6 +42,7 @@ namespace Yoma.Core.Infrastructure.Database
 
             #region Entity
             #region Lookups
+            services.AddScoped<IRepository<Domain.Entity.Models.Lookups.OrganizationStatus>, Entity.Repositories.Lookups.OrganizationStatusRepository>();
             services.AddScoped<IRepository<Domain.Entity.Models.Lookups.OrganizationProviderType>, Entity.Repositories.Lookups.OrganizationProviderTypeRepository>();
             #endregion Lookups
             services.AddScoped<IRepositoryValueContainsWithNavigation<Organization>, OrganizationRepository>();

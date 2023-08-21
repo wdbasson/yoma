@@ -12,7 +12,7 @@ using Yoma.Core.Infrastructure.Database.Context;
 namespace Yoma.Core.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230815115615_ApplicationDb_Initial")]
+    [Migration("20230821085651_ApplicationDb_Initial")]
     partial class ApplicationDb_Initial
     {
         /// <inheritdoc />
@@ -24,6 +24,21 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Yoma.Core.Domain.Entity.Models.Lookups.OrganizationStatus", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("OrganizationStatus");
+                });
 
             modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Core.Entities.BlobObject", b =>
                 {
@@ -67,17 +82,32 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     b.ToTable("OrganizationProviderType", "entity");
                 });
 
-            modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Entity.Entities.Organization", b =>
+            modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Entity.Entities.Lookups.OrganizationStatus", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("Active")
-                        .HasColumnType("bit");
+                    b.Property<DateTimeOffset>("DateCreated")
+                        .HasColumnType("datetimeoffset");
 
-                    b.Property<bool>("Approved")
-                        .HasColumnType("bit");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("OrganizationStatus", "entity");
+                });
+
+            modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Entity.Entities.Organization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Biography")
                         .HasColumnType("varchar(MAX)");
@@ -91,16 +121,13 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     b.Property<Guid?>("CountryId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTimeOffset?>("DateApproved")
-                        .HasColumnType("datetimeoffset");
-
                     b.Property<DateTimeOffset>("DateCreated")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTimeOffset?>("DateDeactivated")
+                    b.Property<DateTimeOffset>("DateModified")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTimeOffset>("DateModified")
+                    b.Property<DateTimeOffset?>("DateStatusModified")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<Guid?>("LogoId")
@@ -128,6 +155,9 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     b.Property<string>("RegistrationNumber")
                         .HasColumnType("varchar(255)");
 
+                    b.Property<Guid>("StatusId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("StreetAddress")
                         .HasColumnType("varchar(500)");
 
@@ -154,7 +184,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.HasIndex("Approved", "Active", "DateModified", "DateCreated");
+                    b.HasIndex("StatusId", "DateStatusModified", "DateModified", "DateCreated");
 
                     b.ToTable("Organization", "entity");
                 });
@@ -620,10 +650,16 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     b.Property<decimal?>("YomaReward")
                         .HasColumnType("decimal(8,2)");
 
+                    b.Property<decimal?>("YomaRewardCumulative")
+                        .HasColumnType("decimal(8,2)");
+
                     b.Property<decimal?>("YomaRewardPool")
                         .HasColumnType("decimal(8,2)");
 
                     b.Property<decimal?>("ZltoReward")
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<decimal?>("ZltoRewardCumulative")
                         .HasColumnType("decimal(8,2)");
 
                     b.Property<decimal?>("ZltoRewardPool")
@@ -761,17 +797,25 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                         .WithMany()
                         .HasForeignKey("LogoId");
 
+                    b.HasOne("Yoma.Core.Domain.Entity.Models.Lookups.OrganizationStatus", "Status")
+                        .WithMany()
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("CompanyRegistrationDocument");
 
                     b.Navigation("Country");
 
                     b.Navigation("Logo");
+
+                    b.Navigation("Status");
                 });
 
             modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Entity.Entities.OrganizationProviderType", b =>
                 {
                     b.HasOne("Yoma.Core.Infrastructure.Database.Entity.Entities.Organization", "Organization")
-                        .WithMany()
+                        .WithMany("ProviderTypes")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -910,7 +954,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                         .IsRequired();
 
                     b.HasOne("Yoma.Core.Infrastructure.Database.Opportunity.Entities.Opportunity", "Opportunity")
-                        .WithMany()
+                        .WithMany("Categories")
                         .HasForeignKey("OpportunityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -929,7 +973,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                         .IsRequired();
 
                     b.HasOne("Yoma.Core.Infrastructure.Database.Opportunity.Entities.Opportunity", "Opportunity")
-                        .WithMany()
+                        .WithMany("Countries")
                         .HasForeignKey("OpportunityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -948,7 +992,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                         .IsRequired();
 
                     b.HasOne("Yoma.Core.Infrastructure.Database.Opportunity.Entities.Opportunity", "Opportunity")
-                        .WithMany()
+                        .WithMany("Languages")
                         .HasForeignKey("OpportunityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -961,7 +1005,7 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Opportunity.Entities.OpportunitySkill", b =>
                 {
                     b.HasOne("Yoma.Core.Infrastructure.Database.Opportunity.Entities.Opportunity", "Opportunity")
-                        .WithMany()
+                        .WithMany("Skills")
                         .HasForeignKey("OpportunityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -975,6 +1019,22 @@ namespace Yoma.Core.Infrastructure.Database.Migrations
                     b.Navigation("Opportunity");
 
                     b.Navigation("Skill");
+                });
+
+            modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Entity.Entities.Organization", b =>
+                {
+                    b.Navigation("ProviderTypes");
+                });
+
+            modelBuilder.Entity("Yoma.Core.Infrastructure.Database.Opportunity.Entities.Opportunity", b =>
+                {
+                    b.Navigation("Categories");
+
+                    b.Navigation("Countries");
+
+                    b.Navigation("Languages");
+
+                    b.Navigation("Skills");
                 });
 #pragma warning restore 612, 618
         }
