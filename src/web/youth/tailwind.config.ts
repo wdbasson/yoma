@@ -40,6 +40,7 @@ export default {
   darkMode: "class",
   plugins: [require("daisyui"), require("tailwindcss-animate")],
   daisyui: {
+    logs: false, // `logs: true` breaks Prettier CI
     themes: [
       {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
