@@ -5,19 +5,19 @@ using Yoma.Core.Domain.Lookups.Interfaces;
 
 namespace Yoma.Core.Domain.Entity.Validators
 {
-    public class OrganizationRequestValidator : AbstractValidator<OrganizationRequest>
+    public abstract class OrganizationRequestValidatorBase<TRequest> : AbstractValidator<TRequest>
+        where TRequest : OrganizationRequestBase
     {
         #region Class Variables
         private readonly ICountryService _countryService;
         #endregion
 
         #region Constructor
-        public OrganizationRequestValidator(ICountryService countryService)
+        public OrganizationRequestValidatorBase(ICountryService countryService)
         {
             _countryService = countryService;
 
-            RuleFor(x => x.Id).NotEmpty().When(x => x.Id.HasValue).WithMessage("{PropertyName} contains empty value.");
-            RuleFor(x => x.Name).NotEmpty().Length(1, 255);
+            RuleFor(x => x.Name).NotEmpty().Length(1, 80);
             RuleFor(x => x.WebsiteURL).Length(1, 2048).Must(ValidURL).WithMessage("'{PropertyName}' is invalid.");
             RuleFor(x => x.PrimaryContactName).Length(1, 255).When(x => !string.IsNullOrEmpty(x.PrimaryContactName));
             RuleFor(x => x.PrimaryContactEmail).Length(1, 320).EmailAddress().When(x => !string.IsNullOrEmpty(x.PrimaryContactEmail));
@@ -30,6 +30,8 @@ namespace Yoma.Core.Domain.Entity.Validators
             RuleFor(x => x.StreetAddress).Length(1, 500).When(x => !string.IsNullOrEmpty(x.StreetAddress));
             RuleFor(x => x.Province).Length(1, 255).When(x => !string.IsNullOrEmpty(x.Province));
             RuleFor(x => x.PostalCode).Length(1, 10).When(x => !string.IsNullOrEmpty(x.PostalCode));
+            RuleFor(x => x.Tagline).Length(1, 160).When(x => !string.IsNullOrEmpty(x.PostalCode));
+            RuleFor(x => x.Biography).Length(1, 480).When(x => !string.IsNullOrEmpty(x.PostalCode));
         }
         #endregion
 

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 using Yoma.Core.Domain.Core;
 using Yoma.Core.Domain.Opportunity;
@@ -13,7 +14,7 @@ namespace Yoma.Core.Api.Controllers
 {
     [Route("api/v3/opportunity")]
     [ApiController]
-    [Authorize(Policy = Common.Constants.Authorization_Policy, Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+    [Authorize(Policy = Common.Constants.Authorization_Policy)]
     [SwaggerTag("(by default, Admin or Organization Admin roles required)")]
     public class OpportunityController : Controller
     {
@@ -73,64 +74,6 @@ namespace Yoma.Core.Api.Controllers
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
-        #endregion
-
-        #region Administrative Actions
-        [SwaggerOperation(Summary = "Return a list of opportunity categories")]
-        [HttpGet("category")]
-        [ProducesResponseType(typeof(List<Domain.Opportunity.Models.Lookups.OpportunityCategory>), (int)HttpStatusCode.OK)]
-        public IActionResult ListOpportunityCategories()
-        {
-            _logger.LogInformation("Handling request {requestName}", nameof(ListOpportunityCategories));
-
-            var result = _opportunityCategoryService.List();
-
-            _logger.LogInformation("Request {requestName} handled", nameof(ListOpportunityCategories));
-
-            return StatusCode((int)HttpStatusCode.OK, result);
-        }
-
-        [SwaggerOperation(Summary = "Return a list of opportunity difficulties")]
-        [HttpGet("difficulty")]
-        [ProducesResponseType(typeof(List<OpportunityDifficulty>), (int)HttpStatusCode.OK)]
-        public IActionResult ListOpportunityDifficulties()
-        {
-            _logger.LogInformation("Handling request {requestName}", nameof(ListOpportunityDifficulties));
-
-            var result = _opportunityDifficultyService.List();
-
-            _logger.LogInformation("Request {requestName} handled", nameof(ListOpportunityDifficulties));
-
-            return StatusCode((int)HttpStatusCode.OK, result);
-        }
-
-        [SwaggerOperation(Summary = "Return a list of opportunity types")]
-        [HttpGet("type")]
-        [ProducesResponseType(typeof(List<OpportunityType>), (int)HttpStatusCode.OK)]
-        public IActionResult ListOpportunityTypes()
-        {
-            _logger.LogInformation("Handling request {requestName}", nameof(ListOpportunityTypes));
-
-            var result = _opportunityTypeService.List();
-
-            _logger.LogInformation("Request {requestName} handled", nameof(ListOpportunityTypes));
-
-            return StatusCode((int)HttpStatusCode.OK, result);
-        }
-
-        [SwaggerOperation(Summary = "Get the specified opportunity by id")]
-        [HttpGet("{id}")]
-        [ProducesResponseType(typeof(Opportunity), (int)HttpStatusCode.OK)]
-        public IActionResult GetById([FromRoute] Guid id)
-        {
-            _logger.LogInformation("Handling request {requestName}", nameof(GetById));
-
-            var result = _opportunityService.GetById(id, true, true);
-
-            _logger.LogInformation("Request {requestName} handled", nameof(GetById));
-
-            return StatusCode((int)HttpStatusCode.OK, result);
-        }
 
         [SwaggerOperation(Summary = "Search for opportunities based on the supplied filter")]
         [HttpPost("search")]
@@ -146,10 +89,73 @@ namespace Yoma.Core.Api.Controllers
 
             return StatusCode((int)HttpStatusCode.OK, result);
         }
+        #endregion
+
+        #region Administrative Actions
+        [SwaggerOperation(Summary = "Return a list of opportunity categories")]
+        [HttpGet("category")]
+        [ProducesResponseType(typeof(List<Domain.Opportunity.Models.Lookups.OpportunityCategory>), (int)HttpStatusCode.OK)]
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+        public IActionResult ListOpportunityCategories()
+        {
+            _logger.LogInformation("Handling request {requestName}", nameof(ListOpportunityCategories));
+
+            var result = _opportunityCategoryService.List();
+
+            _logger.LogInformation("Request {requestName} handled", nameof(ListOpportunityCategories));
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
+        [SwaggerOperation(Summary = "Return a list of opportunity difficulties")]
+        [HttpGet("difficulty")]
+        [ProducesResponseType(typeof(List<OpportunityDifficulty>), (int)HttpStatusCode.OK)]
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+        public IActionResult ListOpportunityDifficulties()
+        {
+            _logger.LogInformation("Handling request {requestName}", nameof(ListOpportunityDifficulties));
+
+            var result = _opportunityDifficultyService.List();
+
+            _logger.LogInformation("Request {requestName} handled", nameof(ListOpportunityDifficulties));
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
+        [SwaggerOperation(Summary = "Return a list of opportunity types")]
+        [HttpGet("type")]
+        [ProducesResponseType(typeof(List<OpportunityType>), (int)HttpStatusCode.OK)]
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+        public IActionResult ListOpportunityTypes()
+        {
+            _logger.LogInformation("Handling request {requestName}", nameof(ListOpportunityTypes));
+
+            var result = _opportunityTypeService.List();
+
+            _logger.LogInformation("Request {requestName} handled", nameof(ListOpportunityTypes));
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
+
+        [SwaggerOperation(Summary = "Get the specified opportunity by id")]
+        [HttpGet("{id}")]
+        [ProducesResponseType(typeof(Opportunity), (int)HttpStatusCode.OK)]
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+        public IActionResult GetById([FromRoute] Guid id)
+        {
+            _logger.LogInformation("Handling request {requestName}", nameof(GetById));
+
+            var result = _opportunityService.GetById(id, true, true);
+
+            _logger.LogInformation("Request {requestName} handled", nameof(GetById));
+
+            return StatusCode((int)HttpStatusCode.OK, result);
+        }
 
         [SwaggerOperation(Summary = "Insert or update an opportunity")]
         [HttpPost()]
         [ProducesResponseType(typeof(Opportunity), (int)HttpStatusCode.OK)]
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
         public async Task<IActionResult> Upsert([FromBody] OpportunityRequest request)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(Upsert));
@@ -164,6 +170,7 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Update opportunity status (Active / Inactive / Deleted)")]
         [HttpPut("{id}/{status}")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
         public async Task<IActionResult> UpdateStatus([FromRoute] Guid id, [FromRoute] Status status)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(UpdateStatus));
@@ -178,7 +185,8 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Assign category(ies) to the specified opportunity")]
         [HttpPut("{id}/assign/categories")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
-        public async Task<IActionResult> AssignCategories([FromRoute] Guid id, [FromBody] List<Guid> categoryIds)
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+        public async Task<IActionResult> AssignCategories([FromRoute] Guid id, [Required][FromBody] List<Guid> categoryIds)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(AssignCategories));
 
@@ -192,7 +200,8 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Remove category(ies) from the specified opportunity")]
         [HttpDelete("{id}/remove/categories")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
-        public async Task<IActionResult> DeleteCategories([FromRoute] Guid id, [FromBody] List<Guid> categoryIds)
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+        public async Task<IActionResult> DeleteCategories([FromRoute] Guid id, [Required][FromBody] List<Guid> categoryIds)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(DeleteCategories));
 
@@ -206,7 +215,8 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Assign country(ies) to the specified opportunity")]
         [HttpPut("{id}/assign/countries")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
-        public async Task<IActionResult> AssignCountries([FromRoute] Guid id, [FromBody] List<Guid> countryIds)
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+        public async Task<IActionResult> AssignCountries([FromRoute] Guid id, [Required][FromBody] List<Guid> countryIds)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(AssignCountries));
 
@@ -220,7 +230,8 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Remove country(ies) from the specified opportunity")]
         [HttpDelete("{id}/remove/countries")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
-        public async Task<IActionResult> DeleteCountries([FromRoute] Guid id, [FromBody] List<Guid> countryIds)
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+        public async Task<IActionResult> DeleteCountries([FromRoute] Guid id, [Required][FromBody] List<Guid> countryIds)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(DeleteCountries));
 
@@ -234,7 +245,8 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Assign language(s) to the specified opportunity")]
         [HttpPut("{id}/assign/languages")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
-        public async Task<IActionResult> AssignLanguages([FromRoute] Guid id, [FromBody] List<Guid> languageIds)
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+        public async Task<IActionResult> AssignLanguages([FromRoute] Guid id, [Required][FromBody] List<Guid> languageIds)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(AssignLanguages));
 
@@ -248,7 +260,8 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Remove language(s) from the specified opportunity")]
         [HttpDelete("{id}/remove/languages")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
-        public async Task<IActionResult> DeleteLanguages([FromRoute] Guid id, [FromBody] List<Guid> languageIds)
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+        public async Task<IActionResult> DeleteLanguages([FromRoute] Guid id, [Required][FromBody] List<Guid> languageIds)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(DeleteLanguages));
 
@@ -262,7 +275,8 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Assign skill(s) to the specified opportunity")]
         [HttpPut("{id}/assign/skills")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
-        public async Task<IActionResult> AssignSkills([FromRoute] Guid id, [FromBody] List<Guid> skillIds)
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+        public async Task<IActionResult> AssignSkills([FromRoute] Guid id, [Required][FromBody] List<Guid> skillIds)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(AssignSkills));
 
@@ -276,7 +290,8 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Remove skill(s) from the specified opportunity")]
         [HttpDelete("{id}/remove/skills")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
-        public async Task<IActionResult> DeleteSkills([FromRoute] Guid id, [FromBody] List<Guid> skillIds)
+        [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
+        public async Task<IActionResult> DeleteSkills([FromRoute] Guid id, [Required][FromBody] List<Guid> skillIds)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(DeleteSkills));
 

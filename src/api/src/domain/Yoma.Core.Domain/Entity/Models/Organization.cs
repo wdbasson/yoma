@@ -44,9 +44,7 @@ namespace Yoma.Core.Domain.Entity.Models
 
         public string? LogoURL { get; set; }
 
-        public Guid? CompanyRegistrationDocumentId { get; set; }
-
-        public string? CompanyRegistrationDocumentURL { get; set; }
+        public List<OrganizationDocument>? Documents { get; set; }
 
         public DateTimeOffset DateCreated { get; set; }
 

@@ -5,6 +5,10 @@ namespace Yoma.Core.Domain.Entity.Interfaces
 {
     public interface IOrganizationService
     {
+        bool Active(Guid id, bool throwNotFound);
+
+        bool Updatable(Guid id, bool throwNotFound);
+
         Organization GetById(Guid id, bool includeChildItems, bool ensureOrganizationAuthorization);
 
         Organization? GetByIdOrNull(Guid id, bool includeChildItems);
@@ -15,28 +19,30 @@ namespace Yoma.Core.Domain.Entity.Interfaces
 
         OrganizationSearchResults Search(OrganizationSearchFilter filter);
 
-        Task<Organization> Upsert(OrganizationRequest request, bool ensureOrganizationAuthorization);
+        Task<Organization> Create(OrganizationCreateRequest request);
+
+        Task<Organization> Update(OrganizationUpdateRequest request, bool ensureOrganizationAuthorization);
 
         Task UpdateStatus(Guid id, OrganizationStatus status, bool ensureOrganizationAuthorization);
 
-        Task AssignProviderTypes(Guid id, List<Guid> providerTypeIds, bool ensureOrganizationAuthorization);
+        Task<Organization> AssignProviderTypes(Guid id, List<Guid> providerTypeIds, bool ensureOrganizationAuthorization);
 
-        Task DeleteProviderTypes(Guid id, List<Guid> providerTypeIds, bool ensureOrganizationAuthorization);
+        Task<Organization> DeleteProviderTypes(Guid id, List<Guid> providerTypeIds, bool ensureOrganizationAuthorization);
 
         Task<Organization> UpsertLogo(Guid id, IFormFile? file, bool ensureOrganizationAuthorization);
 
-        Task<Organization> UpsertRegistrationDocument(Guid id, IFormFile? file, bool ensureOrganizationAuthorization);
+        Task<Organization> UpsertDocuments(Guid id, OrganizationDocumentType type, List<IFormFile> documents, bool ensureOrganizationAuthorization);
 
         bool IsAdmin(Guid id, bool throwUnauthorized);
 
         bool IsAdminsOf(List<Guid> ids, bool throwUnauthorized);
 
-        List<User> ListAdmins(Guid id, bool ensureOrganizationAuthorization);
+        List<UserInfo> ListAdmins(Guid id, bool ensureOrganizationAuthorization);
 
-        List<Organization> ListAdminsOf();
+        List<OrganizationInfo> ListAdminsOf();
 
-        Task AssignAdmin(Guid id, Guid userId, bool ensureOrganizationAuthorization);
+        Task AssignAdmin(Guid id, string email, bool ensureOrganizationAuthorization);
 
-        Task RemoveAdmin(Guid id, Guid userId, bool ensureOrganizationAuthorization);
+        Task RemoveAdmin(Guid id, string email, bool ensureOrganizationAuthorization);
     }
 }

@@ -26,15 +26,17 @@ namespace Yoma.Core.Domain.Entity.Services
         private readonly IOrganizationStatusService _organizationStatusService;
         private readonly IOrganizationProviderTypeService _providerTypeService;
         private readonly IBlobService _blobService;
-        private readonly OrganizationRequestValidator _organizationRequestValidator;
+        private readonly OrganizationCreateRequestValidator _organizationCreateRequestValidator;
+        private readonly OrganizationUpdateRequestValidator _organizationUpdateRequestValidator;
         private readonly OrganizationSearchFilterValidator _organizationSearchFilterValidator;
         private readonly IRepositoryValueContainsWithNavigation<Organization> _organizationRepository;
         private readonly IRepository<OrganizationUser> _organizationUserRepository;
-        private readonly IRepository<OrganizationProviderType> _organizationProviderTypeRepository;
+        private readonly IRepository<Models.OrganizationProviderType> _organizationProviderTypeRepository;
+        private readonly IRepository<OrganizationDocument> _organizationDocumentRepository;
 
-        public static readonly OrganizationStatus[] Statuses_Updatable = { OrganizationStatus.Active, OrganizationStatus.Inactive };
+        private static readonly OrganizationStatus[] Statuses_Updatable = { OrganizationStatus.Active, OrganizationStatus.Inactive };
         private static readonly OrganizationStatus[] Statuses_Activatable = { OrganizationStatus.Inactive };
-        private static readonly OrganizationStatus[] Statuses_Deletable = { OrganizationStatus.Active, OrganizationStatus.Inactive, OrganizationStatus.Declined };
+        private static readonly OrganizationStatus[] Statuses_CanDelete = { OrganizationStatus.Active, OrganizationStatus.Inactive, OrganizationStatus.Declined };
         private static readonly OrganizationStatus[] Statuses_DeActivatable = { OrganizationStatus.Active, OrganizationStatus.Declined };
         private static readonly OrganizationStatus[] Statuses_Declinable = { OrganizationStatus.Inactive };
         #endregion
@@ -46,11 +48,13 @@ namespace Yoma.Core.Domain.Entity.Services
             IOrganizationStatusService organizationStatusService,
             IOrganizationProviderTypeService providerTypeService,
             IBlobService blobService,
-            OrganizationRequestValidator organizationRequestValidator,
+            OrganizationCreateRequestValidator organizationCreateRequestValidator,
+            OrganizationUpdateRequestValidator organizationUpdateRequestValidator,
             OrganizationSearchFilterValidator organizationSearchFilterValidator,
             IRepositoryValueContainsWithNavigation<Organization> organizationRepository,
             IRepository<OrganizationUser> organizationUserRepository,
-            IRepository<OrganizationProviderType> organizationProviderTypeRepository)
+            IRepository<Models.OrganizationProviderType> organizationProviderTypeRepository,
+            IRepository<OrganizationDocument> organizationDocumentRepository)
         {
             _httpContextAccessor = httpContextAccessor;
             _userService = userService;
@@ -58,15 +62,31 @@ namespace Yoma.Core.Domain.Entity.Services
             _organizationStatusService = organizationStatusService;
             _providerTypeService = providerTypeService;
             _blobService = blobService;
-            _organizationRequestValidator = organizationRequestValidator;
+            _organizationCreateRequestValidator = organizationCreateRequestValidator;
+            _organizationUpdateRequestValidator = organizationUpdateRequestValidator;
             _organizationSearchFilterValidator = organizationSearchFilterValidator;
             _organizationRepository = organizationRepository;
             _organizationUserRepository = organizationUserRepository;
             _organizationProviderTypeRepository = organizationProviderTypeRepository;
+            _organizationDocumentRepository = organizationDocumentRepository;
         }
         #endregion
 
         #region Public Members
+        public bool Active(Guid id, bool throwNotFound)
+        {
+            var org = throwNotFound ? GetById(id, false, false) : GetByIdOrNull(id, false);
+            if (org == null) return false;
+            return org.Status != OrganizationStatus.Active;
+        }
+
+        public bool Updatable(Guid id, bool throwNotFound)
+        {
+            var org = throwNotFound ? GetById(id, false, false) : GetByIdOrNull(id, false);
+            if (org == null) return false;
+            return Statuses_Updatable.Contains(org.Status);
+        }
+
         public Organization GetById(Guid id, bool includeChildItems, bool ensureOrganizationAuthorization)
         {
             if (id == Guid.Empty)
@@ -76,7 +96,7 @@ namespace Yoma.Core.Domain.Entity.Services
                 ?? throw new ArgumentOutOfRangeException(nameof(id), $"{nameof(Organization)} with id '{id}' does not exist");
 
             if (ensureOrganizationAuthorization)
-                IsAdmin(result.Id, true);
+                IsAdmin(result, true);
 
             return result;
         }
@@ -89,8 +109,8 @@ namespace Yoma.Core.Domain.Entity.Services
             var result = _organizationRepository.Query(includeChildItems).SingleOrDefault(o => o.Id == id);
             if (result == null) return null;
 
-            result.LogoURL = GetS3ObjectURL(result.LogoId);
-            result.CompanyRegistrationDocumentURL = GetS3ObjectURL(result.CompanyRegistrationDocumentId);
+            result.LogoURL = GetBlobObjectURL(result.LogoId);
+            result.Documents?.ForEach(o => o.Url = _blobService.GetURL(o.FileId));
 
             return result;
         }
@@ -104,8 +124,8 @@ namespace Yoma.Core.Domain.Entity.Services
             var result = _organizationRepository.Query(includeChildItems).SingleOrDefault(o => o.Name == name);
             if (result == null) return null;
 
-            result.LogoURL = GetS3ObjectURL(result.LogoId);
-            result.CompanyRegistrationDocumentURL = GetS3ObjectURL(result.CompanyRegistrationDocumentId);
+            result.LogoURL = GetBlobObjectURL(result.LogoId);
+            result.Documents?.ForEach(o => o.Url = _blobService.GetURL(o.FileId));
 
             return result;
         }
@@ -151,24 +171,96 @@ namespace Yoma.Core.Domain.Entity.Services
             return results;
         }
 
-        public async Task<Organization> Upsert(OrganizationRequest request, bool ensureOrganizationAuthorization)
+        public async Task<Organization> Create(OrganizationCreateRequest request)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            await _organizationRequestValidator.ValidateAndThrowAsync(request);
+            await _organizationCreateRequestValidator.ValidateAndThrowAsync(request);
 
-            // check if user exists
-            var isNew = !request.Id.HasValue;
-            var isUserOnly = HttpContextAccessorHelper.IsUserRoleOnly(_httpContextAccessor);
+            var existingByName = GetByNameOrNull(request.Name, false);
+            if (existingByName != null)
+                throw new ValidationException($"{nameof(Organization)} with the specified name '{request.Name}' already exists");
 
-            var result = !request.Id.HasValue ? new Organization { Id = Guid.NewGuid() } : GetById(request.Id.Value, true, ensureOrganizationAuthorization);
+            var statusInactiveId = _organizationStatusService.GetByName(OrganizationStatus.Inactive.ToString()).Id;
 
-            if (!isNew && isUserOnly)
-                throw new SecurityException("Unauthorized: Updates are not permitted for an authenticated user who solely holds the 'User' role");
+            var result = new Organization
+            {
+                Name = request.Name,
+                WebsiteURL = request.WebsiteURL,
+                PrimaryContactName = request.PrimaryContactName,
+                PrimaryContactEmail = request.PrimaryContactEmail,
+                PrimaryContactPhone = request.PrimaryContactPhone,
+                VATIN = request.VATIN,
+                TaxNumber = request.TaxNumber,
+                RegistrationNumber = request.RegistrationNumber,
+                City = request.City,
+                CountryId = request.CountryId,
+                StreetAddress = request.StreetAddress,
+                Province = request.Province,
+                PostalCode = request.PostalCode,
+                Tagline = request.Tagline,
+                Biography = request.Biography,
+                StatusId = statusInactiveId, //new organization defaults to inactive / unapproved
+                Status = OrganizationStatus.Inactive
+            };
 
-            var existingByEmail = GetByNameOrNull(request.Name, false);
-            if (existingByEmail != null && (isNew || result.Id != existingByEmail.Id))
+            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+            //create org
+            result = await _organizationRepository.Create(result);
+
+            //assign provider types
+            result = await AssignProviderTypes(result, request.ProviderTypeIds, false);
+
+            //insert logo
+            result = await UpsertLogo(result, request.Logo);
+
+            //assign admins
+            if (request.AddCurrentUserAsAdmin)
+            {
+                var username = HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false);
+                await AssignAdmin(result, username);
+            }
+
+            if (request.AdminAdditionalEmails != null && request.AdminAdditionalEmails.Any())
+                foreach (var item in request.AdminAdditionalEmails)
+                    await AssignAdmin(result, item);
+
+            //upload documents
+            result = await UpsertDocuments(result, OrganizationDocumentType.Registration, request.RegistrationDocuments);
+
+            var isProviderTypeEducation = result.ProviderTypes?.SingleOrDefault(o => string.Equals(o.Name, OrganizationProviderType.Education.ToString(), StringComparison.InvariantCultureIgnoreCase)) != null;
+            if (isProviderTypeEducation && (request.EducationProviderDocuments == null || !request.EducationProviderDocuments.Any()))
+                throw new ValidationException($"Education provider type documents are required");
+
+            if (request.EducationProviderDocuments != null && request.EducationProviderDocuments.Any())
+                result = await UpsertDocuments(result, OrganizationDocumentType.EducationProvider, request.EducationProviderDocuments);
+
+            var isProviderTypeMarketplace = result.ProviderTypes?.SingleOrDefault(o => string.Equals(o.Name, OrganizationProviderType.Marketplace.ToString(), StringComparison.InvariantCultureIgnoreCase)) != null;
+            if (isProviderTypeMarketplace && (request.BusinessDocuments == null || !request.BusinessDocuments.Any()))
+                throw new ValidationException($"Business documents are required");
+
+            if (request.BusinessDocuments != null && request.BusinessDocuments.Any())
+                result = await UpsertDocuments(result, OrganizationDocumentType.EducationProvider, request.BusinessDocuments);
+
+            //TODO: Send email to SAP admins
+
+            scope.Complete();
+
+            return result;
+        }
+
+        public async Task<Organization> Update(OrganizationUpdateRequest request, bool ensureOrganizationAuthorization)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            await _organizationUpdateRequestValidator.ValidateAndThrowAsync(request);
+
+            var result = GetById(request.Id, true, ensureOrganizationAuthorization);
+
+            var existingByName = GetByNameOrNull(request.Name, false);
+            if (existingByName != null && result.Id != existingByName.Id)
                 throw new ValidationException($"{nameof(Organization)} with the specified name '{request.Name}' already exists");
 
             result.Name = request.Name;
@@ -187,29 +279,11 @@ namespace Yoma.Core.Domain.Entity.Services
             result.Tagline = request.Tagline;
             result.Biography = request.Biography;
 
-            if (isNew)
-            {
-                var statusInactive = _organizationStatusService.GetByName(OrganizationStatus.Inactive.ToString());
-                result.StatusId = statusInactive.Id; //new organization defaults to inactive / unapproved
-                //TODO: Send email to SAP admins
+            if (!Statuses_Updatable.Contains(result.Status))
+                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{result.Status}')");
 
-                using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
-                result = await _organizationRepository.Create(result);
-                if (isUserOnly)
-                {
-                    var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false));
-                    await AssignAdmin(result.Id, user.Id, false);
-                }
-                scope.Complete();
-            }
-            else
-            {
-                if (!Statuses_Updatable.Contains(result.Status))
-                    throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{result.Status}')");
-
-                await _organizationRepository.Update(result);
-                result.DateModified = DateTimeOffset.Now;
-            }
+            await _organizationRepository.Update(result);
+            result.DateModified = DateTimeOffset.Now;
 
             return result;
         }
@@ -245,7 +319,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
                 case OrganizationStatus.Deleted:
                     if (org.Status == OrganizationStatus.Deleted) return;
-                    if (!Statuses_Deletable.Contains(org.Status))
+                    if (!Statuses_CanDelete.Contains(org.Status))
                         throw new InvalidOperationException($"{nameof(Organization)} can not be deleted (current status '{org.Status}')");
                     break;
 
@@ -261,177 +335,73 @@ namespace Yoma.Core.Domain.Entity.Services
             await _organizationRepository.Update(org);
         }
 
-        public async Task AssignProviderTypes(Guid id, List<Guid> providerTypeIds, bool ensureOrganizationAuthorization)
+        public async Task<Organization> AssignProviderTypes(Guid id, List<Guid> providerTypeIds, bool ensureOrganizationAuthorization)
         {
-            var org = GetById(id, false, ensureOrganizationAuthorization);
+            var result = GetById(id, true, ensureOrganizationAuthorization);
 
-            if (providerTypeIds == null || !providerTypeIds.Any())
-                throw new ArgumentNullException(nameof(providerTypeIds));
-
-            if (!Statuses_Updatable.Contains(org.Status))
-                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{org.Status}')");
-
-            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
-            foreach (var typeId in providerTypeIds)
-            {
-                var type = _providerTypeService.GetById(typeId);
-
-                var item = _organizationProviderTypeRepository.Query().SingleOrDefault(o => o.OrganizationId == org.Id && o.ProviderTypeId == type.Id);
-                if (item != null) return;
-
-                item = new OrganizationProviderType
-                {
-                    OrganizationId = org.Id,
-                    ProviderTypeId = type.Id
-                };
-
-                await _organizationProviderTypeRepository.Create(item);
-            }
-
-            scope.Complete();
+            return await AssignProviderTypes(result, providerTypeIds, true);
         }
 
-        public async Task DeleteProviderTypes(Guid id, List<Guid> providerTypeIds, bool ensureOrganizationAuthorization)
+        public async Task<Organization> DeleteProviderTypes(Guid id, List<Guid> providerTypeIds, bool ensureOrganizationAuthorization)
         {
-            var org = GetById(id, false, ensureOrganizationAuthorization);
+            var result = GetById(id, true, ensureOrganizationAuthorization);
 
             if (providerTypeIds == null || !providerTypeIds.Any())
                 throw new ArgumentNullException(nameof(providerTypeIds));
 
-            if (!Statuses_Updatable.Contains(org.Status))
-                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{org.Status}')");
+            if (!Statuses_Updatable.Contains(result.Status))
+                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{result.Status}')");
 
-            using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             foreach (var typeId in providerTypeIds)
             {
                 var type = _providerTypeService.GetById(typeId);
 
-                var item = _organizationProviderTypeRepository.Query().SingleOrDefault(o => o.OrganizationId == org.Id && o.ProviderTypeId == type.Id);
-                if (item == null) return;
+                var item = _organizationProviderTypeRepository.Query().SingleOrDefault(o => o.OrganizationId == result.Id && o.ProviderTypeId == type.Id);
+                if (item == null) continue;
 
                 await _organizationProviderTypeRepository.Delete(item);
+
+                var typeToRemove = (result.ProviderTypes?.Single(o => o.Id == type.Id))
+                    ?? throw new InvalidOperationException($"Type '{type.Name}' expected but not found");
+                result.ProviderTypes?.Remove(typeToRemove);
             }
+
+            return result;
         }
 
         public async Task<Organization> UpsertLogo(Guid id, IFormFile? file, bool ensureOrganizationAuthorization)
         {
             var result = GetById(id, true, ensureOrganizationAuthorization);
 
-            if (file == null)
-                throw new ArgumentNullException(nameof(file));
-
-            if (!Statuses_Updatable.Contains(result.Status))
-                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{result.Status}')");
-
-            var currentLogoId = result.LogoId;
-
-            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
-            {
-                BlobObject? s3Object = null;
-                try
-                {
-                    s3Object = await _blobService.Create(file, FileTypeEnum.Photos);
-                    result.LogoId = s3Object.Id;
-                    await _organizationRepository.Update(result);
-
-                    if (currentLogoId.HasValue)
-                        await _blobService.Delete(currentLogoId.Value);
-
-                    scope.Complete();
-                }
-                catch
-                {
-                    if (s3Object != null)
-                        await _blobService.Delete(s3Object.Id);
-
-                    throw;
-                }
-            }
-
-            result.LogoURL = GetS3ObjectURL(result.LogoId);
-
-            return result;
+            return await UpsertLogo(result, file);
         }
 
-        public async Task<Organization> UpsertRegistrationDocument(Guid id, IFormFile? file, bool ensureOrganizationAuthorization)
+        public async Task<Organization> UpsertDocuments(Guid id, OrganizationDocumentType type, List<IFormFile> documents, bool ensureOrganizationAuthorization)
         {
             var result = GetById(id, true, ensureOrganizationAuthorization);
 
-            if (file == null)
-                throw new ArgumentNullException(nameof(file));
-
-            if (!Statuses_Updatable.Contains(result.Status))
-                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{result.Status}')");
-
-            var currentDocumentId = result.CompanyRegistrationDocumentId;
-
-            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled))
-            {
-                BlobObject? s3Object = null;
-                try
-                {
-                    s3Object = await _blobService.Create(file, FileTypeEnum.Documents);
-                    result.CompanyRegistrationDocumentId = s3Object.Id;
-                    await _organizationRepository.Update(result);
-
-                    if (currentDocumentId.HasValue)
-                        await _blobService.Delete(currentDocumentId.Value);
-
-                    scope.Complete();
-                }
-                catch
-                {
-                    if (s3Object != null)
-                        await _blobService.Delete(s3Object.Id);
-
-                    throw;
-                }
-            }
-
-            result.CompanyRegistrationDocumentURL = GetS3ObjectURL(result.CompanyRegistrationDocumentId);
-
-            return result;
+            return await UpsertDocuments(result, type, documents);
         }
 
-        public async Task AssignAdmin(Guid id, Guid userId, bool ensureOrganizationAuthorization)
+        public async Task AssignAdmin(Guid id, string email, bool ensureOrganizationAuthorization)
         {
             var org = GetById(id, false, ensureOrganizationAuthorization);
-            var user = _userService.GetById(userId);
+
+            await AssignAdmin(org, email);
+        }
+
+        public async Task RemoveAdmin(Guid id, string email, bool ensureOrganizationAuthorization)
+        {
+            var org = GetById(id, false, ensureOrganizationAuthorization);
+
+            var user = _userService.GetByEmail(email);
             if (!user.ExternalId.HasValue)
                 throw new InvalidOperationException($"External id expected for user with id '{user.Id}'");
 
             if (!Statuses_Updatable.Contains(org.Status))
                 throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{org.Status}')");
 
-            var item = _organizationUserRepository.Query().SingleOrDefault(o => o.OrganizationId == id && o.UserId == userId);
-            if (item != null) return;
-
-            item = new OrganizationUser
-            {
-                OrganizationId = org.Id,
-                UserId = user.Id
-            };
-
-            using var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
-            await _organizationUserRepository.Create(item);
-
-            await _identityProviderClient.EnsureRoles(user.ExternalId.Value, new List<string> { Constants.Role_OrganizationAdmin });
-
-            scope.Complete();
-        }
-
-        public async Task RemoveAdmin(Guid id, Guid userId, bool ensureOrganizationAuthorization)
-        {
-            var org = GetById(id, false, ensureOrganizationAuthorization);
-
-            var user = _userService.GetById(userId);
-            if (!user.ExternalId.HasValue)
-                throw new InvalidOperationException($"External id expected for user with id '{user.Id}'");
-
-            if (!Statuses_Updatable.Contains(org.Status))
-                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{org.Status}')");
-
-            var item = _organizationUserRepository.Query().SingleOrDefault(o => o.OrganizationId == id && o.UserId == userId);
+            var item = _organizationUserRepository.Query().SingleOrDefault(o => o.OrganizationId == id && o.UserId == user.Id);
             if (item == null) return;
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
@@ -444,16 +414,8 @@ namespace Yoma.Core.Domain.Entity.Services
 
         public bool IsAdmin(Guid id, bool throwUnauthorized)
         {
-            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false));
             var org = GetById(id, false, false);
-
-            OrganizationUser? orgUser = null;
-            var isAdmin = HttpContextAccessorHelper.IsAdminRole(_httpContextAccessor);
-            if (!isAdmin) orgUser = _organizationUserRepository.Query().SingleOrDefault(o => o.OrganizationId == org.Id && o.UserId == user.Id);
-
-            if (!isAdmin && orgUser == null && throwUnauthorized)
-                throw new SecurityException("Unauthorized");
-            return true;
+            return IsAdmin(org, throwUnauthorized);
         }
 
         public bool IsAdminsOf(List<Guid> ids, bool throwUnauthorized)
@@ -470,28 +432,232 @@ namespace Yoma.Core.Domain.Entity.Services
             return result;
         }
 
-        public List<User> ListAdmins(Guid id, bool ensureOrganizationAuthorization)
+        public List<UserInfo> ListAdmins(Guid id, bool ensureOrganizationAuthorization)
         {
             var org = GetById(id, false, ensureOrganizationAuthorization);
             var adminIds = _organizationUserRepository.Query().Where(o => o.OrganizationId == org.Id).Select(o => o.UserId).ToList();
 
             var results = new List<User>();
             adminIds.ForEach(o => results.Add(_userService.GetById(o)));
-            return results;
+            return results.Select(o => o.ToInfo()).ToList();
         }
 
-        public List<Organization> ListAdminsOf()
+        public List<OrganizationInfo> ListAdminsOf()
         {
             var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false));
             var orgIds = _organizationUserRepository.Query().Where(o => o.UserId == user.Id).Select(o => o.OrganizationId).ToList();
 
             var results = _organizationRepository.Query().Where(o => orgIds.Contains(o.Id)).ToList();
-            return results;
+            return results.Select(o => o.ToInfo()).ToList();
         }
         #endregion
 
         #region Private Members
-        private string? GetS3ObjectURL(Guid? id)
+        private bool IsAdmin(Organization org, bool throwUnauthorized)
+        {
+            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false));
+
+            OrganizationUser? orgUser = null;
+            var isAdmin = HttpContextAccessorHelper.IsAdminRole(_httpContextAccessor);
+            if (!isAdmin) orgUser = _organizationUserRepository.Query().SingleOrDefault(o => o.OrganizationId == org.Id && o.UserId == user.Id);
+
+            if (!isAdmin && orgUser == null && throwUnauthorized)
+                throw new SecurityException("Unauthorized");
+            return true;
+        }
+
+        private async Task<Organization> AssignProviderTypes(Organization org, List<Guid> providerTypeIds, bool sendForReapproval)
+        {
+            if (providerTypeIds == null || !providerTypeIds.Any())
+                throw new ArgumentNullException(nameof(providerTypeIds));
+
+            if (!Statuses_Updatable.Contains(org.Status))
+                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{org.Status}')");
+
+            var typesAdded = false;
+            using var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+            foreach (var typeId in providerTypeIds)
+            {
+                var type = _providerTypeService.GetById(typeId);
+
+                var itemExisting = org.ProviderTypes?.SingleOrDefault(o => o.Id == type.Id);
+                if (itemExisting != null) continue;
+
+                var item = new Models.OrganizationProviderType
+                {
+                    OrganizationId = org.Id,
+                    ProviderTypeId = type.Id
+                };
+
+                await _organizationProviderTypeRepository.Create(item);
+
+                org.ProviderTypes ??= new List<Models.Lookups.OrganizationProviderType>();
+                org.ProviderTypes.Add(new Models.Lookups.OrganizationProviderType { Id = type.Id, Name = type.Name });
+
+                typesAdded = true;
+            }
+
+            if (sendForReapproval && typesAdded)
+            {
+                //with type addition organization is send for re-approval; all related opportunities will temporarily disappear from the listings
+                var statusInactiveId = _organizationStatusService.GetByName(OrganizationStatus.Inactive.ToString()).Id;
+                org.StatusId = statusInactiveId;
+                org.Status = OrganizationStatus.Inactive;
+                await _organizationRepository.Update(org);
+
+                //TODO: Send email to SAP admins
+            }
+
+            scope.Complete();
+
+            return org;
+        }
+
+        private async Task<Organization> UpsertLogo(Organization org, IFormFile? file)
+        {
+            if (file == null)
+                throw new ArgumentNullException(nameof(file));
+
+            if (!Statuses_Updatable.Contains(org.Status))
+                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{org.Status}')");
+
+            var currentLogo = org.LogoId.HasValue ? new { Id = org.LogoId.Value, File = await _blobService.Download(org.LogoId.Value) } : null;
+
+            BlobObject? blobObject = null;
+            try
+            {
+                using var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+                blobObject = await _blobService.Create(file, FileType.Photos);
+                org.LogoId = blobObject.Id;
+                await _organizationRepository.Update(org);
+
+                if (currentLogo != null)
+                    await _blobService.Delete(currentLogo.Id);
+
+                scope.Complete();
+            }
+            catch
+            {
+                if (blobObject != null)
+                    await _blobService.Delete(blobObject.Key);
+
+                if (currentLogo != null)
+                    await _blobService.Create(currentLogo.Id, currentLogo.File, FileType.Photos);
+
+                throw;
+            }
+
+            org.LogoURL = GetBlobObjectURL(org.LogoId);
+
+            return org;
+        }
+
+        private async Task AssignAdmin(Organization org, string email)
+        {
+            var user = _userService.GetByEmail(email);
+            if (!user.ExternalId.HasValue)
+                throw new InvalidOperationException($"External id expected for user with id '{user.Id}'");
+
+            if (!Statuses_Updatable.Contains(org.Status))
+                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{org.Status}')");
+
+            var item = _organizationUserRepository.Query().SingleOrDefault(o => o.OrganizationId == org.Id && o.UserId == user.Id);
+            if (item != null) return;
+
+            item = new OrganizationUser
+            {
+                OrganizationId = org.Id,
+                UserId = user.Id
+            };
+
+            using var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+            await _organizationUserRepository.Create(item);
+
+            await _identityProviderClient.EnsureRoles(user.ExternalId.Value, new List<string> { Constants.Role_OrganizationAdmin });
+
+            scope.Complete();
+        }
+
+        private async Task<Organization> UpsertDocuments(Organization org, OrganizationDocumentType type, List<IFormFile> documents)
+        {
+            if (documents == null || !documents.Any())
+                throw new ArgumentNullException(nameof(documents));
+
+            if (!Statuses_Updatable.Contains(org.Status))
+                throw new InvalidOperationException($"{nameof(Organization)} can no longer be updated (current status '{org.Status}')");
+
+            var itemsNew = new List<OrganizationDocument>();
+            var itemsExisting = new List<OrganizationDocument>();
+            var itemsExistingDeleted = new List<OrganizationDocument>();
+            var itemsNewBlobs = new List<BlobObject>();
+            try
+            {
+                using (var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    var itemsExistingByType = org.Documents?.Where(o => o.Type == type.ToString()).ToList();
+
+                    //track existing (to be deleted)
+                    if (itemsExistingByType != null && itemsExistingByType.Any())
+                    {
+                        foreach (var item in itemsExistingByType)
+                            item.File = await _blobService.Download(item.FileId);
+                        itemsExisting.AddRange(itemsExistingByType);
+                    }
+
+                    //new items
+                    foreach (var file in documents)
+                    {
+                        //upload new item to blob storage
+                        var blobObject = await _blobService.Create(file, FileType.Documents);
+                        itemsNewBlobs.Add(blobObject);
+
+                        var item = new OrganizationDocument
+                        {
+                            OrganizationId = org.Id,
+                            FileId = blobObject.Id,
+                            Type = type.ToString(),
+                            ContentType = file.ContentType,
+                            OriginalFileName = file.FileName,
+                            DateCreated = DateTimeOffset.Now
+                        };
+
+                        //create new item in db
+                        await _organizationDocumentRepository.Create(item);
+                        itemsNew.Add(item);
+                    }
+
+                    //delete existing items in blob storage and db
+                    foreach (var item in itemsExisting)
+                    {
+                        await _organizationDocumentRepository.Delete(item);
+                        await _blobService.Delete(item.FileId);
+                        itemsExistingDeleted.Add(item);
+                    }
+
+                    scope.Complete();
+                }
+            }
+            catch //roll back
+            {
+                //re-upload existing items to blob storage
+                foreach (var item in itemsExistingDeleted)
+                    await _blobService.Create(item.FileId, item.File, FileType.Documents);
+
+                //delete newly create items in blob storage
+                foreach (var item in itemsNewBlobs)
+                    await _blobService.Delete(item.Key);
+
+                throw;
+            }
+
+            org.Documents ??= new List<OrganizationDocument>();
+            org.Documents.AddRange(itemsNew);
+            org.Documents?.ForEach(o => o.Url = _blobService.GetURL(o.FileId));
+
+            return org;
+        }
+
+        private string? GetBlobObjectURL(Guid? id)
         {
             if (!id.HasValue) return null;
             return _blobService.GetURL(id.Value);

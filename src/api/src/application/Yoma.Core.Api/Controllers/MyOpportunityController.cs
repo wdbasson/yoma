@@ -11,7 +11,7 @@ namespace Yoma.Core.Api.Controllers
 {
     [Route("api/v3/user")]
     [ApiController]
-    [Authorize(Policy = Common.Constants.Authorization_Policy, Roles = $"{Constants.Role_User}")]
+    [Authorize(Policy = Common.Constants.Authorization_Policy)]
     [SwaggerTag("(by default, User role required)")]
     public class MyOpportunityController : Controller
     {
@@ -36,14 +36,13 @@ namespace Yoma.Core.Api.Controllers
         [HttpPut("verification/{userId}/{opportunityId}/update/{status}")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
         [Authorize(Roles = $"{Constants.Role_Admin}, {Constants.Role_OrganizationAdmin}")]
-        //
-        public async Task<IActionResult> UpdateVerificationStatus([FromRoute] Guid userId, [FromRoute] Guid opportunityId, [FromRoute] VerificationStatus status)
+        public async Task<IActionResult> CompleteVerification([FromRoute] Guid userId, [FromRoute] Guid opportunityId, [FromRoute] VerificationStatus status)
         {
-            _logger.LogInformation("Handling request {requestName}", nameof(UpdateVerificationStatus));
+            _logger.LogInformation("Handling request {requestName}", nameof(CompleteVerification));
 
-            await _myOpportunityService.UpdateVerificationStatus(userId, opportunityId, status);
+            await _myOpportunityService.CompleteVerification(userId, opportunityId, status);
 
-            _logger.LogInformation("Request {requestName} handled", nameof(UpdateVerificationStatus));
+            _logger.LogInformation("Request {requestName} handled", nameof(CompleteVerification));
 
             return StatusCode((int)HttpStatusCode.OK);
         }
@@ -53,6 +52,7 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Save an opportunity (Authenticated User)")]
         [HttpPut("action/{opportunityId}/save")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
+        [Authorize(Roles = $"{Constants.Role_User}")]
         public async Task<IActionResult> PerformActionSaved([FromRoute] Guid opportunityId)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(PerformActionSaved));
@@ -67,6 +67,7 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Remove a saved opportunity (Authenticated User)")]
         [HttpPut("action/{opportunityId}/save/remove")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
+        [Authorize(Roles = $"{Constants.Role_User}")]
         public async Task<IActionResult> PerformActionSavedRemove([FromRoute] Guid opportunityId)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(PerformActionSavedRemove));
@@ -81,6 +82,7 @@ namespace Yoma.Core.Api.Controllers
         [SwaggerOperation(Summary = "Complete an opportunity by applying for verification (Authenticated User)")]
         [HttpPut("action/{opportunityId}/verify")]
         [ProducesResponseType((int)HttpStatusCode.OK)]
+        [Authorize(Roles = $"{Constants.Role_User}")]
         public async Task<IActionResult> PerformActionSendForVerification([FromRoute] Guid opportunityId, [FromBody] MyOpportunityVerifyRequest request)
         {
             _logger.LogInformation("Handling request {requestName}", nameof(PerformActionSendForVerification));
