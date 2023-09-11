@@ -19,7 +19,12 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"]
-    }
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
   "include": [
     ".eslintrc.cjs",
@@ -30,7 +35,8 @@
     "**/*.mjs",
     "next.config.js",
     "next.config.mjs",
-    "src/components/Organisation/Upsert/OrgRolesEdit.tsx"
+    "src/components/Organisation/Upsert/OrgRolesEdit.tsx",
+    ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }
