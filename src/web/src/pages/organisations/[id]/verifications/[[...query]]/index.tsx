@@ -38,7 +38,6 @@ import {
   type MyOpportunityInfo,
   type MyOpportunityRequestVerifyFinalize,
   type MyOpportunityRequestVerifyFinalizeBatch,
-  type MyOpportunitySearchCriteriaOpportunity,
   type MyOpportunitySearchResults,
   VerificationStatus,
 } from "~/api/models/myOpportunity";
@@ -56,7 +55,8 @@ import { GoogleMap, MarkerF, useLoadScript } from "@react-google-maps/api";
 import { env } from "~/env.mjs";
 import { SearchInput } from "~/components/SearchInput";
 import Select from "react-select";
-import { SelectOption } from "~/api/models/lookups";
+import { type SelectOption } from "~/api/models/lookups";
+import { Loading } from "~/components/Status/Loading";
 
 interface IParams extends ParsedUrlQuery {
   id: string;
@@ -192,7 +192,7 @@ const OpportunityVerifications: NextPageWithLayout<{
       // reset scroll position
       window.scrollTo(0, 0);
     },
-    [query, id, router],
+    [router, query, id, opportunity],
   );
 
   const [isLoading, setIsLoading] = useState(false);
@@ -212,7 +212,6 @@ const OpportunityVerifications: NextPageWithLayout<{
       setIsLoading(true);
 
       try {
-        debugger;
         const model: MyOpportunityRequestVerifyFinalize = {
           opportunityId: row.opportunityId,
           userId: row.userId,
@@ -381,6 +380,7 @@ const OpportunityVerifications: NextPageWithLayout<{
         <title>Yoma Partner | Verifications</title>
       </Head>
 
+      {isLoading && <Loading />}
       <PageBackground />
 
       {/* MODAL DIALOG FOR VERIFY (SINGLE) */}

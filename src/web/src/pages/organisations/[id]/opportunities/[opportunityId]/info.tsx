@@ -7,8 +7,8 @@ import {
 import { type GetServerSidePropsContext } from "next";
 import { getServerSession } from "next-auth";
 import { type ParsedUrlQuery } from "querystring";
-import { useState, type ReactElement, useCallback, useMemo } from "react";
-import { OpportunityInfo, Status } from "~/api/models/opportunity";
+import { useState, type ReactElement, useCallback } from "react";
+import { type OpportunityInfo, Status } from "~/api/models/opportunity";
 import {
   getOpportunityInfoByIdAdmin,
   updateOpportunityStatus,
@@ -36,10 +36,10 @@ import iconLanguage from "public/images/icon-language.svg";
 import iconTopics from "public/images/icon-topics.svg";
 import iconSkills from "public/images/icon-skills.svg";
 import iconUser from "public/images/icon-user.svg";
+import iconSuccess from "public/images/icon-success.svg";
 import { toast } from "react-toastify";
-import { ApiError } from "next/dist/server/api-utils";
 import { ApiErrors } from "~/components/Status/ApiErrors";
-import { AxiosError } from "axios";
+import { type AxiosError } from "axios";
 import { Loading } from "~/components/Status/Loading";
 
 interface IParams extends ParsedUrlQuery {
@@ -116,7 +116,7 @@ const OpportunityDetails: NextPageWithLayout<{
   id: string;
   opportunityId: string;
   user: User;
-}> = ({ id, opportunityId }) => {
+}> = ({ id, opportunityId, user }) => {
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
   const { data: opportunity } = useQuery<OpportunityInfo>({
@@ -146,14 +146,13 @@ const OpportunityDetails: NextPageWithLayout<{
           autoClose: false,
           icon: false,
         });
-
         //captureException(error);
-        setIsLoading(false);
-
-        return;
       }
+      setIsLoading(false);
+
+      return;
     },
-    [opportunityId],
+    [opportunityId, queryClient],
   );
 
   return (
@@ -214,6 +213,7 @@ const OpportunityDetails: NextPageWithLayout<{
                 <FaPencilAlt className="mr-2 h-3 w-3" />
                 Edit
               </Link>
+              {/* TODO */}
               <Link
                 href={`/organisations/${id}/opportunities/${opportunityId}/edit`}
                 className="flex flex-row items-center text-gray-dark hover:brightness-50"
@@ -222,26 +222,31 @@ const OpportunityDetails: NextPageWithLayout<{
                 Duplicate
               </Link>
 
-              {opportunity?.status == "Active" && (
+              {/* if active, then org admins can make it inactive
+                  if deleted, admins can make it inactive */}
+              {(opportunity?.status == "Active" ||
+                (user?.roles.some((x) => x === "Admin") &&
+                  opportunity?.status == "Deleted")) && (
                 <button
                   className="flex flex-row items-center text-gray-dark hover:brightness-50"
                   onClick={() => updateStatus(Status.Inactive)}
                 >
                   <FaClock className="mr-2 h-3 w-3" />
-                  Expire / Inactivate
+                  Make Inactive
                 </button>
               )}
 
-              {opportunity?.status == "Expired" && (
+              {opportunity?.status == "Inactive" && (
                 <button
                   className="flex flex-row items-center text-gray-dark hover:brightness-50"
                   onClick={() => updateStatus(Status.Active)}
                 >
                   <FaClock className="mr-2 h-3 w-3" />
-                  Activate
+                  Make Active
                 </button>
               )}
 
+              {/* TODO */}
               <Link
                 href={`/organisations/${id}/opportunities/${opportunityId}/edit`}
                 className="flex flex-row items-center text-gray-dark hover:brightness-50"
@@ -249,6 +254,8 @@ const OpportunityDetails: NextPageWithLayout<{
                 <FaArrowCircleUp className="mr-2 h-3 w-3" />
                 Short link
               </Link>
+
+              {/* TODO */}
               <Link
                 href={`/organisations/${id}/opportunities/${opportunityId}/edit`}
                 className="flex flex-row items-center text-gray-dark hover:brightness-50"
@@ -271,71 +278,91 @@ const OpportunityDetails: NextPageWithLayout<{
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1 rounded-lg bg-white p-6">
-            <h4 className="text-black">{opportunity?.title}</h4>
-            {/* <h6 className="text-sm text-gray">by {opportunity?.}</h6> */}
-            <div className="flex flex-row gap-1 text-xs font-bold text-green-dark">
-              <div className="badge h-6 rounded-md bg-green-light text-green">
-                <Image
-                  src={iconClock}
-                  alt="Icon Clock"
-                  width={20}
-                  height={20}
-                  sizes="100vw"
-                  priority={true}
-                  style={{ width: "20px", height: "20px" }}
-                />
-
-                <span className="ml-1">{`${opportunity?.commitmentIntervalCount} ${opportunity?.commitmentInterval}`}</span>
-              </div>
-
-              <div className="badge h-6 rounded-md bg-green-light text-green">
-                <Image
-                  src={iconUser}
-                  alt="Icon User"
-                  width={20}
-                  height={20}
-                  sizes="100vw"
-                  priority={true}
-                  style={{ width: "20px", height: "20px" }}
-                />
-
-                <span className="ml-1">
-                  {opportunity?.participantCountVerificationCompleted} enrolled
-                </span>
-              </div>
-
-              {/* Status Badges */}
-              {opportunity?.status == "Active" && (
+          <div className="flex flex-grow flex-row gap-1 rounded-lg bg-white p-6">
+            <div className="flex flex-col gap-1">
+              <h4 className="text-black">{opportunity?.title}</h4>
+              <h6 className="text-gray-dark">
+                by {opportunity?.organizationName}
+              </h6>
+              <div className="flex flex-row gap-1 text-xs font-bold text-green-dark">
                 <div className="badge h-6 rounded-md bg-green-light text-green">
-                  Ongoing / Active
+                  <Image
+                    src={iconClock}
+                    alt="Icon Clock"
+                    width={20}
+                    height={20}
+                    sizes="100vw"
+                    priority={true}
+                    style={{ width: "20px", height: "20px" }}
+                  />
+
+                  <span className="ml-1">{`${opportunity?.commitmentIntervalCount} ${opportunity?.commitmentInterval}`}</span>
                 </div>
-              )}
-              {opportunity?.status == "Expired" && (
-                <div className="badge h-6 rounded-md bg-green-light text-yellow">
-                  Expired
+
+                <div className="badge h-6 rounded-md bg-green-light text-green">
+                  <Image
+                    src={iconUser}
+                    alt="Icon User"
+                    width={20}
+                    height={20}
+                    sizes="100vw"
+                    priority={true}
+                    style={{ width: "20px", height: "20px" }}
+                  />
+
+                  <span className="ml-1">
+                    {opportunity?.participantCountVerificationCompleted}{" "}
+                    enrolled
+                  </span>
                 </div>
-              )}
-              {opportunity?.status == "Inactive" && (
-                <div className="badge h-6 rounded-md bg-green-light text-red-400">
-                  Inactive
-                </div>
-              )}
-              {opportunity?.status == "Deleted" && (
-                <div className="badge h-6 rounded-md bg-green-light text-red-400">
-                  Deleted
-                </div>
-              )}
-              {opportunity?.published && (
-                <div className="badge h-6 rounded-md bg-green-light text-blue">
-                  Published
-                </div>
-              )}
-              {!opportunity?.published && (
-                <div className="badge h-6 rounded-md bg-green-light text-red-400">
-                  Not published
-                </div>
-              )}
+
+                {/* Status Badges */}
+                {opportunity?.status == "Active" && (
+                  <div className="badge h-6 rounded-md bg-green-light text-green">
+                    Ongoing / Active
+                  </div>
+                )}
+                {opportunity?.status == "Expired" && (
+                  <div className="badge h-6 rounded-md bg-green-light text-yellow">
+                    Expired
+                  </div>
+                )}
+                {opportunity?.status == "Inactive" && (
+                  <div className="badge h-6 rounded-md bg-green-light text-red-400">
+                    Inactive
+                  </div>
+                )}
+                {opportunity?.status == "Deleted" && (
+                  <div className="badge h-6 rounded-md bg-green-light text-red-400">
+                    Deleted
+                  </div>
+                )}
+                {opportunity?.published && (
+                  <div className="badge h-6 rounded-md bg-green-light text-blue">
+                    Published
+                  </div>
+                )}
+                {!opportunity?.published && (
+                  <div className="badge h-6 rounded-md bg-green-light text-red-400">
+                    Not published
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* company logo */}
+            <div className="flex h-24 w-28 items-center justify-center rounded-full border-green-dark bg-white p-4 shadow-lg">
+              <Image
+                src={opportunity?.organizationLogoURL ?? iconSuccess}
+                alt="Icon Success"
+                width={80}
+                height={80}
+                sizes="100vw"
+                priority={true}
+                style={{
+                  width: "80px",
+                  height: "80px",
+                }}
+              />
             </div>
           </div>
 
@@ -345,7 +372,7 @@ const OpportunityDetails: NextPageWithLayout<{
             </div>
             <div className="flex w-[33%] flex-col gap-2">
               <div className="flex flex-col rounded-lg bg-white p-6">
-                <div className="flex flex-row items-center gap-1 text-sm font-bold">
+                <div className="mb-2 flex flex-row items-center gap-1 text-sm font-bold">
                   <IoMdPerson className="h-6 w-6 text-gray" />
                   Participants
                 </div>

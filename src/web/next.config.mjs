@@ -23,8 +23,8 @@ const config = {
   async redirects() {
     return [
       {
-        source: '/',
-        destination: '/opportunities',
+        source: "/",
+        destination: "/opportunities",
         basePath: false,
         permanent: true,
       },
