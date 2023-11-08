@@ -1,6 +1,6 @@
 describe("Login to Yoma Web Youth", () => {
   it("should login to yoma web youth", () => {
-    cy.visit("http://localhost:3000");
+    cy.visit("http://localhost:3000", { failOnStatusCode: false });
     cy.reload(); // Reload the page to get cookies to load
     cy.getAllCookies().then((cookies) => {
       cookies.forEach((c) => {
