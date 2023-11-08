@@ -75,14 +75,18 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       () =>
         searchMyOpportunitiesAdmin(
           {
-            //organizations: [id],
+            organizations: [id],
             pageNumber: page ? parseInt(page.toString()) : 1,
             pageSize: 10,
-            opportunityId: null,
+            opportunity: null,
             userId: null,
             valueContains: query?.toString() ?? null,
             action: Action.Verification, //TODO
-            verificationStatus: VerificationStatus.Pending,
+            verificationStatuses: [
+              VerificationStatus.Pending,
+              VerificationStatus.Completed,
+              VerificationStatus.Rejected,
+            ],
           },
           context,
         ),
@@ -119,14 +123,18 @@ const OpportunityVerifications: NextPageWithLayout<{
     queryKey: [`Verifications_${id}_${query?.toString()}_${page?.toString()}`],
     queryFn: () =>
       searchMyOpportunitiesAdmin({
-        // organizations: [id],
+        organizations: [id],
         pageNumber: page ? parseInt(page.toString()) : 1,
         pageSize: 10,
-        opportunityId: null,
+        opportunity: null,
         userId: null,
         valueContains: query?.toString() ?? null,
         action: Action.Verification, //TODO
-        verificationStatus: VerificationStatus.Pending,
+        verificationStatuses: [
+          VerificationStatus.Pending,
+          VerificationStatus.Completed,
+          VerificationStatus.Rejected,
+        ],
       }),
   });
   const { data: dataOpportunitiesForVerification } = useQuery<
@@ -390,11 +398,11 @@ const OpportunityVerifications: NextPageWithLayout<{
                       {currentRow?.userDisplayName}
                     </p>
                     <p className="text--dark text-sm">
-                      User Experience Designer
+                      {currentRow?.userEmail}
                     </p>
                     <p className="flex flex-row items-center text-sm text-gray-dark">
                       <IoMdPin className="mr-2 h-4 w-4 text-gray-dark" />
-                      Cape Town
+                      {currentRow?.userCountryOfResidence}
                     </p>
                   </div>
                   <div className="flex flex-col items-center justify-center gap-4">

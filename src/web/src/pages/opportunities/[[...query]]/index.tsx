@@ -392,27 +392,27 @@ const Opportunities: NextPageWithLayout<InputProps> = ({
 
         includeExpired: false,
         mostViewed: mostViewed ? Boolean(mostViewed) : null,
-        types: types != undefined ? types?.toString().split(",") : [],
+        types: types != undefined ? types?.toString().split(",") : null,
         categories:
-          categories != undefined ? categories?.toString().split(",") : [],
+          categories != undefined ? categories?.toString().split(",") : null,
         countries:
           countries != undefined && countries != null
             ? countries?.toString().split(",")
-            : [],
+            : null,
         languages:
-          languages != undefined ? languages?.toString().split(",") : [],
+          languages != undefined ? languages?.toString().split(",") : null,
         organizations:
           organizations != undefined
             ? organizations?.toString().split(",")
-            : [],
+            : null,
         commitmentIntervals:
           commitmentIntervals != undefined
             ? commitmentIntervals?.toString().split(",")
-            : [],
+            : null,
         zltoRewardRanges:
           zltoRewardRanges != undefined
             ? zltoRewardRanges?.toString().split(",")
-            : [],
+            : null,
       });
   }, [
     setOpportunitySearchFilter,

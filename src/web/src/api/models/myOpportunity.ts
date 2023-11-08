@@ -26,14 +26,15 @@ export interface MyOpportunitySearchFilter
   extends MyOpportunitySearchFilterBase {}
 
 export interface MyOpportunitySearchFilterBase extends PaginationFilter {
-  action: Action | null; //nb
-  verificationStatus: VerificationStatus | null;
+  action: Action;
+  verificationStatuses: VerificationStatus[] | null;
 }
 
 export interface MyOpportunitySearchFilterAdmin
   extends MyOpportunitySearchFilterBase {
   userId: string | null;
-  opportunityId: string | null;
+  opportunity: string | null;
+  organizations: string[] | null;
   valueContains: string | null;
 }
 
@@ -49,6 +50,8 @@ export interface MyOpportunityInfo {
   userDisplayName: string | null;
   userPhotoId: string | null;
   userPhotoURL: string | null;
+  userCountry: string | null;
+  userCountryOfResidence: string | null;
   opportunityId: string;
   opportunityTitle: string;
   opportunityDescription: string;

@@ -116,7 +116,9 @@ export const getOpportunityInfoById = async (
 ): Promise<OpportunityInfo> => {
   const instance = context ? ApiServer(context) : await ApiClient;
 
-  const { data } = await instance.get<OpportunityInfo>(`/opportunity/${id}`);
+  const { data } = await instance.get<OpportunityInfo>(
+    `/opportunity/${id}/info`,
+  );
   return data;
 };
 
