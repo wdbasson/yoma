@@ -12,6 +12,8 @@ namespace Yoma.Core.Domain.Opportunity.Models
 
         public string Type { get; set; }
 
+        public Guid OrganizationId { get; set; }
+
         public string OrganizationName { get; set; }
 
         public string? OrganizationLogoURL { get; set; }
@@ -43,6 +45,10 @@ namespace Yoma.Core.Domain.Opportunity.Models
         public int ParticipantCountVerificationPending { get; set; }
 
         public int ParticipantCountTotal { get; set; }
+
+        public Guid StatusId { get; set; }
+
+        public Status Status { get; set; }
 
         public List<string>? Keywords { get; set; }
 
