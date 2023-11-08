@@ -1,10 +1,18 @@
-import { QueryClient, dehydrate, useQuery } from "@tanstack/react-query";
+import {
+  QueryClient,
+  dehydrate,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { type GetServerSidePropsContext } from "next";
 import { getServerSession } from "next-auth";
 import { type ParsedUrlQuery } from "querystring";
-import { useState, type ReactElement } from "react";
-import type { OpportunityInfo } from "~/api/models/opportunity";
-import { getOpportunityInfoByIdAdmin } from "~/api/services/opportunities";
+import { useState, type ReactElement, useCallback, useMemo } from "react";
+import { OpportunityInfo, Status } from "~/api/models/opportunity";
+import {
+  getOpportunityInfoByIdAdmin,
+  updateOpportunityStatus,
+} from "~/api/services/opportunities";
 import MainLayout from "~/components/Layout/Main";
 import withAuth from "~/context/withAuth";
 import { authOptions, type User } from "~/server/auth";
@@ -28,6 +36,11 @@ import iconLanguage from "public/images/icon-language.svg";
 import iconTopics from "public/images/icon-topics.svg";
 import iconSkills from "public/images/icon-skills.svg";
 import iconUser from "public/images/icon-user.svg";
+import { toast } from "react-toastify";
+import { ApiError } from "next/dist/server/api-utils";
+import { ApiErrors } from "~/components/Status/ApiErrors";
+import { AxiosError } from "axios";
+import { Loading } from "~/components/Status/Loading";
 
 interface IParams extends ParsedUrlQuery {
   id: string;
@@ -104,6 +117,8 @@ const OpportunityDetails: NextPageWithLayout<{
   opportunityId: string;
   user: User;
 }> = ({ id, opportunityId }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
   const { data: opportunity } = useQuery<OpportunityInfo>({
     queryKey: ["opportunityInfo", opportunityId],
     queryFn: () => getOpportunityInfoByIdAdmin(opportunityId),
@@ -112,8 +127,38 @@ const OpportunityDetails: NextPageWithLayout<{
   const [manageOpportunityMenuVisible, setManageOpportunityMenuVisible] =
     useState(false);
 
+  const updateStatus = useCallback(
+    async (status: Status) => {
+      setIsLoading(true);
+
+      try {
+        // call api
+        await updateOpportunityStatus(opportunityId, status);
+
+        // invalidate cache
+        await queryClient.invalidateQueries(["opportunityInfo", opportunityId]);
+
+        toast.success("Opportunity status updated");
+      } catch (error) {
+        toast(<ApiErrors error={error as AxiosError} />, {
+          type: "error",
+          toastId: "opportunity",
+          autoClose: false,
+          icon: false,
+        });
+
+        //captureException(error);
+        setIsLoading(false);
+
+        return;
+      }
+    },
+    [opportunityId],
+  );
+
   return (
     <>
+      {isLoading && <Loading />}
       <PageBackground />
 
       <div className="container z-10 max-w-5xl px-2 py-4">
@@ -176,13 +221,26 @@ const OpportunityDetails: NextPageWithLayout<{
                 <FaClipboard className="mr-2 h-3 w-3" />
                 Duplicate
               </Link>
-              <Link
-                href={`/organisations/${id}/opportunities/${opportunityId}/edit`}
-                className="flex flex-row items-center text-gray-dark hover:brightness-50"
-              >
-                <FaClock className="mr-2 h-3 w-3" />
-                Expire
-              </Link>
+
+              {opportunity?.status == "Active" && (
+                <button
+                  className="flex flex-row items-center text-gray-dark hover:brightness-50"
+                  onClick={() => updateStatus(Status.Inactive)}
+                >
+                  <FaClock className="mr-2 h-3 w-3" />
+                  Expire / Inactivate
+                </button>
+              )}
+
+              {opportunity?.status == "Expired" && (
+                <button
+                  className="flex flex-row items-center text-gray-dark hover:brightness-50"
+                  onClick={() => updateStatus(Status.Active)}
+                >
+                  <FaClock className="mr-2 h-3 w-3" />
+                  Activate
+                </button>
+              )}
 
               <Link
                 href={`/organisations/${id}/opportunities/${opportunityId}/edit`}
@@ -202,8 +260,8 @@ const OpportunityDetails: NextPageWithLayout<{
               <div className="divider -m-2" />
 
               <button
-                className="flex flex-row items-center text-red-500 hover:brightness-50 "
-                //onClick={handleLogout}
+                className="flex flex-row items-center text-red-500 hover:brightness-50"
+                onClick={() => updateStatus(Status.Deleted)}
               >
                 <FaTrash className="mr-2 h-3 w-3" />
                 Delete
@@ -231,26 +289,53 @@ const OpportunityDetails: NextPageWithLayout<{
                 <span className="ml-1">{`${opportunity?.commitmentIntervalCount} ${opportunity?.commitmentInterval}`}</span>
               </div>
 
-              {(opportunity?.participantCountTotal ?? 0) > 0 && (
-                <div className="badge h-6 rounded-md bg-green-light text-green">
-                  <Image
-                    src={iconUser}
-                    alt="Icon User"
-                    width={20}
-                    height={20}
-                    sizes="100vw"
-                    priority={true}
-                    style={{ width: "20px", height: "20px" }}
-                  />
+              <div className="badge h-6 rounded-md bg-green-light text-green">
+                <Image
+                  src={iconUser}
+                  alt="Icon User"
+                  width={20}
+                  height={20}
+                  sizes="100vw"
+                  priority={true}
+                  style={{ width: "20px", height: "20px" }}
+                />
 
-                  <span className="ml-1">
-                    {opportunity?.participantCountTotal} enrolled
-                  </span>
+                <span className="ml-1">
+                  {opportunity?.participantCountVerificationCompleted} enrolled
+                </span>
+              </div>
+
+              {/* Status Badges */}
+              {opportunity?.status == "Active" && (
+                <div className="badge h-6 rounded-md bg-green-light text-green">
+                  Ongoing / Active
                 </div>
               )}
-              <div className="badge h-6 rounded-md bg-green-light text-green">
-                Ongoing
-              </div>
+              {opportunity?.status == "Expired" && (
+                <div className="badge h-6 rounded-md bg-green-light text-yellow">
+                  Expired
+                </div>
+              )}
+              {opportunity?.status == "Inactive" && (
+                <div className="badge h-6 rounded-md bg-green-light text-red-400">
+                  Inactive
+                </div>
+              )}
+              {opportunity?.status == "Deleted" && (
+                <div className="badge h-6 rounded-md bg-green-light text-red-400">
+                  Deleted
+                </div>
+              )}
+              {opportunity?.published && (
+                <div className="badge h-6 rounded-md bg-green-light text-blue">
+                  Published
+                </div>
+              )}
+              {!opportunity?.published && (
+                <div className="badge h-6 rounded-md bg-green-light text-red-400">
+                  Not published
+                </div>
+              )}
             </div>
           </div>
 
@@ -270,14 +355,18 @@ const OpportunityDetails: NextPageWithLayout<{
                   </div>
                   {opportunity?.participantCountVerificationPending &&
                     opportunity?.participantCountVerificationPending > 0 && (
-                      <div className="flex flex-row items-center gap-2 rounded-lg bg-yellow-light p-1">
-                        <div className="badge badge-warning rounded-lg bg-yellow text-white">
-                          {opportunity?.participantCountVerificationPending}
+                      <Link
+                        href={`/organisations/${id}/verifications?opportunity=${opportunityId}`}
+                      >
+                        <div className="flex flex-row items-center gap-2 rounded-lg bg-yellow-light p-1">
+                          <div className="badge badge-warning rounded-lg bg-yellow text-white">
+                            {opportunity?.participantCountVerificationPending}
+                          </div>
+                          <div className="text-xs font-bold text-yellow">
+                            to be verified
+                          </div>
                         </div>
-                        <div className="text-xs font-bold text-yellow">
-                          to be verified
-                        </div>
-                      </div>
+                      </Link>
                     )}
                 </div>
               </div>

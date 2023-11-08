@@ -54,16 +54,20 @@ import iconVideo from "public/images/icon-video.svg";
 import iconLocation from "public/images/icon-location.svg";
 import { GoogleMap, MarkerF, useLoadScript } from "@react-google-maps/api";
 import { env } from "~/env.mjs";
+import { SearchInput } from "~/components/SearchInput";
+import Select from "react-select";
+import { SelectOption } from "~/api/models/lookups";
 
 interface IParams extends ParsedUrlQuery {
   id: string;
   query?: string;
+  opportunity?: string;
   page?: string;
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { id } = context.params as IParams;
-  const { query, page } = context.query;
+  const { query, opportunity, page } = context.query;
 
   const session = await getServerSession(context.req, context.res, authOptions);
 
@@ -71,14 +75,16 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   if (session) {
     // 👇 prefetch queries (on server)
     await queryClient.prefetchQuery(
-      [`Verifications_${id}_${query?.toString()}_${page?.toString()}`],
+      [
+        `Verifications_${id}_${query?.toString()}_${opportunity}_${page?.toString()}`,
+      ],
       () =>
         searchMyOpportunitiesAdmin(
           {
             organizations: [id],
             pageNumber: page ? parseInt(page.toString()) : 1,
             pageSize: 10,
-            opportunity: null,
+            opportunity: opportunity?.toString() ?? null,
             userId: null,
             valueContains: query?.toString() ?? null,
             action: Action.Verification, //TODO
@@ -92,8 +98,15 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         ),
     );
 
-    await queryClient.prefetchQuery(["OpportunitiesForVerification", id], () =>
-      getOpportunitiesForVerification([id], undefined, context),
+    await queryClient.prefetchQuery(
+      ["OpportunitiesForVerification", id],
+      async () =>
+        (await getOpportunitiesForVerification([id], undefined, context)).map(
+          (x) => ({
+            value: x.id,
+            label: x.title,
+          }),
+        ),
     );
   }
 
@@ -103,6 +116,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       user: session?.user ?? null, // (required for 'withAuth' HOC component)
       id: id ?? null,
       query: query ?? null,
+      opportunity: opportunity ?? null,
       page: page ?? null,
     },
   };
@@ -113,20 +127,23 @@ const libraries: any[] = ["places"];
 const OpportunityVerifications: NextPageWithLayout<{
   id: string;
   query?: string;
+  opportunity?: string;
   page?: string;
-}> = ({ id, query, page }) => {
+}> = ({ id, query, opportunity, page }) => {
   const queryClient = useQueryClient();
   const router = useRouter();
 
   // 👇 use prefetched queries (from server)
   const { data: data, error } = useQuery<MyOpportunitySearchResults>({
-    queryKey: [`Verifications_${id}_${query?.toString()}_${page?.toString()}`],
+    queryKey: [
+      `Verifications_${id}_${query?.toString()}_${opportunity?.toString()}_${page?.toString()}`,
+    ],
     queryFn: () =>
       searchMyOpportunitiesAdmin({
         organizations: [id],
         pageNumber: page ? parseInt(page.toString()) : 1,
         pageSize: 10,
-        opportunity: null,
+        opportunity: opportunity?.toString() ?? null,
         userId: null,
         valueContains: query?.toString() ?? null,
         action: Action.Verification, //TODO
@@ -137,11 +154,13 @@ const OpportunityVerifications: NextPageWithLayout<{
         ],
       }),
   });
-  const { data: dataOpportunitiesForVerification } = useQuery<
-    MyOpportunitySearchCriteriaOpportunity[]
-  >({
+  const { data: dataOpportunitiesForVerification } = useQuery<SelectOption[]>({
     queryKey: [`OpportunitiesForVerification_${id}`],
-    queryFn: () => getOpportunitiesForVerification([id]),
+    queryFn: async () =>
+      (await getOpportunitiesForVerification([id])).map((x) => ({
+        value: x.id,
+        label: x.title,
+      })),
   });
 
   const onSearch = useCallback(
@@ -167,7 +186,7 @@ const OpportunityVerifications: NextPageWithLayout<{
       // redirect
       void router.push({
         pathname: `/organisations/${id}/verifications`,
-        query: { query: query, page: value },
+        query: { query: query, opportunity: opportunity, page: value },
       });
 
       // reset scroll position
@@ -650,17 +669,29 @@ const OpportunityVerifications: NextPageWithLayout<{
         <div className="flex flex-col gap-2 py-4 sm:flex-row">
           <h3 className="flex flex-grow text-white">Verifications</h3>
 
-          {/* <div className="flex gap-2 sm:justify-end">
+          <div className="flex gap-2 sm:justify-end">
             <SearchInput defaultValue={query} onSearch={onSearch} />
 
-            <Link
+            <Select
+              classNames={{
+                control: () => "input input-bordered",
+              }}
+              options={dataOpportunitiesForVerification}
+              // onChange={(val) => onChange(val?.value)}
+              value={dataOpportunitiesForVerification?.find(
+                (c) => c.value === opportunity,
+              )}
+              placeholder="Opportunity"
+            />
+
+            {/* <Link
               href={`/organisations/${id}/opportunities/create`}
               className="flex w-40 flex-row items-center justify-center whitespace-nowrap rounded-full bg-green-dark p-1 text-xs text-white"
             >
               <IoIosAdd className="mr-1 h-5 w-5" />
               Add opportunity
-            </Link>
-          </div> */}
+            </Link> */}
+          </div>
         </div>
 
         <div className="rounded-lg bg-white p-4">
@@ -673,7 +704,7 @@ const OpportunityVerifications: NextPageWithLayout<{
               }
             />
           )} */}
-          {data && data.items?.length === 0 && query && (
+          {data && data.totalCount === 0 && (
             <NoRowsMessage
               title={"No results found"}
               description={"Please try refining your search query."}
