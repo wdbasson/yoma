@@ -24,6 +24,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   };
 }
 
+// NB: this a placeholder page for the home,
+// but has since been replaced by /opportunities page (see next.config.mjs)
 const Home: NextPageWithLayout<{
   id: string;
   user: User;
