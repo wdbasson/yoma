@@ -14,6 +14,7 @@ export const UserMenu: React.FC = () => {
   const { data: session } = useSession();
 
   const handleLogout = () => {
+    setUserMenuVisible(false);
     signOut(); // eslint-disable-line @typescript-eslint/no-floating-promises
   };
 
@@ -74,6 +75,7 @@ export const UserMenu: React.FC = () => {
           <Link
             href="/user/settings"
             className="px-7 py-3 text-gray-dark hover:brightness-50"
+            onClick={() => setUserMenuVisible(false)}
           >
             User settings
           </Link>
@@ -82,6 +84,7 @@ export const UserMenu: React.FC = () => {
             <Link
               href="/admin"
               className="px-7 py-3 text-gray-dark hover:brightness-50"
+              onClick={() => setUserMenuVisible(false)}
             >
               Admin
             </Link>
@@ -97,12 +100,14 @@ export const UserMenu: React.FC = () => {
                 <Link
                   href="/organisations"
                   className="flex-grow px-5 text-gray-dark hover:brightness-50"
+                  onClick={() => setUserMenuVisible(false)}
                 >
                   Organisations
                 </Link>
                 <Link
                   href={`/organisations`}
                   className="text-xs text-green hover:brightness-50"
+                  onClick={() => setUserMenuVisible(false)}
                 >
                   View all...
                 </Link>{" "}
@@ -112,6 +117,7 @@ export const UserMenu: React.FC = () => {
                   key={organisation.id}
                   href={`/organisations/${organisation.id}`}
                   className="px-7 py-3 text-gray-dark hover:brightness-50"
+                  onClick={() => setUserMenuVisible(false)}
                 >
                   <div className="rounded-lgx bg-emerald-400x p-2x flex flex-row items-center gap-4 text-sm">
                     {!organisation.logoURL && (

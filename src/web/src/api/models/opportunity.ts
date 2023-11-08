@@ -86,6 +86,8 @@ export interface OpportunityInfo {
   participantCountVerificationCompleted: number;
   participantCountVerificationPending: number;
   participantCountTotal: number;
+  statusId: string;
+  status: Status | string; //NB: hack comes back as string
   keywords: string[] | null;
   dateStart: string;
   dateEnd: string | null;

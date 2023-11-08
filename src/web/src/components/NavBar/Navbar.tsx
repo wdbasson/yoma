@@ -40,36 +40,42 @@ export const Navbar: React.FC = () => {
               <Link
                 href="/"
                 className="px-7 py-3 text-white hover:brightness-50"
+                onClick={() => setMenuVisible(false)}
               >
                 Home
               </Link>
               <Link
                 href="/about"
                 className="px-7 py-3 text-white hover:brightness-50"
+                onClick={() => setMenuVisible(false)}
               >
                 About
               </Link>
               <Link
                 href="/opportunities?types=Learning"
                 className="px-7 py-3 text-white hover:brightness-50"
+                onClick={() => setMenuVisible(false)}
               >
                 Learning
               </Link>
               <Link
                 href="/opportunities?types=Task"
                 className="px-7 py-3 text-white hover:brightness-50"
+                onClick={() => setMenuVisible(false)}
               >
                 Tasks
               </Link>
               <Link
                 href="/jobs"
                 className="px-7 py-3 text-white hover:brightness-50"
+                onClick={() => setMenuVisible(false)}
               >
                 Jobs
               </Link>
               <Link
                 href="/marketplace"
                 className="px-7 py-3 text-white hover:brightness-50"
+                onClick={() => setMenuVisible(false)}
               >
                 Marketplace
               </Link>

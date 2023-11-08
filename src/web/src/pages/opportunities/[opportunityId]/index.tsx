@@ -27,9 +27,9 @@ import iconDifficulty from "public/images/icon-difficulty.svg";
 import iconLanguage from "public/images/icon-language.svg";
 import iconTopics from "public/images/icon-topics.svg";
 import iconSkills from "public/images/icon-skills.svg";
-import iconRocket from "public/images/icon-rocket.svg";
 import iconBell from "public/images/icon-bell.svg";
 import iconSmiley from "public/images/icon-smiley.svg";
+import iconSuccess from "public/images/icon-success.svg";
 import Image from "next/image";
 import {
   getVerificationStatus,
@@ -472,222 +472,227 @@ const OpportunityDetails: NextPageWithLayout<{
 
         {opportunity && (
           <div className="flex flex-col gap-4">
-            <div className="flex flex-row rounded-lg bg-white p-6">
-              <div className="flex flex-grow flex-col ">
-                <h4 className="text-black">{opportunity.title}</h4>
-                <h6 className="text-gray-dark">
-                  By {opportunity.organizationName}
-                </h6>
-                {/* BADGES */}
-                <div className="my-2 flex flex-row gap-1 text-xs font-bold text-green-dark">
-                  <div className="badge h-6 whitespace-nowrap rounded-md bg-green-light text-green">
-                    <Image
-                      src={iconClock}
-                      alt="Icon Clock"
-                      width={20}
-                      height={20}
-                      sizes="100vw"
-                      priority={true}
-                      style={{ width: "20px", height: "20px" }}
-                    />
-
-                    <span className="ml-1">{`${opportunity.commitmentIntervalCount} ${opportunity.commitmentInterval}`}</span>
-                  </div>
-
-                  {spotsLeft > 0 && (
+            <div className="flex flex-grow flex-row gap-1 rounded-lg bg-white p-6">
+              <div className="flex flex-col gap-1">
+                <div className="flex flex-grow flex-col ">
+                  <h4 className="text-black">{opportunity.title}</h4>
+                  <h6 className="text-gray-dark">
+                    By {opportunity.organizationName}
+                  </h6>
+                  {/* BADGES */}
+                  <div className="my-2 flex flex-row gap-1 text-xs font-bold text-green-dark">
                     <div className="badge h-6 whitespace-nowrap rounded-md bg-green-light text-green">
                       <Image
-                        src={iconUser}
-                        alt="Icon User"
+                        src={iconClock}
+                        alt="Icon Clock"
                         width={20}
                         height={20}
                         sizes="100vw"
                         priority={true}
                         style={{ width: "20px", height: "20px" }}
                       />
-                      <span className="ml-1"> {spotsLeft} spots left</span>
-                    </div>
-                  )}
 
-                  {(opportunity.zltoReward ?? 0) > 0 && (
-                    <div className="badge h-6 whitespace-nowrap rounded-md bg-yellow-light text-yellow">
+                      <span className="ml-1">{`${opportunity.commitmentIntervalCount} ${opportunity.commitmentInterval}`}</span>
+                    </div>
+
+                    {spotsLeft > 0 && (
+                      <div className="badge h-6 whitespace-nowrap rounded-md bg-green-light text-green">
+                        <Image
+                          src={iconUser}
+                          alt="Icon User"
+                          width={20}
+                          height={20}
+                          sizes="100vw"
+                          priority={true}
+                          style={{ width: "20px", height: "20px" }}
+                        />
+                        <span className="ml-1"> {spotsLeft} spots left</span>
+                      </div>
+                    )}
+
+                    {(opportunity.zltoReward ?? 0) > 0 && (
+                      <div className="badge h-6 whitespace-nowrap rounded-md bg-yellow-light text-yellow">
+                        <Image
+                          src={iconZlto}
+                          alt="Icon Zlto"
+                          width={20}
+                          height={20}
+                          sizes="100vw"
+                          priority={true}
+                          style={{ width: "20px", height: "20px" }}
+                        />
+                        <span className="ml-1"> {opportunity.zltoReward}</span>
+                      </div>
+                    )}
+                    <div className="badge h-6 whitespace-nowrap rounded-md bg-purple-light text-purple">
                       <Image
-                        src={iconZlto}
-                        alt="Icon Zlto"
+                        src={iconAction}
+                        alt="Icon Action"
                         width={20}
                         height={20}
                         sizes="100vw"
                         priority={true}
                         style={{ width: "20px", height: "20px" }}
                       />
-                      <span className="ml-1"> {opportunity.zltoReward}</span>
+                      <span className="ml-1">Action</span>
                     </div>
-                  )}
-                  <div className="badge h-6 whitespace-nowrap rounded-md bg-purple-light text-purple">
-                    <Image
-                      src={iconAction}
-                      alt="Icon Action"
-                      width={20}
-                      height={20}
-                      sizes="100vw"
-                      priority={true}
-                      style={{ width: "20px", height: "20px" }}
-                    />
-                    <span className="ml-1">Action</span>
                   </div>
-                </div>
-                {/* BUTTONS */}
-                <div className="mt-4 grid grid-cols-1 gap-2 lg:grid-cols-2">
-                  <div className="flex flex-grow gap-4">
-                    <button
-                      type="button"
-                      className="btn btn-xs rounded-full bg-green normal-case text-white md:btn-sm lg:btn-md md:w-[250px]"
-                      onClick={() => setGotoOpportunityDialogVisible(true)}
-                    >
-                      <Image
-                        src={iconOpen}
-                        alt="Icon Open"
-                        width={20}
-                        height={20}
-                        sizes="100vw"
-                        priority={true}
-                        style={{ width: "20px", height: "20px" }}
-                      />
+                  {/* BUTTONS */}
+                  <div className="mt-4 grid grid-cols-1 gap-2 lg:grid-cols-2">
+                    <div className="flex flex-grow gap-4">
+                      <button
+                        type="button"
+                        className="btn btn-xs rounded-full bg-green normal-case text-white md:btn-sm lg:btn-md md:w-[250px]"
+                        onClick={() => setGotoOpportunityDialogVisible(true)}
+                      >
+                        <Image
+                          src={iconOpen}
+                          alt="Icon Open"
+                          width={20}
+                          height={20}
+                          sizes="100vw"
+                          priority={true}
+                          style={{ width: "20px", height: "20px" }}
+                        />
 
-                      <span className="ml-1">Go to opportunity</span>
-                    </button>
-                    {/* verificationStatus: {JSON.stringify(verificationStatus)} */}
-                    {/* only show upload button if verification is enabled and method is manual */}
-                    {opportunity.verificationEnabled &&
-                      opportunity.verificationMethod == "Manual" && (
-                        <>
-                          {(verificationStatus == null ||
-                            //verificationStatus == undefined ||
-                            //verificationStatus == "" ||
-                            verificationStatus.status == "Rejected") && (
-                            <button
-                              type="button"
-                              className="btn btn-xs rounded-full border-green bg-white normal-case text-green md:btn-sm lg:btn-md md:w-[300px]"
-                              onClick={() =>
-                                session
-                                  ? setCompleteOpportunityDialogVisible(true)
-                                  : setLoginDialogVisible(true)
-                              }
-                            >
-                              <Image
-                                src={iconUpload}
-                                alt="Icon Upload"
-                                width={20}
-                                height={20}
-                                sizes="100vw"
-                                priority={true}
-                                style={{ width: "20px", height: "20px" }}
-                              />
+                        <span className="ml-1">Go to opportunity</span>
+                      </button>
+                      {/* verificationStatus: {JSON.stringify(verificationStatus)} */}
+                      {/* only show upload button if verification is enabled and method is manual */}
+                      {opportunity.verificationEnabled &&
+                        opportunity.verificationMethod == "Manual" && (
+                          <>
+                            {(verificationStatus == null ||
+                              //verificationStatus == undefined ||
+                              //verificationStatus == "" ||
+                              verificationStatus.status == "Rejected") && (
+                              <button
+                                type="button"
+                                className="btn btn-xs rounded-full border-green bg-white normal-case text-green md:btn-sm lg:btn-md md:w-[300px]"
+                                onClick={() =>
+                                  session
+                                    ? setCompleteOpportunityDialogVisible(true)
+                                    : setLoginDialogVisible(true)
+                                }
+                              >
+                                <Image
+                                  src={iconUpload}
+                                  alt="Icon Upload"
+                                  width={20}
+                                  height={20}
+                                  sizes="100vw"
+                                  priority={true}
+                                  style={{ width: "20px", height: "20px" }}
+                                />
 
-                              <span className="ml-1">
-                                Upload your completion files
-                              </span>
-                            </button>
-                          )}
-                          {verificationStatus &&
-                            verificationStatus.status == "Pending" && (
-                              <div className="md:text-md flex items-center justify-center whitespace-nowrap rounded-full bg-gray-light px-8 text-center text-xs font-bold text-gray-dark">
-                                Pending verification
-                              </div>
+                                <span className="ml-1">
+                                  Upload your completion files
+                                </span>
+                              </button>
                             )}
-                          {/* {verificationStatus != null &&
+                            {verificationStatus &&
+                              verificationStatus.status == "Pending" && (
+                                <div className="md:text-md flex items-center justify-center whitespace-nowrap rounded-full bg-gray-light px-8 text-center text-xs font-bold text-gray-dark">
+                                  Pending verification
+                                </div>
+                              )}
+                            {/* {verificationStatus != null &&
                             verificationStatus == "Rejected" && (
                               <div className="flex items-center justify-center rounded-full bg-yellow-light px-8 text-center text-sm font-bold text-warning">
                                 Rejected
                               </div>
                             )} */}
-                          {verificationStatus &&
-                            verificationStatus.status == "Completed" && (
-                              <div className="md:text-md flex items-center justify-center rounded-full border border-purple bg-white px-4 text-center text-xs font-bold text-purple">
-                                Completed
-                                <IoMdCheckmark
-                                  strikethroughThickness={2}
-                                  overlineThickness={2}
-                                  underlineThickness={2}
-                                  className="ml-1 h-4 w-4 text-green"
-                                />
-                              </div>
-                            )}
-                        </>
-                      )}
-                    {/* TODO: */}
-                    {opportunity.verificationEnabled &&
-                      opportunity.verificationMethod == "Automatic" && (
-                        <button
-                          type="button"
-                          className="btn btn-xs rounded-full border-green bg-white normal-case text-green md:btn-sm lg:btn-md md:w-[300px]"
-                          onClick={() =>
-                            session
-                              ? setCompleteOpportunityDialogVisible(true)
-                              : setLoginDialogVisible(true)
-                          }
-                        >
-                          <Image
-                            src={iconUpload}
-                            alt="Icon Upload"
-                            width={20}
-                            height={20}
-                            sizes="100vw"
-                            priority={true}
-                            style={{ width: "20px", height: "20px" }}
-                          />
+                            {verificationStatus &&
+                              verificationStatus.status == "Completed" && (
+                                <div className="md:text-md flex items-center justify-center rounded-full border border-purple bg-white px-4 text-center text-xs font-bold text-purple">
+                                  Completed
+                                  <IoMdCheckmark
+                                    strikethroughThickness={2}
+                                    overlineThickness={2}
+                                    underlineThickness={2}
+                                    className="ml-1 h-4 w-4 text-green"
+                                  />
+                                </div>
+                              )}
+                          </>
+                        )}
+                      {/* TODO: */}
+                      {opportunity.verificationEnabled &&
+                        opportunity.verificationMethod == "Automatic" && (
+                          <button
+                            type="button"
+                            className="btn btn-xs rounded-full border-green bg-white normal-case text-green md:btn-sm lg:btn-md md:w-[300px]"
+                            onClick={() =>
+                              session
+                                ? setCompleteOpportunityDialogVisible(true)
+                                : setLoginDialogVisible(true)
+                            }
+                          >
+                            <Image
+                              src={iconUpload}
+                              alt="Icon Upload"
+                              width={20}
+                              height={20}
+                              sizes="100vw"
+                              priority={true}
+                              style={{ width: "20px", height: "20px" }}
+                            />
 
-                          <span className="ml-1">Mark as completed</span>
-                        </button>
-                      )}
-                  </div>
-                  <div className="flex gap-4 lg:justify-end">
-                    <button
-                      type="button"
-                      className="btn btn-xs rounded-full border-gray-dark bg-white normal-case text-gray-dark md:btn-sm lg:btn-md md:w-[100px]"
-                    >
-                      <Image
-                        src={iconBookmark}
-                        alt="Icon Bookmark"
-                        width={20}
-                        height={20}
-                        sizes="100vw"
-                        priority={true}
-                        style={{ width: "20px", height: "20px" }}
-                      />
+                            <span className="ml-1">Mark as completed</span>
+                          </button>
+                        )}
+                    </div>
+                    <div className="flex gap-4 lg:justify-end">
+                      <button
+                        type="button"
+                        className="btn btn-xs rounded-full border-gray-dark bg-white normal-case text-gray-dark md:btn-sm lg:btn-md md:w-[100px]"
+                      >
+                        <Image
+                          src={iconBookmark}
+                          alt="Icon Bookmark"
+                          width={20}
+                          height={20}
+                          sizes="100vw"
+                          priority={true}
+                          style={{ width: "20px", height: "20px" }}
+                        />
 
-                      <span className="ml-1">Save</span>
-                    </button>
+                        <span className="ml-1">Save</span>
+                      </button>
 
-                    <button
-                      type="button"
-                      className="btn btn-xs rounded-full border-gray-dark bg-white normal-case text-gray-dark md:btn-sm lg:btn-md md:w-[110px]"
-                    >
-                      <Image
-                        src={iconShare}
-                        alt="Icon Share"
-                        width={20}
-                        height={20}
-                        sizes="100vw"
-                        priority={true}
-                        style={{ width: "20px", height: "20px" }}
-                      />
+                      <button
+                        type="button"
+                        className="btn btn-xs rounded-full border-gray-dark bg-white normal-case text-gray-dark md:btn-sm lg:btn-md md:w-[110px]"
+                      >
+                        <Image
+                          src={iconShare}
+                          alt="Icon Share"
+                          width={20}
+                          height={20}
+                          sizes="100vw"
+                          priority={true}
+                          style={{ width: "20px", height: "20px" }}
+                        />
 
-                      <span className="ml-1">Share</span>
-                    </button>
+                        <span className="ml-1">Share</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-              {/* LOGO */}
-              <div>
+              {/* company logo */}
+              <div className="flex h-24 w-28 items-center justify-center rounded-full border-green-dark bg-white p-4 shadow-lg">
                 <Image
-                  src={opportunity?.organizationLogoURL ?? iconRocket}
-                  alt="Icon Open"
-                  width={160}
+                  src={opportunity?.organizationLogoURL ?? iconSuccess}
+                  alt="Icon Success"
+                  width={80}
                   height={80}
                   sizes="100vw"
                   priority={true}
-                  style={{ width: "80px", height: "80px" }}
+                  style={{
+                    width: "80px",
+                    height: "80px",
+                  }}
                 />
               </div>
             </div>
