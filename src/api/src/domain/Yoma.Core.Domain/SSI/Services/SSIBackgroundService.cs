@@ -78,16 +78,17 @@ namespace Yoma.Core.Domain.SSI.Services
                     case Core.Environment.Development:
                         break;
                     default:
+                        _logger.LogInformation("SSI seeding skipped for environment '{environment}'", _environmentProvider.Environment);
                         return;
                 }
 
                 _logger.LogInformation("Processing SSI seeding");
 
-                SeedSchema(ArtifactType.Ld_proof,
+                SeedSchema(ArtifactType.Indy, //TODO: Ld_proof
                     SSISSchemaHelper.ToFullName(SchemaType.Opportunity, OpportunityType.Task.ToString()),
                     new List<string> { "Opportunity_Title", "Opportunity_Summary", "Opportunity_Skills", "User_DisplayName", "User_DateOfBirth", "MyOpportunity_DateCompleted" }).Wait();
 
-                SeedSchema(ArtifactType.Ld_proof,
+                SeedSchema(ArtifactType.Indy, //TODO: Ld_proof
                     SSISSchemaHelper.ToFullName(SchemaType.Opportunity, OpportunityType.Learning.ToString()),
                     new List<string> { "Opportunity_Title", "Opportunity_Summary", "Opportunity_Skills", "User_DisplayName", "User_DateOfBirth", "MyOpportunity_DateCompleted" }).Wait();
 
@@ -351,6 +352,11 @@ namespace Yoma.Core.Domain.SSI.Services
                     ArtifactType = artifactType,
                     Attributes = attributes
                 });
+            }
+            else
+            {
+                if (schema.ArtifactType != artifactType)
+                    throw new InvalidOperationException($"Artifact type mismatch detected for existing schema '{schemaFullName}': Requested '{artifactType}' vs. Existing '{schema.ArtifactType}'");
             }
         }
 

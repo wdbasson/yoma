@@ -99,7 +99,7 @@ namespace Yoma.Core.Domain
             #endregion SSI
         }
 
-        public static void Configure_RecurringJobs(this IServiceProvider serviceProvider, IConfiguration configuration)
+        public static void Configure_RecurringJobs(this IServiceProvider serviceProvider, IConfiguration configuration, Domain.Core.Environment environment)
         {
             var options = configuration.GetSection(ScheduleJobOptions.Section).Get<ScheduleJobOptions>() ?? throw new InvalidOperationException($"Failed to retrieve configuration section '{ScheduleJobOptions.Section}'");
 
@@ -133,12 +133,21 @@ namespace Yoma.Core.Domain
 
             //ssi
             var ssiTenantBackgroundService = scope.ServiceProvider.GetRequiredService<ISSIBackgroundService>();
-            BackgroundJob.Enqueue(() => ssiTenantBackgroundService.SeedSchemas()); //execute on startup provided local
-            RecurringJob.AddOrUpdate($"SSI Tenant Creation",
-               () => ssiTenantBackgroundService.ProcessTenantCreation(), options.SSITenantCreationSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
-            return;
-            RecurringJob.AddOrUpdate($"SSI Credential Issuance",
-               () => ssiTenantBackgroundService.ProcessCredentialIssuance(), options.SSICredentialIssuanceSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+            //RecurringJob.AddOrUpdate($"SSI Tenant Creation",
+            //   () => ssiTenantBackgroundService.ProcessTenantCreation(), options.SSITenantCreationSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+            //RecurringJob.AddOrUpdate($"SSI Credential Issuance",
+            //   () => ssiTenantBackgroundService.ProcessCredentialIssuance(), options.SSICredentialIssuanceSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+            //seeding (local and development)
+            switch(environment)
+            {
+                case Core.Environment.Local:
+                case Core.Environment.Development:
+                    //ssi
+                    //BackgroundJob.Enqueue(() => ssiTenantBackgroundService.SeedSchemas());
+                    BackgroundJob.Schedule(() => organizationBackgroundService.SeedLogoAndDocuments(), TimeSpan.FromMinutes(5));
+                    break;
+            }
         }
         #endregion
     }

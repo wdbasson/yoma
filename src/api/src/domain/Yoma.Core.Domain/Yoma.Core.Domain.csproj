@@ -7,6 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Entity\SampleBlobs\sample.pdf" />
+    <None Remove="Entity\SampleBlobs\sample_logo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Entity\SampleBlobs\sample.pdf" />
+    <EmbeddedResource Include="Entity\SampleBlobs\sample_logo.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
     <PackageReference Include="Flurl.Http" Version="3.2.4" />
     <PackageReference Include="Hangfire.Core" Version="1.8.6" />
