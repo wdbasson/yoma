@@ -15,6 +15,7 @@ import type {
   OpportunitySearchFilter,
   OpportunitySearchCriteriaZltoReward,
   OpportunitySearchCriteriaCommitmentInterval,
+  Status,
 } from "../models/opportunity";
 import type { Country, Language } from "../models/lookups";
 import type { OrganizationInfo } from "../models/organisation";
@@ -98,13 +99,27 @@ export const getOpportunityById = async (
   return data;
 };
 
+export const getOpportunityInfoByIdAdmin = async (
+  id: string,
+  context?: GetServerSidePropsContext,
+): Promise<OpportunityInfo> => {
+  const instance = context ? ApiServer(context) : await ApiClient;
+
+  const { data } = await instance.get<OpportunityInfo>(
+    `/opportunity/${id}/admin/info`,
+  );
+  return data;
+};
+
 export const getOpportunityInfoById = async (
   id: string,
   context?: GetServerSidePropsContext,
 ): Promise<OpportunityInfo> => {
   const instance = context ? ApiServer(context) : await ApiClient;
 
-  const { data } = await instance.get<OpportunityInfo>(`/opportunity/${id}`);
+  const { data } = await instance.get<OpportunityInfo>(
+    `/opportunity/${id}/info`,
+  );
   return data;
 };
 
@@ -195,3 +210,29 @@ export const getZltoRewardRanges = async (
   );
   return data;
 };
+
+export const updateOpportunityStatus = async (
+  opportunityId: string,
+  status: Status,
+  context?: GetServerSidePropsContext,
+): Promise<Opportunity> => {
+  const instance = context ? ApiServer(context) : await ApiClient;
+
+  const { data } = await instance.patch<Opportunity>(
+    `/opportunity/${opportunityId}/${status}`,
+  );
+  return data;
+};
+
+// export const updateOpportunityStatus = async (
+//   opportunityId: string,
+//   status: Status,
+//   context?: GetServerSidePropsContext,
+// ): Promise<Opportunity> => {
+//   const instance = context ? ApiServer(context) : await ApiClient;
+
+//   const { data } = await instance.patch<Opportunity>(
+//     `/opportunity/${opportunityId}/${status}`,
+//   );
+//   return data;
+// };

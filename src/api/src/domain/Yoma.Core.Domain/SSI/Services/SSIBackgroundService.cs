@@ -3,7 +3,6 @@ using Microsoft.Extensions.Options;
 using System.Collections;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
-using Yoma.Core.Domain.Core.Services;
 using Yoma.Core.Domain.Entity;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Models;
@@ -78,16 +77,17 @@ namespace Yoma.Core.Domain.SSI.Services
                     case Core.Environment.Development:
                         break;
                     default:
+                        _logger.LogInformation("SSI seeding skipped for environment '{environment}'", _environmentProvider.Environment);
                         return;
                 }
 
                 _logger.LogInformation("Processing SSI seeding");
 
-                SeedSchema(ArtifactType.Ld_proof,
+                SeedSchema(ArtifactType.Indy, //TODO: Ld_proof
                     SSISSchemaHelper.ToFullName(SchemaType.Opportunity, OpportunityType.Task.ToString()),
                     new List<string> { "Opportunity_Title", "Opportunity_Summary", "Opportunity_Skills", "User_DisplayName", "User_DateOfBirth", "MyOpportunity_DateCompleted" }).Wait();
 
-                SeedSchema(ArtifactType.Ld_proof,
+                SeedSchema(ArtifactType.Indy, //TODO: Ld_proof
                     SSISSchemaHelper.ToFullName(SchemaType.Opportunity, OpportunityType.Learning.ToString()),
                     new List<string> { "Opportunity_Title", "Opportunity_Summary", "Opportunity_Skills", "User_DisplayName", "User_DateOfBirth", "MyOpportunity_DateCompleted" }).Wait();
 
@@ -202,6 +202,8 @@ namespace Yoma.Core.Domain.SSI.Services
 
                             var request = new CredentialIssuanceRequest
                             {
+                                ClientReferent = new KeyValuePair<string, string>(SSISchemaService.SchemaAttribute_Internal_ReferentClient, item.Id.ToString()),
+                                SchemaType = item.SchemaType.ToString(),
                                 SchemaName = item.SchemaName,
                                 ArtifactType = item.ArtifactType,
                                 Attributes = new Dictionary<string, string>()
@@ -341,14 +343,19 @@ namespace Yoma.Core.Domain.SSI.Services
             var schema = await _ssiSchemaService.GetByFullNameOrNull(schemaFullName);
             if (schema == null)
             {
-                var nameParts = _ssiSchemaService.SchemaFullNameValidateAndGetParts(schemaFullName);
+                var (schemaType, displayName) = _ssiSchemaService.SchemaFullNameValidateAndGetParts(schemaFullName);
                 await _ssiSchemaService.Create(new SSISchemaRequestCreate
                 {
-                    TypeId = nameParts.schemaType.Id,
-                    Name = nameParts.displayName,
+                    TypeId = schemaType.Id,
+                    Name = displayName,
                     ArtifactType = artifactType,
                     Attributes = attributes
                 });
+            }
+            else
+            {
+                if (schema.ArtifactType != artifactType)
+                    throw new InvalidOperationException($"Artifact type mismatch detected for existing schema '{schemaFullName}': Requested '{artifactType}' vs. Existing '{schema.ArtifactType}'");
             }
         }
 

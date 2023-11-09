@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using System;
 using System.Transactions;
 using Yoma.Core.Domain.Core;
 using Yoma.Core.Domain.Core.Extensions;
@@ -300,7 +299,7 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
                     }
 
                     query = query.Where(predicate);
-                    query.OrderByDescending(o => o.DateModified).ThenByDescending(o => o.DateCompleted);
+                    query = query.OrderByDescending(o => o.DateModified).ThenByDescending(o => o.DateCompleted);
 
                     break;
 
@@ -644,6 +643,7 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
             var filter = new MyOpportunitySearchFilterAdmin
             {
                 TotalCountOnly = true,
+                Opportunity = result.OpportunityId,
                 Action = Action.Verification,
                 VerificationStatuses = new List<VerificationStatus> { VerificationStatus.Pending }
             };

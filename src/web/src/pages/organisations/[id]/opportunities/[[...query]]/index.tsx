@@ -7,8 +7,11 @@ import { useCallback, type ReactElement } from "react";
 import { getOpportunitiesAdmin } from "~/api/services/opportunities";
 import MainLayout from "~/components/Layout/Main";
 import withAuth from "~/context/withAuth";
-import { authOptions } from "~/server/auth";
-import { type OpportunitySearchResults } from "~/api/models/opportunity";
+import { type User, authOptions } from "~/server/auth";
+import {
+  Status,
+  type OpportunitySearchResults,
+} from "~/api/models/opportunity";
 import { type NextPageWithLayout } from "~/pages/_app";
 import { type ParsedUrlQuery } from "querystring";
 import Link from "next/link";
@@ -44,7 +47,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
             pageSize: 10,
             startDate: null,
             endDate: null,
-            statuses: null,
+            // admins can see deleted opportunities, org admins can see Active, Expired & Inactive
+            statuses: session?.user?.roles.some((x) => x === "Admin")
+              ? null
+              : [Status.Active, Status.Expired, Status.Inactive],
             types: null,
             categories: null,
             languages: null,
@@ -73,7 +79,8 @@ const Opportunities: NextPageWithLayout<{
   id: string;
   query?: string;
   page?: string;
-}> = ({ id, query, page }) => {
+  user?: User;
+}> = ({ id, query, page, user }) => {
   const router = useRouter();
 
   // 👇 use prefetched queries (from server)
@@ -88,7 +95,10 @@ const Opportunities: NextPageWithLayout<{
         pageSize: 10,
         startDate: null,
         endDate: null,
-        statuses: null,
+        // admins can see deleted opportunities, org admins can see Active, Expired & Inactive
+        statuses: user?.roles.some((x) => x === "Admin")
+          ? null
+          : [Status.Active, Status.Expired, Status.Inactive],
         types: null,
         categories: null,
         languages: null,
@@ -209,37 +219,12 @@ const Opportunities: NextPageWithLayout<{
                         </>
                       </td>
                       <td>{opportunity.url}</td>
-                      <td>{opportunity.participantCount}</td>
-                      {/* <td>{opportunity.ver}</td>  */}
+                      <td>{opportunity.participantCountTotal}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-
-            // <ReactDataGrid
-            //   columns={[
-            //     { key: "title", name: "Title" },
-            //     { key: "type", name: "Type" },
-            //     { key: "skills", name: "Skills", renderCell: SkillsFormatter },
-            //     { key: "status", name: "Status", renderCell: StatusFormatter },
-            //     { key: "zltoReward", name: "ZLTO" },
-            //     {
-            //       key: "unverifiedCredentials",
-            //       name: "Participants (verifications)",
-            //       renderCell: UnverifiedCredentialsFormatter,
-            //     },
-            //     { key: "opportunityURL", name: "Short Link" },
-            //     { key: "opportunityURL1", name: "Magic Link" },
-            //     {
-            //       key: "opportunityURL2",
-            //       name: "Manage",
-            //       renderCell: ManageFormatter,
-            //       cellClass: "flex justify-center items-center",
-            //     },
-            //   ]}
-            //   rows={opportunities}
-            // />
           )}
 
           <div className="mt-2 grid place-items-center justify-center">

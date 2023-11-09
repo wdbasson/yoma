@@ -10,7 +10,7 @@ export interface OpportunitySearchFilterAdmin
 }
 
 export interface OpportunitySearchResults extends OpportunitySearchResultsBase {
-  items: Opportunity[];
+  items: OpportunityInfo[];
 }
 
 export interface OpportunitySearchResultsBase {
@@ -75,7 +75,7 @@ export interface OpportunityInfo {
   organizationName: string;
   organizationLogoURL: string | null;
   instructions: string | null;
-  uRL: string | null;
+  url: string | null; //NB:
   zltoReward: number | null;
   yomaReward: number | null;
   difficulty: string;
@@ -86,6 +86,8 @@ export interface OpportunityInfo {
   participantCountVerificationCompleted: number;
   participantCountVerificationPending: number;
   participantCountTotal: number;
+  statusId: string;
+  status: Status | string; //NB: hack comes back as string
   keywords: string[] | null;
   dateStart: string;
   dateEnd: string | null;
