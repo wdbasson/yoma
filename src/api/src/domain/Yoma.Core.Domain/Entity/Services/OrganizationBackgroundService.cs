@@ -10,9 +10,7 @@ using Yoma.Core.Domain.EmailProvider.Models;
 using Flurl;
 using Yoma.Core.Domain.Core.Helpers;
 using System.Reflection;
-using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.AspNetCore.Http;
-using System.Runtime.CompilerServices;
 
 namespace Yoma.Core.Domain.Entity.Services
 {
@@ -177,6 +175,7 @@ namespace Yoma.Core.Domain.Entity.Services
         }
         #endregion
 
+        #region Private Members
         private void SeedLogo()
         {
             var items = _organizationRepository.Query(true).Where(o => !o.LogoId.HasValue).ToList();
@@ -244,5 +243,6 @@ namespace Yoma.Core.Domain.Entity.Services
                     item.Id, OrganizationDocumentType.Business,
                     new List<IFormFile> { FileHelper.FromByteArray(fileName, $"application/{fileExtension}", resourceBytes) }, false).Wait();
         }
+        #endregion
     }
 }

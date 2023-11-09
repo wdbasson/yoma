@@ -9,6 +9,7 @@
   <ItemGroup>
     <None Remove="Entity\SampleBlobs\sample.pdf" />
     <None Remove="Entity\SampleBlobs\sample_logo.png" />
+    <None Remove="Entity\SampleBlobs\sample_photo.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -16,6 +17,7 @@
     <EmbeddedResource Include="Entity\SampleBlobs\sample_logo.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="Entity\SampleBlobs\sample_photo.png" />
   </ItemGroup>
 
   <ItemGroup>
