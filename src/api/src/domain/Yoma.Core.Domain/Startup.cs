@@ -50,6 +50,7 @@ namespace Yoma.Core.Domain
             services.AddScoped<IOrganizationBackgroundService, OrganizationBackgroundService>();
             services.AddScoped<IUserProfileService, UserProfileService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserBackgroundService, UserBackgroundService>();
             #endregion Entity
 
             #region Lookups
@@ -145,7 +146,13 @@ namespace Yoma.Core.Domain
                 case Core.Environment.Development:
                     //ssi
                     //BackgroundJob.Enqueue(() => ssiTenantBackgroundService.SeedSchemas());
+
+                    //organization
                     BackgroundJob.Schedule(() => organizationBackgroundService.SeedLogoAndDocuments(), TimeSpan.FromMinutes(5));
+
+                    //user
+                    var userBackgroundService = scope.ServiceProvider.GetRequiredService<IUserBackgroundService>();
+                    BackgroundJob.Schedule(() => userBackgroundService.SeedPhotos(), TimeSpan.FromMinutes(5));
                     break;
             }
         }
