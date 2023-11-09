@@ -140,7 +140,7 @@ namespace Yoma.Core.Domain
             //   () => ssiTenantBackgroundService.ProcessCredentialIssuance(), options.SSICredentialIssuanceSchedule, new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 
             //seeding (local and development)
-            switch(environment)
+            switch (environment)
             {
                 case Core.Environment.Local:
                 case Core.Environment.Development:
