@@ -11,7 +11,13 @@ import { type GetServerSidePropsContext } from "next";
 import { getServerSession } from "next-auth";
 import router from "next/router";
 import { type ParsedUrlQuery } from "querystring";
-import { useCallback, useState, type ReactElement, useEffect } from "react";
+import {
+  useCallback,
+  useState,
+  type ReactElement,
+  useEffect,
+  useMemo,
+} from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import { Controller, useForm, type FieldValues } from "react-hook-form";
 import Select from "react-select";
@@ -32,6 +38,7 @@ import {
   updateSchema,
   getSchemaByName,
   getSchemaTypes,
+  getSchemaEntities,
 } from "~/api/services/credentials";
 import {
   ArtifactType,
@@ -51,19 +58,18 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const queryClient = new QueryClient();
   const session = await getServerSession(context.req, context.res, authOptions);
 
-  // UND_ERR_HEADERS_OVERFLOW ISSUE: disable prefetching for now
-  //   await queryClient.prefetchQuery(["schemaEntities"], async () =>
-  //   (await getSchemaEntities(context)).map((c) => ({
-  //     value: c.id,
-  //     label: c.name,
-  //   })),
-  // );
-
   if (id !== "create") {
     await queryClient.prefetchQuery(["schema", id], () =>
       getSchemaByName(id, context),
     );
   }
+
+  await queryClient.prefetchQuery(["schemaTypes"], async () =>
+    (await getSchemaTypes()).map((c) => ({
+      value: c.id,
+      label: c.name,
+    })),
+  );
 
   return {
     props: {
@@ -112,6 +118,7 @@ const SchemaCreateEdit: NextPageWithLayout<{
     attributes:
       schema?.entities
         ?.flatMap((x) => x.properties)
+        .filter((x) => x?.system == false)
         .map((x) => x?.attributeName!) ?? [],
   });
   /* eslint-enable */
@@ -240,6 +247,45 @@ const SchemaCreateEdit: NextPageWithLayout<{
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [step]);
+
+  const { data: schemaEntities } = useQuery({
+    queryKey: ["schemaEntities", formData.typeId],
+    queryFn: () =>
+      getSchemaEntities(
+        SchemaType[
+          schemaTypes?.find((x) => x.value == formData.typeId)
+            ?.label as keyof typeof SchemaType
+        ],
+      ),
+    enabled: formData.typeId != null,
+  });
+  const systemSchemaEntities = useMemo(
+    () =>
+      schemaEntities?.map((x) => ({
+        ...x,
+        properties: x.properties?.filter((x) => x.system == true),
+      })) ?? [],
+    [schemaEntities],
+  );
+  const renderAttribute = useCallback(
+    (attributeName: string, index: number) => {
+      const schemaEntity = schemaEntities?.find(
+        (x) => x.properties?.some((y) => y.attributeName == attributeName),
+      );
+      const dataSource = schemaEntity?.name;
+      const nameDisplay = schemaEntity?.properties?.find(
+        (y) => y.attributeName == attributeName,
+      )?.nameDisplay;
+
+      return (
+        <tr key={`${index}_${attributeName}`}>
+          <td>{dataSource}</td>
+          <td>{nameDisplay}</td>
+        </tr>
+      );
+    },
+    [schemaEntities],
+  );
 
   return (
     <>
@@ -556,23 +602,13 @@ const SchemaCreateEdit: NextPageWithLayout<{
                     )}
                   >
                     <div className="form-control">
-                      <label className="label">
-                        <span className="label-text">Attributes included</span>
-                      </label>
-
                       <Controller
                         control={controlStep2}
                         name="attributes"
                         render={({ field: { onChange } }) => (
                           <SchemaAttributesEdit
                             defaultValue={formData.attributes}
-                            schemaType={
-                              SchemaType[
-                                schemaTypes?.find(
-                                  (x) => x.value == formData.typeId,
-                                )?.label as keyof typeof SchemaType
-                              ]
-                            }
+                            schemaEntities={schemaEntities}
                             onChange={onChange}
                           />
                         )}
@@ -695,13 +731,67 @@ const SchemaCreateEdit: NextPageWithLayout<{
                           Attributes
                         </span>
                       </label>
-                      <label className="label-text text-sm">
+
+                      <div className="flex flex-col gap-2">
+                        <label className="label">
+                          <span className="label-text">System attributes</span>
+                        </label>
+
+                        <table className="table w-full">
+                          <thead>
+                            <tr>
+                              <th>Datasource</th>
+                              <th>Attribute</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {systemSchemaEntities?.map(
+                              (x) =>
+                                ({
+                                  ...x,
+                                  properties: x.properties?.filter(
+                                    (x) => x.system == true,
+                                  ),
+                                }).properties?.map((attribute, index) => (
+                                  <>
+                                    {renderAttribute(
+                                      attribute.attributeName,
+                                      index,
+                                    )}
+                                  </>
+                                )),
+                            ) ?? []}
+                          </tbody>
+                        </table>
+
+                        <label className="label">
+                          <span className="label-text">
+                            Additional attributes
+                          </span>
+                        </label>
+
+                        <table className="table w-full">
+                          <thead>
+                            <tr>
+                              <th>Datasource</th>
+                              <th>Attribute</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {formData.attributes?.map((attribute, index) => (
+                              <>{renderAttribute(attribute, index)}</>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* <label className="label-text text-sm">
                         <ul>
                           {formData.attributes.map((attr) => (
                             <li key={`review_${attr}`}>{attr}</li>
                           ))}
                         </ul>
-                      </label>
+                      </label> */}
                       {errorsStep2.attributes && (
                         <label className="label">
                           <span className="label-text-alt italic text-red-500">
