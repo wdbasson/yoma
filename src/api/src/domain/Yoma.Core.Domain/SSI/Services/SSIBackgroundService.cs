@@ -1,13 +1,13 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections;
+using Yoma.Core.Domain.Core.Helpers;
 using Yoma.Core.Domain.Core.Interfaces;
 using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Entity;
 using Yoma.Core.Domain.Entity.Interfaces;
 using Yoma.Core.Domain.Entity.Models;
 using Yoma.Core.Domain.MyOpportunity.Interfaces;
-using Yoma.Core.Domain.Opportunity;
 using Yoma.Core.Domain.Opportunity.Interfaces;
 using Yoma.Core.Domain.SSI.Helpers;
 using Yoma.Core.Domain.SSI.Interfaces;
@@ -142,7 +142,7 @@ namespace Yoma.Core.Domain.SSI.Services
 
                                     request = new TenantRequest
                                     {
-                                        Referent = org.Id.ToString(),
+                                        Referent = HashHelper.ComputeSHA256Hash(org.Name), //use hash value of the name; these are published to the trust registry and both the name and label must be unique
                                         Name = org.Name,
                                         ImageUrl = org.LogoURL,
                                         Roles = new List<Role> { Role.Holder, Role.Issuer, Role.Verifier }
