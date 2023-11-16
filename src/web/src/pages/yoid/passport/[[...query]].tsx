@@ -9,8 +9,6 @@ import { authOptions } from "~/server/auth";
 import { type NextPageWithLayout } from "../../_app";
 import { DATETIME_FORMAT_SYSTEM, PAGE_SIZE } from "~/lib/constants";
 import Image from "next/image";
-import { useSetAtom } from "jotai";
-import { userProfileAtom } from "~/lib/store";
 import YoIDTabbedLayout from "~/components/Layout/YoIDTabbed";
 import {
   getCredentialById,
@@ -79,9 +77,6 @@ const MyPassport: NextPageWithLayout<{
   schemaType?: string;
   page?: string;
 }> = ({ id, query, schemaType, page }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [logoFiles, setLogoFiles] = useState<File[]>([]);
-  const setUserProfileAtom = useSetAtom(userProfileAtom);
   const [credentialDialogVisible, setCredentialDialogVisible] = useState(false);
   const [activeCredential, setActiveCredential] =
     useState<SSICredentialInfo | null>(null);
@@ -115,20 +110,23 @@ const MyPassport: NextPageWithLayout<{
       // reset scroll position
       window.scrollTo(0, 0);
     },
-    [router, query, id, schemaType],
+    [query, schemaType],
   );
 
-  const handleOnClickCredential = useCallback((item: SSICredentialInfo) => {
-    getCredentialById(item.id)
-      .then((res) => {
-        setActiveCredential(res);
-        setCredentialDialogVisible(true);
-      })
-      .catch((err) => {
-        toast.error("Unable to retrieve your credential");
-        console.error(err);
-      });
-  }, []);
+  const handleOnClickCredential = useCallback(
+    (item: SSICredentialInfo) => {
+      getCredentialById(item.id)
+        .then((res) => {
+          setActiveCredential(res);
+          setCredentialDialogVisible(true);
+        })
+        .catch((err) => {
+          toast.error("Unable to retrieve your credential");
+          console.error(err);
+        });
+    },
+    [setActiveCredential, setCredentialDialogVisible],
+  );
 
   return (
     <>
@@ -298,11 +296,11 @@ const MyPassport: NextPageWithLayout<{
             {data.items.map((item, index) => (
               <div
                 key={index}
-                className="flex h-[180px] w-[280px] flex-col rounded-lg bg-white p-2"
+                className="flex h-[180px] w-[280px] cursor-pointer flex-col rounded-lg bg-white p-2"
                 onClick={() => handleOnClickCredential(item)}
               >
                 <div className="flex h-full flex-row">
-                  <div className="flex flex-row items-start justify-start">
+                  <div className="flex flex-grow flex-row items-start justify-start">
                     <div className="flex flex-col items-start justify-start gap-2">
                       <p className="max-h-[35px] overflow-hidden text-ellipsis text-sm font-semibold text-gray-dark">
                         {item.issuer}
@@ -312,7 +310,7 @@ const MyPassport: NextPageWithLayout<{
                       </p>
                     </div>
                   </div>
-                  <div className="flex w-64 flex-row items-start">
+                  <div className="flex flex-row items-start">
                     <div className="relative h-16 w-16 cursor-pointer overflow-hidden rounded-full shadow">
                       <Image
                         src={item.issuerLogoURL}
