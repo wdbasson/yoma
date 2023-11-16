@@ -10,6 +10,8 @@ on:
   pull_request:
     branches:
       - "master"
+  release:
+    types: [released,prereleased]
 
 env:
   REGISTRY: ghcr.io/${{ github.repository_owner }}
@@ -153,6 +155,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ matrix.image }}
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=sha,prefix=pr-${{ github.event.pull_request.number }}-,priority=601,enable=${{ github.event_name == 'pull_request' }}
             type=sha,prefix={{branch}}-,priority=601,enable=${{ github.event_name != 'pull_request' }}
             type=ref,event=branch,priority=600
             type=ref,event=pr
@@ -272,21 +275,14 @@ jobs:
       group: ${{ github.workflow }}-deploy-${{ matrix.project }}-${{ github.ref }}
       cancel-in-progress: false
     environment:
-      name: ${{ github.event_name == 'release' && 'prod' || 'dev' }}
+      name: ${{
+        (github.event_name == 'release' && github.event.action == 'released') && 'prod' ||
+        (github.event_name == 'release' && github.event.action == 'prereleased') && 'stage' ||
+        'dev'
+        }}
       url: ${{ vars.PUBLIC_URL }}
 
-    strategy:
-      matrix:
-        project:
-          - yoma-api
-          - yoma-web
-        include:
-          - project: yoma-api
-            context: ./src/api
-          - project: yoma-web
-            context: ./src/web
-
-    if: github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.draft == false
+    if: github.triggering_actor != 'dependabot[bot]'
 
     steps:
       - uses: actions/checkout@v4
@@ -295,36 +291,50 @@ jobs:
         with:
           base: master
           filters: |-
-            changes:
-              - '${{ matrix.context }}/**'
-
+            api:
+              - './src/api/**'
+            web:
+              - './src/web/**'
       - uses: unfor19/install-aws-cli-action@v1
-        if: steps.filter.outputs.changes == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.api == 'true' || steps.filter.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
       - name: SOPS Binary Installer
-        if: steps.filter.outputs.changes == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.api == 'true' || steps.filter.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
         uses: mdgreenwald/mozilla-sops-action@v1.4.1
       - uses: aws-actions/configure-aws-credentials@v4
-        if: steps.filter.outputs.changes == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.api == 'true' || steps.filter.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
         with:
           aws-region: ${{ secrets.AWS_REGION }}
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           role-session-name: github-cicd
       - run: aws eks update-kubeconfig --name ${{ secrets.CLUSTER }}
-        if: steps.filter.outputs.changes == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.api == 'true' || steps.filter.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
       - uses: tailscale/github-action@main
-        if: steps.filter.outputs.changes == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.api == 'true' || steps.filter.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
           version: ${{ env.TAILSCALE_VERSION }}
-
-      - name: Helmfile Apply/Diff
-        if: steps.filter.outputs.changes == 'true' || github.event_name == 'workflow_dispatch'
+      # Diff on PR draft. Apply on
+      - name: Helmfile Apply/Diff API
+        if: steps.filter.outputs.api == 'true' || github.event_name == 'workflow_dispatch'
         uses: helmfile/helmfile-action@v1.4.0
         with:
           helmfile-args: |
-            ${{ github.event_name != 'pull_request' && 'apply' || 'diff' }} \
+            ${{ (github.event_name == 'pull_request' && github.event.pull_request.draft) && 'diff' || 'apply' }} \
               --environment ${{ vars.ENVIRONMENT }} \
-              --selector app=${{ matrix.project }}
+              --selector app=yoma-api
+          helmfile-version: ${{ env.HELMFILE_VERSION }}
+          helm-version: ${{ env.HELM_VERSION }}
+          helm-plugins: |
+            https://github.com/databus23/helm-diff,
+            https://github.com/jkroepke/helm-secrets
+      - name: Helmfile Apply/Diff Web
+        if: steps.filter.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+        uses: helmfile/helmfile-action@v1.4.0
+        with:
+          helmfile-args: |
+            ${{ (github.event_name == 'pull_request' && github.event.pull_request.draft) && 'diff' || 'apply' }} \
+              --environment ${{ vars.ENVIRONMENT }} \
+              --selector app=yoma-web
           helmfile-version: ${{ env.HELMFILE_VERSION }}
           helm-version: ${{ env.HELM_VERSION }}
           helm-plugins: |
