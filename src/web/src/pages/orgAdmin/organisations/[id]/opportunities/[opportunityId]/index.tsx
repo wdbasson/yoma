@@ -56,7 +56,6 @@ import {
 import MainLayout from "~/components/Layout/Main";
 import { ApiErrors } from "~/components/Status/ApiErrors";
 import { Loading } from "~/components/Status/Loading";
-import withAuth from "~/context/withAuth";
 import { authOptions, type User } from "~/server/auth";
 import { PageBackground } from "~/components/PageBackground";
 import Link from "next/link";
@@ -64,6 +63,8 @@ import { IoMdArrowRoundBack } from "react-icons/io";
 import CreatableSelect from "react-select/creatable";
 import type { NextPageWithLayout } from "~/pages/_app";
 import { getSchemas } from "~/api/services/credentials";
+import { THEME_GREEN } from "~/lib/constants";
+import { AccessDenied } from "~/components/Status/AccessDenied";
 
 interface IParams extends ParsedUrlQuery {
   id: string;
@@ -71,9 +72,18 @@ interface IParams extends ParsedUrlQuery {
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const session = await getServerSession(context.req, context.res, authOptions);
+
+  if (!session) {
+    return {
+      props: {
+        error: "Unauthorized",
+      },
+    };
+  }
+
   const { id, opportunityId } = context.params as IParams;
   const queryClient = new QueryClient();
-  const session = await getServerSession(context.req, context.res, authOptions);
 
   // UND_ERR_HEADERS_OVERFLOW ISSUE: disable prefetching for now
   //   await queryClient.prefetchQuery(["categories"], async () =>
@@ -139,7 +149,8 @@ const OpportunityDetails: NextPageWithLayout<{
   id: string;
   opportunityId: string;
   user: User;
-}> = ({ id, opportunityId }) => {
+  error: string;
+}> = ({ id, opportunityId, error }) => {
   const queryClient = useQueryClient();
 
   const { data: categories } = useQuery<SelectOption[]>({
@@ -149,6 +160,7 @@ const OpportunityDetails: NextPageWithLayout<{
         value: c.id,
         label: c.name,
       })),
+    enabled: !error,
   });
   const { data: countries } = useQuery<SelectOption[]>({
     queryKey: ["countries"],
@@ -157,6 +169,7 @@ const OpportunityDetails: NextPageWithLayout<{
         value: c.id,
         label: c.name,
       })),
+    enabled: !error,
   });
   const { data: languages } = useQuery<SelectOption[]>({
     queryKey: ["languages"],
@@ -165,6 +178,7 @@ const OpportunityDetails: NextPageWithLayout<{
         value: c.id,
         label: c.name,
       })),
+    enabled: !error,
   });
   const { data: opportunityTypes } = useQuery<SelectOption[]>({
     queryKey: ["opportunityTypes"],
@@ -173,10 +187,12 @@ const OpportunityDetails: NextPageWithLayout<{
         value: c.id,
         label: c.name,
       })),
+    enabled: !error,
   });
   const { data: verificationTypes } = useQuery<OpportunityVerificationType[]>({
     queryKey: ["verificationTypes"],
     queryFn: async () => await getVerificationTypes(),
+    enabled: !error,
   });
   const { data: difficulties } = useQuery<SelectOption[]>({
     queryKey: ["difficulties"],
@@ -185,6 +201,7 @@ const OpportunityDetails: NextPageWithLayout<{
         value: c.id,
         label: c.name,
       })),
+    enabled: !error,
   });
   const { data: timeIntervals } = useQuery<SelectOption[]>({
     queryKey: ["timeIntervals"],
@@ -193,6 +210,7 @@ const OpportunityDetails: NextPageWithLayout<{
         value: c.id,
         label: c.name,
       })),
+    enabled: !error,
   });
   const { data: skills } = useQuery<SelectOption[]>({
     queryKey: ["skills"],
@@ -203,10 +221,12 @@ const OpportunityDetails: NextPageWithLayout<{
         value: c.id,
         label: c.name,
       })),
+    enabled: !error,
   });
   const { data: schemas } = useQuery({
     queryKey: ["schemas"],
     queryFn: async () => getSchemas(SchemaType.Opportunity),
+    enabled: !error,
   });
   const schemasOptions = useMemo<SelectOption[]>(
     () =>
@@ -225,7 +245,7 @@ const OpportunityDetails: NextPageWithLayout<{
   const { data: opportunity } = useQuery<Opportunity>({
     queryKey: ["opportunity", opportunityId],
     queryFn: () => getOpportunityById(opportunityId),
-    enabled: opportunityId !== "create",
+    enabled: opportunityId !== "create" && !error,
   });
 
   const loadSkills = useCallback(
@@ -264,7 +284,7 @@ const OpportunityDetails: NextPageWithLayout<{
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCancel = () => {
-    void router.push(`/organisations/${id}/opportunities`);
+    void router.push(`/orgAdmin/organisations/${id}/opportunities`);
   };
 
   const [formData, setFormData] = useState<OpportunityRequestBase>({
@@ -354,7 +374,7 @@ const OpportunityDetails: NextPageWithLayout<{
 
       // redirect to list after create
       if (opportunityId === "create")
-        void router.push(`/organisations/${id}/opportunities`);
+        void router.push(`/orgAdmin/organisations/${id}/opportunities`);
     },
     [setIsLoading, id, opportunityId, opportunity, queryClient],
   );
@@ -639,6 +659,8 @@ const OpportunityDetails: NextPageWithLayout<{
     }
   }, [schemas, watcSSISchemaName]);
 
+  if (error) return <AccessDenied />;
+
   return (
     <>
       {isLoading && <Loading />}
@@ -651,7 +673,7 @@ const OpportunityDetails: NextPageWithLayout<{
             <li>
               <Link
                 className="font-bold text-white hover:text-gray"
-                href={`/organisations/${id}/opportunities`}
+                href={`/orgAdmin/organisations/${id}/opportunities`}
               >
                 <IoMdArrowRoundBack className="mr-1 inline-block h-4 w-4" />
                 Opportunities
@@ -664,7 +686,7 @@ const OpportunityDetails: NextPageWithLayout<{
                 ) : (
                   <Link
                     className="text-white hover:text-gray"
-                    href={`/organisations/${id}/opportunities/${opportunityId}/info`}
+                    href={`/orgAdmin/organisations/${id}/opportunities/${opportunityId}/info`}
                   >
                     {opportunity?.title}
                   </Link>
@@ -2457,4 +2479,6 @@ OpportunityDetails.getLayout = function getLayout(page: ReactElement) {
   return <MainLayout>{page}</MainLayout>;
 };
 
-export default withAuth(OpportunityDetails);
+OpportunityDetails.theme = THEME_GREEN;
+
+export default OpportunityDetails;

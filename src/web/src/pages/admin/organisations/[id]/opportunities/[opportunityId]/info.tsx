@@ -14,7 +14,6 @@ import {
   updateOpportunityStatus,
 } from "~/api/services/opportunities";
 import MainLayout from "~/components/Layout/Main";
-import withAuth from "~/context/withAuth";
 import { authOptions, type User } from "~/server/auth";
 import { PageBackground } from "~/components/PageBackground";
 import Link from "next/link";
@@ -41,6 +40,8 @@ import { toast } from "react-toastify";
 import { ApiErrors } from "~/components/Status/ApiErrors";
 import { type AxiosError } from "axios";
 import { Loading } from "~/components/Status/Loading";
+import { AccessDenied } from "~/components/Status/AccessDenied";
+import { THEME_BLUE } from "~/lib/constants";
 
 interface IParams extends ParsedUrlQuery {
   id: string;
@@ -48,14 +49,22 @@ interface IParams extends ParsedUrlQuery {
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const { id, opportunityId } = context.params as IParams;
-  const queryClient = new QueryClient();
   const session = await getServerSession(context.req, context.res, authOptions);
 
-  if (session)
-    await queryClient.prefetchQuery(["opportunityInfo", opportunityId], () =>
-      getOpportunityInfoByIdAdmin(opportunityId, context),
-    );
+  if (!session) {
+    return {
+      props: {
+        error: "Unauthorized",
+      },
+    };
+  }
+
+  const { id, opportunityId } = context.params as IParams;
+  const queryClient = new QueryClient();
+
+  await queryClient.prefetchQuery(["opportunityInfo", opportunityId], () =>
+    getOpportunityInfoByIdAdmin(opportunityId, context),
+  );
 
   return {
     props: {
@@ -71,13 +80,15 @@ const OpportunityDetails: NextPageWithLayout<{
   id: string;
   opportunityId: string;
   user: User;
-}> = ({ id, opportunityId, user }) => {
+  error: string;
+}> = ({ id, opportunityId, user, error }) => {
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: opportunity } = useQuery<OpportunityInfo>({
     queryKey: ["opportunityInfo", opportunityId],
     queryFn: () => getOpportunityInfoByIdAdmin(opportunityId),
+    enabled: !error,
   });
 
   const [manageOpportunityMenuVisible, setManageOpportunityMenuVisible] =
@@ -111,6 +122,8 @@ const OpportunityDetails: NextPageWithLayout<{
     [opportunityId, queryClient],
   );
 
+  if (error) return <AccessDenied />;
+
   return (
     <>
       {isLoading && <Loading />}
@@ -124,7 +137,7 @@ const OpportunityDetails: NextPageWithLayout<{
               <li>
                 <Link
                   className="font-bold text-white hover:text-gray"
-                  href={`/organisations/${id}/opportunities`}
+                  href={`/admin/organisations/${id}/opportunities`}
                 >
                   <IoMdArrowRoundBack className="mr-1 inline-block h-4 w-4" />
                   Opportunities
@@ -163,7 +176,7 @@ const OpportunityDetails: NextPageWithLayout<{
           >
             <div className="flex flex-col gap-4 p-4 text-xs">
               <Link
-                href={`/organisations/${id}/opportunities/${opportunityId}`}
+                href={`/admin/organisations/${id}/opportunities/${opportunityId}`}
                 className="flex flex-row items-center text-gray-dark hover:brightness-50"
               >
                 <FaPencilAlt className="mr-2 h-3 w-3" />
@@ -171,7 +184,7 @@ const OpportunityDetails: NextPageWithLayout<{
               </Link>
               {/* TODO */}
               <Link
-                href={`/organisations/${id}/opportunities/${opportunityId}/edit`}
+                href={`/admin/organisations/${id}/opportunities/${opportunityId}/edit`}
                 className="flex flex-row items-center text-gray-dark hover:brightness-50"
               >
                 <FaClipboard className="mr-2 h-3 w-3" />
@@ -204,7 +217,7 @@ const OpportunityDetails: NextPageWithLayout<{
 
               {/* TODO */}
               <Link
-                href={`/organisations/${id}/opportunities/${opportunityId}/edit`}
+                href={`/admin/organisations/${id}/opportunities/${opportunityId}/edit`}
                 className="flex flex-row items-center text-gray-dark hover:brightness-50"
               >
                 <FaArrowCircleUp className="mr-2 h-3 w-3" />
@@ -213,7 +226,7 @@ const OpportunityDetails: NextPageWithLayout<{
 
               {/* TODO */}
               <Link
-                href={`/organisations/${id}/opportunities/${opportunityId}/edit`}
+                href={`/admin/organisations/${id}/opportunities/${opportunityId}/edit`}
                 className="flex flex-row items-center text-gray-dark hover:brightness-50"
               >
                 <FaLink className="mr-2 h-3 w-3" />
@@ -341,7 +354,7 @@ const OpportunityDetails: NextPageWithLayout<{
                   {opportunity?.participantCountVerificationPending &&
                     opportunity?.participantCountVerificationPending > 0 && (
                       <Link
-                        href={`/organisations/${id}/verifications?opportunity=${opportunityId}`}
+                        href={`/admin/organisations/${id}/verifications?opportunity=${opportunityId}`}
                       >
                         <div className="flex flex-row items-center gap-2 rounded-lg bg-yellow-light p-1">
                           <div className="badge badge-warning rounded-lg bg-yellow text-white">
@@ -480,4 +493,6 @@ OpportunityDetails.getLayout = function getLayout(page: ReactElement) {
   return <MainLayout>{page}</MainLayout>;
 };
 
-export default withAuth(OpportunityDetails);
+OpportunityDetails.theme = THEME_BLUE;
+
+export default OpportunityDetails;

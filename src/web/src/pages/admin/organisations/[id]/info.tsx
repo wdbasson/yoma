@@ -11,19 +11,29 @@ import { getOrganisationById } from "~/api/services/organisations";
 import MainLayout from "~/components/Layout/Main";
 import { Overview } from "~/components/Organisation/Detail/Overview";
 import { LogoTitle } from "~/components/Organisation/LogoTitle";
-import withAuth from "~/context/withAuth";
 import { authOptions, type User } from "~/server/auth";
-import { type NextPageWithLayout } from "../../_app";
 import { PageBackground } from "~/components/PageBackground";
+import { THEME_BLUE } from "~/lib/constants";
+import { AccessDenied } from "~/components/Status/AccessDenied";
+import type { NextPageWithLayout } from "~/pages/_app";
 
 interface IParams extends ParsedUrlQuery {
   id: string;
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const session = await getServerSession(context.req, context.res, authOptions);
+
+  if (!session) {
+    return {
+      props: {
+        error: "Unauthorized",
+      },
+    };
+  }
+
   const { id } = context.params as IParams;
   const queryClient = new QueryClient();
-  const session = await getServerSession(context.req, context.res, authOptions);
 
   await queryClient.prefetchQuery(["organisation", id], () =>
     getOrganisationById(id, context),
@@ -41,10 +51,14 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 const OrganisationOverview: NextPageWithLayout<{
   id: string;
   user: User;
-}> = ({ id }) => {
+  error: string;
+}> = ({ id, error }) => {
   const { data: organisation } = useQuery<Organization>({
     queryKey: ["organisation", id],
+    enabled: !error,
   });
+
+  if (error) return <AccessDenied />;
 
   return (
     <>
@@ -59,7 +73,7 @@ const OrganisationOverview: NextPageWithLayout<{
         <div className="flex flex-row text-xs text-gray">
           <Link
             className="font-bold text-white hover:text-gray"
-            href={"/organisations"}
+            href={"/admin/organisations"}
           >
             Organisations
           </Link>
@@ -85,7 +99,7 @@ const OrganisationOverview: NextPageWithLayout<{
         {/* BUTTONS */}
         <div className="my-4 flex items-center justify-center gap-2">
           <Link
-            href={`/organisations/${id}/edit`}
+            href={`/admin/organisations/${id}/edit`}
             type="button"
             className="btn btn-info btn-xs"
           >
@@ -101,4 +115,6 @@ OrganisationOverview.getLayout = function getLayout(page: ReactElement) {
   return <MainLayout>{page}</MainLayout>;
 };
 
-export default withAuth(OrganisationOverview);
+OrganisationOverview.theme = THEME_BLUE;
+
+export default OrganisationOverview;
