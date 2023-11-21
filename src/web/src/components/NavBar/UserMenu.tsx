@@ -6,6 +6,8 @@ import { useState } from "react";
 import {
   IoMdAdd,
   IoMdCard,
+  IoMdCheckmark,
+  IoMdClose,
   IoMdImage,
   IoMdPerson,
   IoMdPower,
@@ -28,7 +30,6 @@ export const UserMenu: React.FC = () => {
   const currentOrganisationLogo = useAtomValue(currentOrganisationLogoAtom);
   const { data: session } = useSession();
   const isAdmin = session?.user?.roles.includes(ROLE_ADMIN);
-  const isOrgAdmin = session?.user?.roles.includes(ROLE_ORG_ADMIN);
 
   const handleLogout = () => {
     setUserMenuVisible(false);
@@ -133,7 +134,7 @@ export const UserMenu: React.FC = () => {
         overlayClassName="fixed inset-0"
       >
         <ul className="menu rounded-box">
-          <li>
+          <li className="md:max-w-[300px]">
             <Link
               href="/user/settings"
               className="text-gray-dark"
@@ -176,7 +177,7 @@ export const UserMenu: React.FC = () => {
             </Link>
           </li>
           <div className="divider m-0" />
-          <li>
+          <li className="md:max-w-[300px]">
             <Link
               href="/yoid/passport"
               className="text-gray-dark"
@@ -201,9 +202,7 @@ export const UserMenu: React.FC = () => {
                       key={organisation.id}
                       href={
                         organisation.status == "Active"
-                          ? `/orgAdmin/organisations/${organisation.id}`
-                          : isOrgAdmin
-                          ? `/orgAdmin/organisations/${organisation.id}/edit`
+                          ? `/organisations/${organisation.id}`
                           : `/organisations/${organisation.id}/edit`
                       }
                       className="text-gray-dark"
@@ -214,7 +213,6 @@ export const UserMenu: React.FC = () => {
                           <IoMdImage className="h-6 w-6 text-gray-dark" />
                         </div>
                       )}
-
                       {organisation.logoURL && (
                         <div className="relative h-11 w-11 cursor-pointer overflow-hidden rounded-full shadow">
                           <Image
@@ -237,8 +235,37 @@ export const UserMenu: React.FC = () => {
                           />
                         </div>
                       )}
-                      <div className="flex h-10 items-center overflow-hidden text-ellipsis">
-                        {organisation.name}
+
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center overflow-hidden text-ellipsis whitespace-nowrap md:max-w-[200px]">
+                          {organisation.name}
+                        </div>
+                        <div className="flex flex-row items-center">
+                          {organisation.status == "Active" && (
+                            <>
+                              <IoMdCheckmark className="h-4 w-4 text-info" />
+                              <div className="text-xs text-info">
+                                {organisation.status}
+                              </div>
+                            </>
+                          )}
+                          {organisation.status == "Inactive" && (
+                            <>
+                              <IoMdClose className="h-4 w-4 text-warning" />
+                              <div className="text-xs text-warning">
+                                {organisation.status}
+                              </div>
+                            </>
+                          )}
+                          {organisation.status == "Declined" && (
+                            <>
+                              <IoMdClose className="h-4 w-4 text-error" />
+                              <div className="text-xs text-error">
+                                {organisation.status}
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </Link>
                   </li>
@@ -264,7 +291,7 @@ export const UserMenu: React.FC = () => {
           {(activeRoleView == RoleView.Admin || isAdmin) && (
             <>
               <div className="divider m-0" />
-              <li>
+              <li className="md:max-w-[300px]">
                 <Link
                   href="/admin"
                   className="text-gray-dark"
@@ -279,7 +306,7 @@ export const UserMenu: React.FC = () => {
             </>
           )}
           <div className="divider m-0" />
-          <li>
+          <li className="md:max-w-[300px]">
             <button className="text-left text-gray-dark" onClick={handleLogout}>
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow">
                 <IoMdPower className="h-6 w-6 text-gray-dark" />
