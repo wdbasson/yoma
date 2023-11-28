@@ -3,12 +3,10 @@ import { type GetServerSidePropsContext } from "next";
 import { getServerSession } from "next-auth";
 import router from "next/router";
 import { useCallback, useState, type ReactElement } from "react";
-import { toast } from "react-toastify";
 import { authOptions } from "~/server/auth";
 import { type NextPageWithLayout } from "../../_app";
 import { DATETIME_FORMAT_SYSTEM, PAGE_SIZE } from "~/lib/constants";
 import Image from "next/image";
-import YoIDTabbedLayout from "~/components/Layout/YoIDTabbed";
 import {
   getCredentialById,
   searchCredentials,
@@ -25,13 +23,13 @@ import Moment from "react-moment";
 import { IoMdCheckmark, IoMdClose } from "react-icons/io";
 import ReactModal from "react-modal";
 import { ApiErrors } from "~/components/Status/ApiErrors";
-import { LoadingInline } from "~/components/Status/LoadingInline";
-import { AccessDenied } from "~/components/Status/AccessDenied";
+import { Unauthorized } from "~/components/Status/Unauthorized";
+import { LoadingSkeleton } from "~/components/Status/LoadingSkeleton";
+import YoIDTabbed from "~/components/Layout/YoIDTabbed";
+import { toast } from "react-toastify";
 
 interface IParams extends ParsedUrlQuery {
-  id: string;
   query?: string;
-  schemaType?: string;
   page?: string;
 }
 
@@ -59,6 +57,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     queryFn: () =>
       searchCredentials(
         {
+          //TODO: PAGING NOT SUPPORTED BY API (ARIES CLOUD)
           pageNumber: null, //page ? parseInt(page.toString()) : 1,
           pageSize: null, //PAGE_SIZE,
           schemaType: null, //schemaType?.toString() ?? null,
@@ -73,19 +72,16 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       user: session?.user ?? null, // (required for 'withAuth' HOC component)
       id: id ?? null,
       query: query ?? null,
-      schemaType: schemaType ?? null,
       page: page ?? "1",
     },
   };
 }
 
-const MyPassport: NextPageWithLayout<{
-  id: string;
+const MyCredentials: NextPageWithLayout<{
   query?: string;
-  schemaType?: string;
   page?: string;
   error: string;
-}> = ({ id, query, schemaType, page, error }) => {
+}> = ({ query, page, error }) => {
   const [credentialDialogVisible, setCredentialDialogVisible] = useState(false);
   const [activeCredential, setActiveCredential] =
     useState<SSICredentialInfo | null>(null);
@@ -96,11 +92,10 @@ const MyPassport: NextPageWithLayout<{
     error: dataError,
     isLoading: dataIsLoading,
   } = useQuery<SSIWalletSearchResults>({
-    queryKey: [
-      `Credentials_${id}_${query?.toString()}_${schemaType?.toString()}_${page?.toString()}`,
-    ],
+    queryKey: [`Credentials_${query?.toString()}_${page?.toString()}`],
     queryFn: () =>
       searchCredentials({
+        //TODO: PAGING NOT SUPPORTED BY API (ARIES CLOUD)
         pageNumber: null, //page ? parseInt(page.toString()) : 1,
         pageSize: null, //PAGE_SIZE,
         schemaType: null, //schemaType?.toString() ?? null,
@@ -113,14 +108,11 @@ const MyPassport: NextPageWithLayout<{
     (value: number) => {
       // redirect
       void router.push({
-        pathname: `/yoid/passport`,
-        query: { query: query, opportunity: schemaType, page: value },
+        pathname: `/yoid/credentials`,
+        query: { query: query, page: value },
       });
-
-      // reset scroll position
-      window.scrollTo(0, 0);
     },
-    [query, schemaType],
+    [query],
   );
 
   const handleOnClickCredential = useCallback(
@@ -138,7 +130,7 @@ const MyPassport: NextPageWithLayout<{
     [setActiveCredential, setCredentialDialogVisible],
   );
 
-  if (error) return <AccessDenied />;
+  if (error) return <Unauthorized />;
 
   return (
     <>
@@ -276,100 +268,110 @@ const MyPassport: NextPageWithLayout<{
         </div>
       </ReactModal>
 
-      <div className="flex items-center justify-center">
-        <div className="mt-10">
-          <>
-            {/* ERRROR */}
-            {dataError && <ApiErrors error={dataError} />}
-
-            {/* LOADING */}
-            {dataIsLoading && <LoadingInline />}
-
-            {/* NO ROWS */}
-            {data && data.totalCount === 0 && (
-              <NoRowsMessage
-                title={"No results found"}
-                description={"Please try refining your search query."}
-              />
-            )}
-          </>
-        </div>
-
-        {/* GRID */}
-        {data && data.items?.length > 0 && (
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
-            {data.items.map((item, index) => (
-              <div
-                key={index}
-                className="flex h-[180px] w-[280px] cursor-pointer flex-col rounded-lg bg-white p-2"
-                onClick={() => handleOnClickCredential(item)}
-              >
-                <div className="flex h-full flex-row">
-                  <div className="flex flex-grow flex-row items-start justify-start">
-                    <div className="flex flex-col items-start justify-start gap-2">
-                      <p className="max-h-[35px] overflow-hidden text-ellipsis text-sm font-semibold text-gray-dark">
-                        {item.issuer}
-                      </p>
-                      <p className="max-h-[80px] overflow-hidden text-ellipsis text-sm font-bold">
-                        {item.title}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-row items-start">
-                    <div className="relative h-16 w-16 cursor-pointer overflow-hidden rounded-full shadow">
-                      <Image
-                        src={item.issuerLogoURL}
-                        alt={`${item.issuer} Logo`}
-                        width={60}
-                        height={60}
-                        sizes="(max-width: 60px) 30vw, 50vw"
-                        priority={true}
-                        placeholder="blur"
-                        blurDataURL={`data:image/svg+xml;base64,${toBase64(
-                          shimmer(44, 44),
-                        )}`}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          maxWidth: "60px",
-                          maxHeight: "60px",
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-row items-center justify-center">
-                  <div className="flex flex-grow text-xs tracking-widest">
-                    <Moment format={DATETIME_FORMAT_SYSTEM}>
-                      {new Date(item.dateIssued!)}
-                    </Moment>
-                  </div>
-                  <div className="badge h-6 rounded-md bg-green-light text-xs font-bold text-green">
-                    <IoMdCheckmark className="mr-1 h-4 w-4" />
-                    Verified
-                  </div>
-                </div>
-              </div>
-            ))}
+      <div className="flex w-full flex-col gap-4">
+        {/* ERRROR */}
+        {dataError && <ApiErrors error={dataError} />}
+        {/* LOADING */}
+        {dataIsLoading && (
+          <div className="flex justify-center rounded-lg bg-white p-8">
+            <LoadingSkeleton />
           </div>
         )}
-        <div className="mt-2 grid place-items-center justify-center">
-          {/* PAGINATION */}
-          <PaginationButtons
-            currentPage={page ? parseInt(page) : 1}
-            totalItems={data?.totalCount ?? 0}
-            pageSize={PAGE_SIZE}
-            onClick={handlePagerChange}
-            showPages={false}
-          />
-        </div>
+
+        {/* NO ROWS */}
+        {/* TODO:data.totalCount not populated by API */}
+        {/* {data && (data.totalCount === null || data.totalCount === 0) && ( */}
+        {data && data.items.length === 0 && (
+          <div className="flex justify-center rounded-lg bg-white p-8">
+            <NoRowsMessage
+              title={"No results found"}
+              description={
+                "Credentials that you receive by completing opportunities will be diplayed here."
+              }
+            />
+          </div>
+        )}
+
+        {data && data.items?.length > 0 && (
+          <div className="flex flex-col items-center gap-4">
+            {/* GRID */}
+            {data && data.items?.length > 0 && (
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {data.items.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex h-[180px] cursor-pointer flex-col rounded-lg bg-white p-2"
+                    onClick={() => handleOnClickCredential(item)}
+                  >
+                    <div className="flex h-full flex-row">
+                      <div className="flex flex-grow flex-row items-start justify-start">
+                        <div className="flex flex-col items-start justify-start gap-2">
+                          <p className="max-h-[35px] overflow-hidden text-ellipsis text-sm font-semibold text-gray-dark">
+                            {item.issuer}
+                          </p>
+                          <p className="max-h-[80px] overflow-hidden text-ellipsis text-sm font-bold">
+                            {item.title}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-row items-start">
+                        <div className="relative h-16 w-16 cursor-pointer overflow-hidden rounded-full shadow">
+                          <Image
+                            src={item.issuerLogoURL}
+                            alt={`${item.issuer} Logo`}
+                            width={60}
+                            height={60}
+                            sizes="(max-width: 60px) 30vw, 50vw"
+                            priority={true}
+                            placeholder="blur"
+                            blurDataURL={`data:image/svg+xml;base64,${toBase64(
+                              shimmer(44, 44),
+                            )}`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              maxWidth: "60px",
+                              maxHeight: "60px",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-row items-center justify-center">
+                      <div className="flex flex-grow text-xs tracking-widest">
+                        <Moment format={DATETIME_FORMAT_SYSTEM}>
+                          {new Date(item.dateIssued!)}
+                        </Moment>
+                      </div>
+                      <div className="badge h-6 rounded-md bg-green-light text-xs font-bold text-green">
+                        <IoMdCheckmark className="mr-1 h-4 w-4" />
+                        Verified
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-2 grid place-items-center justify-center">
+              {/* PAGINATION BUTTONS */}
+              <PaginationButtons
+                currentPage={page ? parseInt(page) : 1}
+                totalItems={data?.totalCount ?? 0}
+                pageSize={PAGE_SIZE}
+                onClick={handlePagerChange}
+                showPages={false}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
 };
 
-MyPassport.getLayout = function getLayout(page: ReactElement) {
-  return <YoIDTabbedLayout>{page}</YoIDTabbedLayout>;
+MyCredentials.getLayout = function getLayout(page: ReactElement) {
+  return <YoIDTabbed>{page}</YoIDTabbed>;
 };
 
-export default MyPassport;
+export default MyCredentials;

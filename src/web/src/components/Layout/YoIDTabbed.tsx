@@ -12,9 +12,9 @@ import { toBase64, shimmer } from "~/lib/image";
 import iconZlto from "public/images/icon-zlto.svg";
 import iconCheckmark from "public/images/icon-checkmark.png";
 import iconTools from "public/images/icon-tools.png";
-import iconMap from "public/images/icon-map.png";
-import iconSaved from "public/images/icon-saved.png";
-import iconHourglass from "public/images/icon-hourglass.png";
+import iconCredential from "public/images/icon-credential.png";
+import iconSmiley from "public/images/icon-smiley.png";
+import iconShare from "public/images/icon-share.png";
 import type { TabItem } from "~/api/models/common";
 
 export type TabProps = ({
@@ -37,11 +37,11 @@ const YoIDTabbedLayout: TabProps = ({ children }) => {
   useEffect(() => {
     setTabItems([
       {
-        title: "My Passport",
-        description: "My verified opportunities",
-        url: "/yoid/passport",
+        title: "Opportunities",
+        description: "Completed, pending & saved",
+        url: "/yoid/opportunities/completed",
         badgeCount: null,
-        selected: router.asPath === "/yoid/passport",
+        selected: router.asPath.startsWith("/yoid/opportunities"),
         icon: iconCheckmark,
       },
       {
@@ -49,32 +49,32 @@ const YoIDTabbedLayout: TabProps = ({ children }) => {
         description: "Skills gained through opportunities",
         url: "/yoid/skills",
         badgeCount: null,
-        selected: router.asPath === "/yoid/skills",
+        selected: router.asPath.startsWith("/yoid/skills"),
         icon: iconTools,
       },
       {
-        title: "Travel History",
-        description: "Track my journey through Yoma so far",
-        url: "/yoid/history",
+        title: "Wallet",
+        description: "Digital credentials",
+        url: "/yoid/credentials",
         badgeCount: null,
-        selected: router.asPath === "/yoid/history",
-        icon: iconMap,
+        selected: router.asPath.startsWith("/yoid/credentials"),
+        icon: iconCredential,
       },
       {
-        title: "Saved",
-        description: "My saved learning and task opportunities",
-        url: "/yoid/saved",
+        title: "Personal Info",
+        description: "My personal data",
+        url: "/yoid/settings",
         badgeCount: null,
-        selected: router.asPath === "/yoid/saved",
-        icon: iconSaved,
+        selected: router.asPath.startsWith("/yoid/settings"),
+        icon: iconSmiley,
       },
       {
-        title: "Submitted",
+        title: "Open Digital CV",
         description: "My opportunities submitted for verification",
-        url: "/yoid/submitted",
+        url: "/yoid/cv",
         badgeCount: null,
-        selected: router.asPath === "/yoid/submitted",
-        icon: iconHourglass,
+        selected: router.asPath.startsWith("/yoid/cv"),
+        icon: iconShare,
       },
     ]);
   }, [router.asPath, setTabItems]);
@@ -84,7 +84,7 @@ const YoIDTabbedLayout: TabProps = ({ children }) => {
       <>
         <PageBackground />
 
-        <div className="container z-10 max-w-6xl py-4">
+        <div className="container z-10 py-4">
           {/* USER CARD */}
           <div className="flex items-center justify-center">
             <div className="relative h-[215px] w-[410px]">
@@ -95,7 +95,7 @@ const YoIDTabbedLayout: TabProps = ({ children }) => {
                 objectFit="cover"
                 priority={true}
               />
-              <div className="absolute left-[30px] top-[30px]  w-[335px] p-4 ">
+              <div className="absolute left-[30px] top-[30px]  max-w-[335px] p-4 ">
                 <div className="flex flex-col text-white">
                   <div className="flex flex-row items-center justify-center">
                     <p className="flex-grow text-center text-sm tracking-widest brightness-95">
@@ -170,10 +170,10 @@ const YoIDTabbedLayout: TabProps = ({ children }) => {
             </div>
           </div>
 
-          <div className="mt-8 flex gap-5">
-            {/* MENU NAVIGATION: MEDIUM DISPLAY */}
+          <div className="flex flex-col gap-5 md:flex-row">
+            {/* TABBED NAVIGATION: MEDIUM DISPLAY */}
             <div className="hidden md:block">
-              <ul className="menu w-64 gap-2 md:rounded-2xl">
+              <ul className="menu w-64 gap-2 rounded-lg bg-gray-light">
                 {/* TABS */}
                 {tabItems.map((tabItem, index) => (
                   <li key={`MenuNavigation_${index}`}>
@@ -219,13 +219,14 @@ const YoIDTabbedLayout: TabProps = ({ children }) => {
             </div>
 
             {/* MAIN CONTENT */}
-            <div className="flex-grow">
+            <div className="flex flex-grow flex-col">
               {/* DROPDOWN NAVIGATION: SMALL DISPLAY */}
               <div className="visible flex flex-none items-center justify-center pb-4 md:hidden">
                 <select
                   className="select max-w-lg"
                   onChange={handleChange}
                   value={router.asPath}
+                  title="Select a page"
                 >
                   {tabItems.map((tabItem, index) => (
                     <option
@@ -238,8 +239,9 @@ const YoIDTabbedLayout: TabProps = ({ children }) => {
                   ))}
                 </select>
               </div>
-              <div>
-                {/* CHILDREN */}
+
+              {/* CHILDREN */}
+              <div className="flex flex-grow items-center justify-center">
                 {children}
               </div>
             </div>

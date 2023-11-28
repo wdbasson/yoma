@@ -13,18 +13,17 @@ import zod from "zod";
 import { type UserProfileRequest } from "~/api/models/user";
 import { getCountries, getGenders } from "~/api/services/lookups";
 import { getUserProfile, patchPhoto, patchUser } from "~/api/services/user";
-import MainLayout from "~/components/Layout/Main";
 import { ApiErrors } from "~/components/Status/ApiErrors";
 import { Loading } from "~/components/Status/Loading";
 import { authOptions, type User } from "~/server/auth";
-import { type NextPageWithLayout } from "../_app";
 import { FileUploader } from "~/components/Organisation/Upsert/FileUpload";
 import { ACCEPTED_IMAGE_TYPES } from "~/lib/constants";
 import Image from "next/image";
-import { PageBackground } from "~/components/PageBackground";
 import { useSetAtom } from "jotai";
 import { userProfileAtom } from "~/lib/store";
 import { Unauthorized } from "~/components/Status/Unauthorized";
+import type { NextPageWithLayout } from "~/pages/_app";
+import YoIDTabbedLayout from "~/components/Layout/YoIDTabbed";
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const session = await getServerSession(context.req, context.res, authOptions);
@@ -204,13 +203,12 @@ const Settings: NextPageWithLayout<{
 
   return (
     <>
-      <PageBackground />
       {isLoading && <Loading />}
 
-      <div className="container z-10 max-w-2xl px-2 py-4">
+      <div className="w-full max-w-2xl px-2 py-4">
         <h2 className="font-boldx pb-8 text-white">User Settings</h2>
         <div className="flex flex-col items-center justify-start">
-          <div className="flex w-full max-w-2xl flex-col rounded-lg bg-white p-8">
+          <div className="flex w-full flex-col rounded-lg bg-white p-8">
             <form
               onSubmit={handleSubmit(onSubmit)} // eslint-disable-line @typescript-eslint/no-misused-promises
               className="gap-2x flex flex-col"
@@ -496,7 +494,7 @@ const Settings: NextPageWithLayout<{
 };
 
 Settings.getLayout = function getLayout(page: ReactElement) {
-  return <MainLayout>{page}</MainLayout>;
+  return <YoIDTabbedLayout>{page}</YoIDTabbedLayout>;
 };
 
 export default Settings;
