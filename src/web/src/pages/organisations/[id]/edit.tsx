@@ -152,7 +152,9 @@ const OrganisationUpdate: NextPageWithLayout<{
       setIsLoading(true);
 
       try {
-        debugger;
+        // clear all toasts
+        toast.dismiss();
+
         // update api
         await patchOrganisation(model);
 

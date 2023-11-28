@@ -52,6 +52,8 @@ import type { AxiosError } from "axios";
 import { InternalServerError } from "~/components/Status/InternalServerError";
 import axios from "axios";
 import { LoadingInline } from "~/components/Status/LoadingInline";
+import { DATETIME_FORMAT_HUMAN } from "~/lib/constants";
+import Moment from "react-moment";
 
 interface IParams extends ParsedUrlQuery {
   id: string;
@@ -268,16 +270,9 @@ const OpportunityDetails: NextPageWithLayout<{
                         style={{ width: "28px", height: "28px" }}
                       />
                     </div>
-                    <h3>Please login to continue</h3>
-                    {/* <div className="w-[450px] rounded-lg bg-gray p-4 text-center">
-                Remember to <strong>upload your completion certificate</strong>{" "}
-                on this page upon finishing to <strong>earn your ZLTO</strong>.
-              </div>
-              <div>Don’t show me this message again</div>
-              <div>
-                Be mindful of external sites' privacy policy and keep your data
-                private.
-              </div> */}
+
+                    <h4>Please login to continue</h4>
+
                     <div className="mt-4 flex flex-grow gap-4">
                       <button
                         type="button"
@@ -296,16 +291,17 @@ const OpportunityDetails: NextPageWithLayout<{
 
                         <span className="ml-1">Cancel</span>
                       </button>
+
                       <button
                         type="button"
-                        className="btn rounded-full bg-purple normal-case text-white md:w-[250px]"
+                        className="btn rounded-full bg-purple normal-case text-white hover:bg-purple-light md:w-[250px]"
                         onClick={onLogin}
                       >
                         {isButtonLoading && (
                           <span className="loading loading-spinner loading-md mr-2 text-warning"></span>
                         )}
                         {!isButtonLoading && (
-                          <IoMdFingerPrint className="h-8 w-8 text-white" />
+                          <IoMdFingerPrint className="h-5 w-5 text-white" />
                         )}
                         <p className="text-white">Login</p>
                       </button>
@@ -580,7 +576,7 @@ const OpportunityDetails: NextPageWithLayout<{
                                 priority={true}
                                 style={{ width: "18px", height: "18px" }}
                               />
-                              <span className="ml-1 text-xs">Action</span>
+                              <span className="ml-1 text-xs">Ongoing</span>
                             </div>
                           )}
                           {opportunity?.status == "Expired" && (
@@ -588,28 +584,39 @@ const OpportunityDetails: NextPageWithLayout<{
                               Expired
                             </div>
                           )}
-
-                          {/* {opportunity?.status == "Inactive" && (
-                      <div className="badge h-6 rounded-md bg-green-light text-red-400">
-                        Inactive
-                      </div>
-                    )}
-                    {opportunity?.status == "Deleted" && (
-                      <div className="badge h-6 rounded-md bg-green-light text-red-400">
-                        Deleted
-                      </div>
-                    )}
-                    {opportunity?.published && (
-                      <div className="badge h-6 rounded-md bg-green-light text-blue">
-                        Published
-                      </div>
-                    )}
-                    {!opportunity?.published && (
-                      <div className="badge h-6 rounded-md bg-green-light text-red-400">
-                        Not published
-                      </div>
-                    )} */}
                         </div>
+
+                        {/* DATES */}
+                        {opportunity.status == "Active" && (
+                          <div className="flex flex-col text-sm text-gray-dark">
+                            <div>
+                              {opportunity.dateStart && (
+                                <>
+                                  <span className="mr-2 font-bold">
+                                    Starts:
+                                  </span>
+                                  <span className="text-xs tracking-widest text-black">
+                                    <Moment format={DATETIME_FORMAT_HUMAN}>
+                                      {new Date(opportunity.dateStart)}
+                                    </Moment>
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            <div>
+                              {opportunity.dateEnd && (
+                                <>
+                                  <span className="mr-2 font-bold">Ends:</span>
+                                  <span className="text-xs tracking-widest text-black">
+                                    <Moment format={DATETIME_FORMAT_HUMAN}>
+                                      {new Date(opportunity.dateEnd)}
+                                    </Moment>
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
                         {/* BUTTONS */}
                         <div className="mt-4 grid grid-cols-1 gap-2 lg:grid-cols-2">
@@ -699,8 +706,9 @@ const OpportunityDetails: NextPageWithLayout<{
                                     )}
                                 </>
                               )}
+
                             {/* TODO: */}
-                            {opportunity.verificationEnabled &&
+                            {/* {opportunity.verificationEnabled &&
                               opportunity.verificationMethod == "Automatic" && (
                                 <button
                                   type="button"
@@ -727,7 +735,7 @@ const OpportunityDetails: NextPageWithLayout<{
                                     Mark as completed
                                   </span>
                                 </button>
-                              )}
+                              )} */}
                           </div>
                           <div className="flex gap-4 md:justify-end lg:justify-end">
                             <button
