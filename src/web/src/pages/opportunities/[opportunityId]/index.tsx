@@ -38,6 +38,7 @@ import iconSuccess from "public/images/icon-success.svg";
 import Image from "next/image";
 import {
   getVerificationStatus,
+  performActionViewed,
   saveMyOpportunity,
 } from "~/api/services/myOpportunities";
 import { toast } from "react-toastify";
@@ -54,6 +55,7 @@ import axios from "axios";
 import { LoadingInline } from "~/components/Status/LoadingInline";
 import { DATETIME_FORMAT_HUMAN } from "~/lib/constants";
 import Moment from "react-moment";
+import { config } from "~/lib/react-query-config";
 
 interface IParams extends ParsedUrlQuery {
   id: string;
@@ -62,19 +64,27 @@ interface IParams extends ParsedUrlQuery {
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { opportunityId } = context.params as IParams;
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient(config);
   const session = await getServerSession(context.req, context.res, authOptions);
 
   try {
-    const data = await getOpportunityInfoById(
-      opportunityId,
-      session != null,
-      context,
-    );
-    await queryClient.prefetchQuery({
-      queryKey: ["opportunityInfo", opportunityId],
-      queryFn: () => data,
-    });
+    // 👇 prefetch queries on server
+    await Promise.all([
+      await queryClient.prefetchQuery({
+        queryKey: ["opportunityInfo", opportunityId],
+        queryFn: () =>
+          getOpportunityInfoById(opportunityId, session != null, context),
+      }),
+      session
+        ? await queryClient.prefetchQuery({
+            queryKey: ["verificationStatus", opportunityId],
+            queryFn: () => getVerificationStatus(opportunityId, context),
+          })
+        : null,
+    ]);
+
+    // perform viewed action
+    await performActionViewed(opportunityId, context);
 
     return {
       props: {
