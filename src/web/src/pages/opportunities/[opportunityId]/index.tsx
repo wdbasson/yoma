@@ -67,24 +67,36 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const queryClient = new QueryClient(config);
   const session = await getServerSession(context.req, context.res, authOptions);
 
+  let dataOpportunityInfo: OpportunityInfo | null = null;
+  let dataVerificationStatus: MyOpportunityResponseVerify | null = null;
+
   try {
     // 👇 prefetch queries on server
-    await Promise.all([
-      await queryClient.prefetchQuery({
+    dataOpportunityInfo = await getOpportunityInfoById(
+      opportunityId,
+      session != null,
+      context,
+    );
+    if (session)
+      dataVerificationStatus = await getVerificationStatus(
+        opportunityId,
+        context,
+      );
+
+    Promise.all([
+      queryClient.prefetchQuery({
         queryKey: ["opportunityInfo", opportunityId],
-        queryFn: () =>
-          getOpportunityInfoById(opportunityId, session != null, context),
+        queryFn: () => dataOpportunityInfo,
       }),
-      session
-        ? await queryClient.prefetchQuery({
-            queryKey: ["verificationStatus", opportunityId],
-            queryFn: () => getVerificationStatus(opportunityId, context),
-          })
-        : null,
+      queryClient.prefetchQuery({
+        queryKey: ["verificationStatus", opportunityId],
+        queryFn: () => dataVerificationStatus ?? null,
+      }),
     ]);
 
-    // perform viewed action
-    await performActionViewed(opportunityId, context);
+    // 👇 perform viewed action
+    if (dataOpportunityInfo.published)
+      await performActionViewed(opportunityId, context);
 
     return {
       props: {
@@ -142,18 +154,18 @@ const OpportunityDetails: NextPageWithLayout<{
   });
 
   const { data: verificationStatus, isLoading: verificationStatusIsLoading } =
-    useQuery<MyOpportunityResponseVerify | "">({
+    useQuery<MyOpportunityResponseVerify | null>({
       queryKey: ["verificationStatus", opportunityId],
       queryFn: () => {
         if (
           !!user &&
           !!opportunity &&
-          !!serverError &&
+          serverError == null &&
           opportunity.verificationEnabled &&
           opportunity.verificationMethod == "Manual"
-        )
+        ) {
           return getVerificationStatus(opportunityId);
-        else return "";
+        } else return null;
       },
     });
 
@@ -662,7 +674,7 @@ const OpportunityDetails: NextPageWithLayout<{
                                 <>
                                   {(verificationStatus == null ||
                                     verificationStatus == undefined ||
-                                    verificationStatus == "" ||
+                                    verificationStatus.status == "None" ||
                                     verificationStatus.status == "Rejected") &&
                                     !verificationStatusIsLoading && (
                                       <button
