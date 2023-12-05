@@ -278,10 +278,7 @@ namespace Yoma.Core.Domain.Entity.Services
                 //assign admins
                 var admins = request.AdminEmails ??= new List<string>();
                 if (request.AddCurrentUserAsAdmin)
-                {
-                    var username = HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false);
-                    admins.Add(username);
-                }
+                    admins.Add(user.Email);
                 else if (HttpContextAccessorHelper.IsUserRoleOnly(_httpContextAccessor))
                     throw new ValidationException($"The registering user must be added as an organization admin by default ('{nameof(request.AddCurrentUserAsAdmin)}' must be true).");
                 result = await AssignAdmins(result, admins, OrganizationReapprovalAction.None);
@@ -344,7 +341,7 @@ namespace Yoma.Core.Domain.Entity.Services
             if (existingByName != null && result.Id != existingByName.Id)
                 throw new ValidationException($"{nameof(Organization)} with the specified name '{request.Name}' already exists");
 
-            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false), false, false);
+            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, !ensureOrganizationAuthorization), false, false);
 
             result.Name = request.Name;
             result.WebsiteURL = request.WebsiteURL;
@@ -384,16 +381,12 @@ namespace Yoma.Core.Domain.Entity.Services
                     var resultLogo = await UpdateLogo(result, request.Logo, OrganizationReapprovalAction.None);
                     result = resultLogo.Organization;
                     itemsAdded.Add(resultLogo.ItemAdded);
-                    if (resultLogo.ItemDeleted != null) itemsDeleted.Add(resultLogo.ItemDeleted.Value);
                 }
 
                 //admins
                 var admins = request.AdminEmails ??= new List<string>();
                 if (request.AddCurrentUserAsAdmin)
-                {
-                    var username = HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false);
-                    admins.Add(username);
-                }
+                    admins.Add(user.Email);
                 result = await RemoveAdmins(result, result.Administrators?.Where(o => !admins.Contains(o.Email)).Select(o => o.Email).ToList(), OrganizationReapprovalAction.None);
                 result = await AssignAdmins(result, admins, OrganizationReapprovalAction.None);
 
@@ -484,7 +477,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
             var result = GetById(id, true, true, ensureOrganizationAuthorization);
 
-            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false), false, false);
+            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, !ensureOrganizationAuthorization), false, false);
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
 
@@ -569,7 +562,7 @@ namespace Yoma.Core.Domain.Entity.Services
             if (isProviderTypeMarketplace && (result.Documents == null || !result.Documents.Where(o => o.Type == OrganizationDocumentType.Business).Any()))
                 throw new ValidationException($"Business documents are required. Add the required documents before assigning the provider type");
 
-            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false), false, false);
+            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, !ensureOrganizationAuthorization), false, false);
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             result = await AssignProviderTypes(result, providerTypeIds, OrganizationReapprovalAction.ReapprovalWithEmail);
@@ -592,7 +585,7 @@ namespace Yoma.Core.Domain.Entity.Services
             if (result.ProviderTypes == null || result.ProviderTypes.All(o => providerTypeIds.Contains(o.Id)))
                 throw new ValidationException("One or more provider types are required. Removal will result in no associated provider types");
 
-            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false), false, false);
+            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, !ensureOrganizationAuthorization), false, false);
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             result = await RemoveProviderTypes(result, providerTypeIds, OrganizationReapprovalAction.ReapprovalWithEmail);
@@ -603,14 +596,13 @@ namespace Yoma.Core.Domain.Entity.Services
             return result;
         }
 
-        //TODO: Ensure file name remains the same; utilize organization id
         public async Task<Organization> UpdateLogo(Guid id, IFormFile? file, bool ensureOrganizationAuthorization)
         {
             var result = GetById(id, true, true, ensureOrganizationAuthorization);
 
             ValidateUpdatable(result);
 
-            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, true), false, false);
+            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, !ensureOrganizationAuthorization), false, false);
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             var resultLogo = await UpdateLogo(result, file, OrganizationReapprovalAction.ReapprovalWithEmail);
@@ -627,7 +619,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
             ValidateUpdatable(result);
 
-            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, true), false, false);
+            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, !ensureOrganizationAuthorization), false, false);
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             var resultDocuments = await AddDocuments(result, type, documents, OrganizationReapprovalAction.ReapprovalWithEmail);
@@ -655,7 +647,7 @@ namespace Yoma.Core.Domain.Entity.Services
             if (isProviderTypeMarketplace && (result.Documents == null || result.Documents.Where(o => o.Type == OrganizationDocumentType.Business).All(o => documentFileIds.Contains(o.FileId))))
                 throw new ValidationException($"Business documents are required. Removal will result in no associated documents");
 
-            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false), false, false);
+            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, !ensureOrganizationAuthorization), false, false);
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             var resultDelete = await DeleteDocuments(result, type, documentFileIds, OrganizationReapprovalAction.ReapprovalWithEmail);
@@ -672,7 +664,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
             ValidateUpdatable(result);
 
-            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false), false, false);
+            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, !ensureOrganizationAuthorization), false, false);
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             result = await AssignAdmins(result, emails, OrganizationReapprovalAction.ReapprovalWithEmail);
@@ -692,7 +684,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
             ValidateUpdatable(result);
 
-            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false), false, false);
+            var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, !ensureOrganizationAuthorization), false, false);
 
             using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
             result = await RemoveAdmins(result, emails, OrganizationReapprovalAction.ReapprovalWithEmail);
@@ -819,15 +811,13 @@ namespace Yoma.Core.Domain.Entity.Services
             return organization;
         }
 
-        private async Task<(Organization Organization, BlobObject ItemAdded, (Guid Id, IFormFile File)? ItemDeleted)> UpdateLogo(
+        private async Task<(Organization Organization, BlobObject ItemAdded)> UpdateLogo(
             Organization organization, IFormFile? file, OrganizationReapprovalAction reapprovalAction)
         {
             if (file == null)
                 throw new ArgumentNullException(nameof(file));
 
-            (Guid Id, IFormFile File)? currentLogo = null;
-            if (organization.LogoId.HasValue)
-                currentLogo = (organization.LogoId.Value, await _blobService.Download(organization.LogoId.Value));
+            var currentLogoId = organization.LogoId;
 
             BlobObject? blobObject = null;
             try
@@ -837,8 +827,8 @@ namespace Yoma.Core.Domain.Entity.Services
                 organization.LogoId = blobObject.Id;
                 organization = await _organizationRepository.Update(organization);
 
-                if (currentLogo != null)
-                    await _blobService.Delete(currentLogo.Value.Id);
+                if (currentLogoId.HasValue)
+                    await _blobService.Archive(currentLogoId.Value, blobObject); //preserve / archive previous logo as they might be referenced in credentials
 
                 organization = await SendForReapproval(organization, reapprovalAction, OrganizationStatus.Declined);
 
@@ -849,15 +839,12 @@ namespace Yoma.Core.Domain.Entity.Services
                 if (blobObject != null)
                     await _blobService.Delete(blobObject);
 
-                if (currentLogo != null)
-                    await _blobService.Create(currentLogo.Value.Id, currentLogo.Value.File);
-
                 throw;
             }
 
             organization.LogoURL = GetBlobObjectURL(organization.LogoId);
 
-            return (organization, blobObject, currentLogo);
+            return (organization, blobObject);
         }
 
         private async Task<Organization> AssignAdmins(Organization organization, List<string> emails, OrganizationReapprovalAction reapprovalAction)
