@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections;
-using Yoma.Core.Domain.Core.Helpers;
 using Yoma.Core.Domain.Core.Models;
 using Yoma.Core.Domain.Entity;
 using Yoma.Core.Domain.Entity.Interfaces;
@@ -116,6 +115,7 @@ namespace Yoma.Core.Domain.SSI.Services
 
                                     request = new TenantRequest
                                     {
+                                        // utilize user id, ensuring a consistent tenant reference or name even if the name is altered
                                         Referent = user.Id.ToString(),
                                         Name = user.DisplayName,
                                         ImageUrl = user.PhotoURL,
@@ -131,8 +131,9 @@ namespace Yoma.Core.Domain.SSI.Services
 
                                     request = new TenantRequest
                                     {
-                                        //TODO compute hash of name upon creation and store in db; ensuring hash remains the same even if the organization name is changed later
-                                        Referent = HashHelper.ComputeSHA256Hash(org.Name), //use hash value of the name; these are published to the trust registry and both the name and label must be unique
+                                        // utilize a hash value generated from the name upon creation, ensuring a consistent tenant reference or name even if the name is altered
+                                        // these values are published to the trust registry, requiring uniqueness for both the name and its corresponding label
+                                        Referent = org.NameHashValue,
                                         Name = org.Name,
                                         ImageUrl = org.LogoURL,
                                         Roles = new List<Role> { Role.Holder, Role.Issuer, Role.Verifier }
