@@ -3,7 +3,7 @@ import { useMemo } from "react";
 interface InputProps {
   [key: string]: any;
   currentPage: number;
-  totalItems: number;
+  totalItems: number | null;
   pageSize: number;
   showPages?: boolean;
   showInfo?: boolean;
@@ -37,13 +37,6 @@ export const PaginationButtons: React.FC<InputProps> = ({
     return result;
   }, [totalPages]);
 
-  // const startRow = useMemo(() => {
-  //   if (!currentPage) return 1;
-
-  //   const numPage = parseInt(currentPage.toString());
-  //   return (numPage - 1) * pageSize + 1;
-  // }, [currentPage, pageSize]);
-
   const handlePagerChange = (
     event: React.ChangeEvent<unknown>,
     value: number,
@@ -54,14 +47,13 @@ export const PaginationButtons: React.FC<InputProps> = ({
   return (
     <>
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex w-full items-center justify-center gap-2">
           {/* PREVIOUS BUTTON */}
           {!(currentPage > 1 && totalPages >= currentPage) && (
             <button
               key={`PaginationItem_Prev`}
               type="button"
               className="btn btn-square btn-primary btn-sm border-0 bg-white text-black hover:bg-gray"
-              style={{ borderWidth: "0px" }}
               disabled
             >
               «
@@ -78,7 +70,7 @@ export const PaginationButtons: React.FC<InputProps> = ({
             </button>
           )}
 
-          {/* page buttons */}
+          {/* PAGER BUTTONS */}
           {showPages &&
             currentPages.map((pageNumber, index) => {
               return (
@@ -106,7 +98,7 @@ export const PaginationButtons: React.FC<InputProps> = ({
               );
             })}
 
-          {/* info */}
+          {/* INFO */}
           {showInfo && (
             <div className="text-sm font-bold">
               {currentPage} of {totalPages}

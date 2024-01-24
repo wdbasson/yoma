@@ -5,7 +5,8 @@ import type {
   StoreCategory,
   StoreSearchFilter,
   StoreSearchResults,
-  StoreItemCategory,
+  StoreItemCategorySearchFilter,
+  StoreItemCategorySearchResults,
   StoreItemSearchFilter,
   StoreItemSearchResults,
 } from "../models/marketplace";
@@ -13,13 +14,25 @@ import type {
   WalletVoucherSearchFilter,
   WalletVoucherSearchResults,
 } from "../models/reward";
+import type { Country } from "../models/lookups";
 
-export const getStoreCategories = async (
+export const listSearchCriteriaCountries = async (
+  context?: GetServerSidePropsContext,
+): Promise<Country[]> => {
+  const instance = context ? ApiServer(context) : await ApiClient;
+  const { data } = await instance.get<Country[]>(
+    "/marketplace/store/search/filter/country",
+  );
+  return data;
+};
+
+export const listStoreCategories = async (
+  countryCodeAlpha2: string,
   context?: GetServerSidePropsContext,
 ): Promise<StoreCategory[]> => {
   const instance = context ? ApiServer(context) : await ApiClient;
   const { data } = await instance.get<StoreCategory[]>(
-    "/marketplace/store/category",
+    `/marketplace/store/${countryCodeAlpha2}/category`,
   );
   return data;
 };
@@ -38,13 +51,14 @@ export const searchStores = async (
   return data;
 };
 
-export const getStoreItemCategories = async (
-  storeId: string,
+export const searchStoreItemCategories = async (
+  filter: StoreItemCategorySearchFilter,
   context?: GetServerSidePropsContext,
-): Promise<StoreItemCategory[]> => {
+): Promise<StoreItemCategorySearchResults> => {
   const instance = context ? ApiServer(context) : await ApiClient;
-  const { data } = await instance.get<StoreItemCategory[]>(
-    `/marketplace/store/${storeId}/category/item`,
+  const { data } = await instance.post<StoreItemCategorySearchResults>(
+    `/marketplace/store/item/category/search`,
+    filter,
   );
   return data;
 };
@@ -73,4 +87,15 @@ export const searchVouchers = async (
     filter,
   );
   return data;
+};
+
+export const buyItem = async (
+  storeId: string,
+  itemCategoryId: string,
+  context?: GetServerSidePropsContext,
+): Promise<void> => {
+  const instance = context ? ApiServer(context) : await ApiClient;
+  await instance.post(
+    `marketplace/store/${storeId}/item/category/${itemCategoryId}/buy`,
+  );
 };
