@@ -71,6 +71,10 @@ const LanguageSwitcher = () => {
     // We just need to set the related cookie and reload the page
     // "/auto/" prefix is Google's definition as far as a cookie name
     setCookie(null, COOKIE_NAME, "/auto/" + lang);
+    setCookie(null, COOKIE_NAME, "/auto/" + lang, {
+      domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN,
+    });
+
     window.location.reload();
   };
 

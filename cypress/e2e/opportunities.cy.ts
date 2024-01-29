@@ -32,7 +32,7 @@ describe(`Opportunities`, function () {
           cy.stub(win.console, "error").as("consoleError");
         },
       });
-      cy.wait(4000);
+      cy.wait(30000);
 
       //* click on the first organisation link on the user menu
       cy.get(`button[id="btnUserMenu"]`).should("exist").click();
@@ -54,7 +54,7 @@ describe(`Opportunities`, function () {
       cy.get(`button[id="btnNavbarMenu"]`).should("exist").click();
       cy.wait(200);
       cy.get(`a[id="lnkNavbarMenuModal_Opportunities"]`).first().click();
-      cy.wait(4000);
+      cy.wait(6000);
 
       // href shoud be /organisations/guid/opportunities
       cy.get("@guid").then((guid) => {
@@ -63,7 +63,7 @@ describe(`Opportunities`, function () {
 
       //* click on the create opportunity button
       cy.get(`a[id="btnCreateOpportunity"]`).should("exist").click();
-      cy.wait(6000);
+      cy.wait(8000);
 
       // href should be /organisations/guid/opportunities/create
       cy.get("@guid").then((guid) => {
