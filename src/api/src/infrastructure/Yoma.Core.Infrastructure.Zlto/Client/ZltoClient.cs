@@ -259,7 +259,7 @@ namespace Yoma.Core.Infrastructure.Zlto.Client
                 Summary = o.ItemCatDetails,
                 ImageURL = string.Equals(o.ItemCatImage, Image_Default_Empty_Value, StringComparison.InvariantCultureIgnoreCase) ? null : o.ItemCatImage,
                 //o.StoreItemCount: internal count the does not reflect the available item count correctly
-                Count = ListStoreItems(storeId, o.ItemCategoryId.ToString(), null, null).Result.Count(),
+                Count = ListStoreItems(storeId, o.ItemCategoryId.ToString(), null, null).Result.Count,
                 Amount = o.ItemCatZlto
 
             }).OrderBy(o => o.Name).ToList();
@@ -420,7 +420,7 @@ namespace Yoma.Core.Infrastructure.Zlto.Client
 
         private async Task<KeyValuePair<string, string>> GetAuthHeaderToken()
         {
-            if (_accessToken != null && _accessToken.DateExpire > DateTimeOffset.Now)
+            if (_accessToken != null && _accessToken.DateExpire > DateTimeOffset.UtcNow)
                 return new KeyValuePair<string, string>(Header_Authorization, $"{Header_Authorization_Value_Prefix} {_accessToken.AccessToken}");
 
             var request = new PartnerRequestLogin
@@ -444,7 +444,7 @@ namespace Yoma.Core.Infrastructure.Zlto.Client
                 AccessToken = response.AccessToken,
                 PartnerId = response.AccountInfo.PartnerId,
                 PartnerName = response.AccountInfo.PartnerName.ToLower(),
-                DateExpire = DateTimeOffset.Now.AddHours(_options.PartnerTokenExpirationIntervalInHours)
+                DateExpire = DateTimeOffset.UtcNow.AddHours(_options.PartnerTokenExpirationIntervalInHours)
             };
 
             return new KeyValuePair<string, string>(Header_Authorization, $"{Header_Authorization_Value_Prefix} {response.AccessToken}");
