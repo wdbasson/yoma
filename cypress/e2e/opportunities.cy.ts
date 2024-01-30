@@ -32,12 +32,12 @@ declare global {
 //           cy.stub(win.console, "error").as("consoleError");
 //         },
 //       });
-//       cy.wait(30000);
+//       cy.wait(10000);
 
 //       //* click on the first organisation link on the user menu
 //       cy.get(`button[id="btnUserMenu"]`).should("exist").click();
 //       cy.get(`#organisations a`).first().click();
-//       cy.wait(5000);
+//       cy.wait(10000);
 
 //       // href should end with /organisations/guid
 //       cy.location("href").then((href) => {
@@ -63,7 +63,7 @@ declare global {
 
 //       //* click on the create opportunity button
 //       cy.get(`a[id="btnCreateOpportunity"]`).should("exist").click();
-//       cy.wait(8000);
+//       cy.wait(10000);
 
 //       // href should be /organisations/guid/opportunities/create
 //       cy.get("@guid").then((guid) => {
