@@ -14,7 +14,7 @@ ingress:
 
 env:
   ASPNETCORE_ENVIRONMENT: "Development"
-  ConnectionStrings__SQLConnection: "Data Source=mssql-mssqlserver-2022,1433;Initial Catalog=yoma-dev;MultipleActiveResultSets=true;User ID=sa;Password=Password1;TrustServerCertificate=True;Encrypt=True"
+  # ConnectionStrings__SQLConnection: "Host=postgres-yoma;Port=5432;Database=yoma-dev;Username=postgres;Password=P@ssword1;SslMode=Prefer;Trust Server Certificate=True;Include Error Detail=true;"
 
 appSettings:
   fileName: appsettings.Development.json
@@ -29,23 +29,41 @@ volumeMounts:
     mountPath: /api/appsettings.Development.json
     subPath: appsettings.Development.json
 
+initContainers:
+  - name: check-postgres
+    image: postgres:latest
+    imagePullPolicy: IfNotPresent
+    command:
+      - sh
+    args:
+      - -c
+      - |-
+        until pg_isready; do
+          echo "Waiting for PostgreSQL..."
+          sleep 2
+        done
+        echo "PostgreSQL is up and running."
+    env:
+      - name: PGHOST
+        value: &databaseName postgres-yoma
+
 postInstallHook:
   enabled: true
   image:
-    repository: ghcr.io/didx-xyz/mssql-server
+    repository: postgres
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: 2022-latest
+    tag: "16"
   command:
     - /bin/bash
-    - /init/post.sh
-    - mssql-mssqlserver-2022
-    - sa
-    - /init/post.sql
+    - -c
+    - "/init/post.sh /init/post.sql"
   env:
-    ACCEPT_EULA: "Y"
-    SA_PASSWORD: "Password1"
-    SQLCMDPASSWORD: "Password1"
+    PGHOST: *databaseName
+    PGPASSWORD: P@ssword1
+    PGUSER: yoma
+    PGDATABASE: yoma-dev
+    PGPORT: "5432"
   nodeSelector:
     kubernetes.io/arch: amd64
 
@@ -70,15 +88,18 @@ postInstallHook:
           wget -O - \
             --header="Authorization: token ${GITHUB_PAT}"\
             --header="Accept:application/vnd.github.v3.raw" \
-            https://api.github.com/repos/didx-xyz/yoma/tarball/master | tar xz
-          cp -v ./didx-xyz-yoma-*/src/api/cicd/scripts/sqlserver-init/* /init/
-          rm -rf ./didx-xyz-yoma-*
+            https://api.github.com/repos/didx-xyz/yoma/tarball/${GIT_REF} | tar xz
+          cp -v ./didx-xyz-yoma-*/src/api/cicd/scripts/postgressql-init/* /init/
+          chmod +x /init/post.sh
+          rm -rvf ./didx-xyz-yoma-*
       env:
         - name: GITHUB_PAT
           valueFrom:
             secretKeyRef:
               name: keycloak-github-pat
               key: github-pat
+        - name: GIT_REF
+          value: "master"
       volumeMounts:
         - name: init
           mountPath: /init
