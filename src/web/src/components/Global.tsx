@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 import { getOrganisationById } from "~/api/services/organisations";
 import { getUserProfile, patchYoIDOnboarding } from "~/api/services/user";
 import {
-  GA_ACTION_USER_LOGIN_AFTER,
   GA_ACTION_USER_YOIDONBOARDINGCONFIRMED,
   GA_CATEGORY_USER,
   ROLE_ADMIN,
@@ -52,28 +51,31 @@ export const Global: React.FC = () => {
 
   // 🔔 USER PROFILE
   useEffect(() => {
+    //TODO: disabled for now. need to fix issue with GA login event beging tracked twice
     // skip if not logged in or userProfile atom already set (atomWithStorage)
-    if (!session || userProfile) return;
+    //if (!session || userProfile) return;
 
-    getUserProfile()
-      .then((res) => {
-        // update atom
-        setUserProfile(res);
+    if (!userProfile) {
+      getUserProfile()
+        .then((res) => {
+          // update atom
+          setUserProfile(res);
 
-        // 📊 GOOGLE ANALYTICS: track event
-        trackGAEvent(
-          GA_CATEGORY_USER,
-          GA_ACTION_USER_LOGIN_AFTER,
-          "User logged in",
-        );
+          // 📊 GOOGLE ANALYTICS: track event
+          // trackGAEvent(
+          //   GA_CATEGORY_USER,
+          //   GA_ACTION_USER_LOGIN_AFTER,
+          //   "User logged in",
+          // );
 
-        // show onboarding dialog if not onboarded
-        if (!res.yoIDOnboarded) {
-          setOnboardingDialogVisible(true);
-        }
-      })
-      .catch((e) => console.error(e));
-  }, [session, userProfile, setUserProfile, setOnboardingDialogVisible]);
+          // show onboarding dialog if not onboarded
+          if (!res.yoIDOnboarded) {
+            setOnboardingDialogVisible(true);
+          }
+        })
+        .catch((e) => console.error(e));
+    }
+  }, [/*session,*/ userProfile, setUserProfile, setOnboardingDialogVisible]);
 
   // 🔔 SMALL DISPLAY
   // track the screen size for responsive elements
