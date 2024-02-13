@@ -54,7 +54,7 @@ import { InternalServerError } from "~/components/Status/InternalServerError";
 import axios from "axios";
 import { LoadingInline } from "~/components/Status/LoadingInline";
 import {
-  DATETIME_FORMAT_HUMAN,
+  DATE_FORMAT_HUMAN,
   GA_ACTION_OPPORTUNITY_COMPLETED,
   GA_ACTION_OPPORTUNITY_FOLLOWEXTERNAL,
   GA_ACTION_USER_LOGIN_BEFORE,
@@ -64,6 +64,7 @@ import {
 import Moment from "react-moment";
 import { config } from "~/lib/react-query-config";
 import { trackGAEvent } from "~/lib/google-analytics";
+import { RoundedImage } from "~/components/RoundedImage";
 
 interface IParams extends ParsedUrlQuery {
   id: string;
@@ -297,7 +298,6 @@ const OpportunityDetails: NextPageWithLayout<{
                   </ul>
                 </div>
               </div>
-
               {/* LOGIN DIALOG */}
               <ReactModal
                 isOpen={loginDialogVisible}
@@ -373,7 +373,6 @@ const OpportunityDetails: NextPageWithLayout<{
                   </div>
                 </div>
               </ReactModal>
-
               {/* GO-TO OPPORTUNITY DIALOG */}
               <ReactModal
                 isOpen={gotoOpportunityDialogVisible}
@@ -462,7 +461,6 @@ const OpportunityDetails: NextPageWithLayout<{
                   </div>
                 </div>
               </ReactModal>
-
               {/* UPLOAD/COMPLETE OPPORTUNITY DIALOG */}
               <ReactModal
                 isOpen={completeOpportunityDialogVisible}
@@ -483,7 +481,6 @@ const OpportunityDetails: NextPageWithLayout<{
                   onSave={onOpportunityCompleted}
                 />
               </ReactModal>
-
               {/* COMPLETE SUCCESS DIALOG */}
               <ReactModal
                 isOpen={completeOpportunitySuccessDialogVisible}
@@ -653,7 +650,7 @@ const OpportunityDetails: NextPageWithLayout<{
                                     Starts:
                                   </span>
                                   <span className="text-xs tracking-widest text-black">
-                                    <Moment format={DATETIME_FORMAT_HUMAN}>
+                                    <Moment format={DATE_FORMAT_HUMAN}>
                                       {new Date(opportunity.dateStart)}
                                     </Moment>
                                   </span>
@@ -665,7 +662,7 @@ const OpportunityDetails: NextPageWithLayout<{
                                 <>
                                   <span className="mr-2 font-bold">Ends:</span>
                                   <span className="text-xs tracking-widest text-black">
-                                    <Moment format={DATETIME_FORMAT_HUMAN}>
+                                    <Moment format={DATE_FORMAT_HUMAN}>
                                       {new Date(opportunity.dateEnd)}
                                     </Moment>
                                   </span>
@@ -833,21 +830,14 @@ const OpportunityDetails: NextPageWithLayout<{
                         </div>
                       </div>
                     </div>
-                    {/* company logo */}
-                    <div className="absolute right-6 top-4 h-16 w-16 items-center justify-center rounded-full border-green-dark bg-white p-3 shadow-lg">
-                      <Image
-                        src={opportunity?.organizationLogoURL ?? iconSuccess}
-                        alt="Icon Success"
-                        width={40}
-                        height={40}
-                        sizes="100vw"
-                        priority={true}
-                        style={{
-                          width: "40px",
-                          height: "40px",
-                        }}
-                      />
-                    </div>
+
+                    {/* COMPANY LOGO */}
+                    <RoundedImage
+                      icon={opportunity?.organizationLogoURL ?? iconSuccess}
+                      alt="Company Logo"
+                      imageWidth={60}
+                      imageHeight={60}
+                    />
                   </div>
 
                   <div className="flex flex-col gap-4 md:flex-row">

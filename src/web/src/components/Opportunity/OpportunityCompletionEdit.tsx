@@ -54,8 +54,8 @@ export const OpportunityCompletionEdit: React.FC<InputProps> = ({
       picture: z.any().optional(),
       voiceNote: z.any().optional(),
       geometry: z.any().optional(),
-      dateStart: z.union([z.null(), z.string(), z.date()]).optional(),
-      dateEnd: z.union([z.string(), z.date(), z.null()]).optional(),
+      dateStart: z.union([z.null(), z.string()]).optional(),
+      dateEnd: z.union([z.string(), z.null()]).optional(),
     })
     .superRefine((values, ctx) => {
       if (
@@ -184,38 +184,17 @@ export const OpportunityCompletionEdit: React.FC<InputProps> = ({
         return;
       }
 
-      // add the current time to date start and date end
-      const dateStartWithCurrentTime = data.dateStart
-        ? new Date(
-            new Date(data.dateStart).setHours(
-              new Date().getHours(),
-              new Date().getMinutes(),
-              new Date().getSeconds(),
-            ),
-          ).toISOString()
-        : null;
-      const dateEndWithCurrentTime = data.dateEnd
-        ? new Date(
-            new Date(data.dateEnd).setHours(
-              new Date().getHours(),
-              new Date().getMinutes(),
-              new Date().getSeconds(),
-            ),
-          ).toISOString()
-        : null;
-
       /* eslint-disable @typescript-eslint/no-unsafe-argument */
       const request: MyOpportunityRequestVerify = {
         certificate: data.certificate,
         picture: data.picture,
         voiceNote: data.voiceNote,
         geometry: data.geometry,
-        dateStart: dateStartWithCurrentTime,
-        dateEnd: dateEndWithCurrentTime,
+        dateStart: data.dateStart ? data.dateStart : null,
+        dateEnd: data.dateEnd ? data.dateEnd : null,
       };
 
       setIsLoading(true);
-
       /* eslint-enable @typescript-eslint/no-unsafe-argument */
 
       performActionSendForVerificationManual(opportunityInfo.id, request)
