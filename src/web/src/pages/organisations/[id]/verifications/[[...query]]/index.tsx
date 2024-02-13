@@ -883,7 +883,7 @@ const OpportunityVerifications: NextPageWithLayout<{
                       </td>
                       <td>
                         {item.dateStart && (
-                          <Moment format={DATETIME_FORMAT_HUMAN}>
+                          <Moment format={DATETIME_FORMAT_HUMAN} utc={true}>
                             {item.dateStart}
                           </Moment>
                         )}

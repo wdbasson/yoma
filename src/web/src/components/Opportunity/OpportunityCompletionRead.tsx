@@ -230,16 +230,20 @@ export const OpportunityCompletionRead: React.FC<InputProps> = ({
       {data?.dateStart && (
         <div className="flex flex-row gap-2 text-sm text-gray-dark md:h-3">
           <div>Started opportunity at: </div>
-          <div className="font-semibold">
-            <Moment format={DATETIME_FORMAT_HUMAN}>{data.dateStart}</Moment>
+          <div className="font-bold">
+            <Moment format={DATETIME_FORMAT_HUMAN} utc={true}>
+              {data.dateStart}
+            </Moment>
           </div>
         </div>
       )}
       {data?.dateEnd && (
         <div className="flex flex-row gap-2 text-sm text-gray-dark">
           <div>Finished opportunity at: </div>
-          <div className="font-semibold">
-            <Moment format={DATETIME_FORMAT_HUMAN}>{data.dateEnd}</Moment>
+          <div className="font-bold">
+            <Moment format={DATETIME_FORMAT_HUMAN} utc={true}>
+              {data.dateEnd}
+            </Moment>
           </div>
         </div>
       )}
