@@ -1328,19 +1328,20 @@ const OpportunityDetails: NextPageWithLayout<{
                           onBlur={(e) => {
                             // default pool to limit & reward
                             const participantLimit = parseInt(e.target.value);
-                            const yomaReward = getValuesStep3("yomaReward");
+                            // NB: yoma rewards has been disabled temporarily
+                            //const yomaReward = getValuesStep3("yomaReward");
                             const zltoReward = getValuesStep3("zltoReward");
 
                             if (participantLimit !== null) {
-                              if (
-                                yomaReward !== null &&
-                                yomaReward !== undefined &&
-                                !isNaN(yomaReward)
-                              )
-                                setValueStep3(
-                                  "yomaRewardPool",
-                                  participantLimit * yomaReward,
-                                );
+                              // if (
+                              //   yomaReward !== null &&
+                              //   yomaReward !== undefined &&
+                              //   !isNaN(yomaReward)
+                              // )
+                              //   setValueStep3(
+                              //     "yomaRewardPool",
+                              //     participantLimit * yomaReward,
+                              //   );
 
                               if (
                                 zltoReward !== null &&
@@ -1403,7 +1404,8 @@ const OpportunityDetails: NextPageWithLayout<{
                       onSubmitStep(4, data),
                     )}
                   >
-                    <div className="grid grid-cols-2 gap-2">
+                    {/* NB: yoma rewards has been disabled temporarily */}
+                    {/* <div className="grid grid-cols-2 gap-2">
                       <div className="form-control">
                         <label className="label">
                           <span className="label-text">Yoma Reward</span>
@@ -1486,8 +1488,7 @@ const OpportunityDetails: NextPageWithLayout<{
                           </label>
                         )}
                       </div>
-                    </div>
-
+                    </div> */}
                     <div className="grid grid-cols-2 gap-2">
                       <div className="form-control">
                         <label className="label">
@@ -1572,9 +1573,7 @@ const OpportunityDetails: NextPageWithLayout<{
                         )}
                       </div>
                     </div>
-
                     <h6 className="font-bold">Skills</h6>
-
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text">
@@ -1614,7 +1613,6 @@ const OpportunityDetails: NextPageWithLayout<{
                         </label>
                       )}
                     </div>
-
                     {/* BUTTONS */}
                     <div className="my-4 flex items-center justify-center gap-2">
                       {opportunityId === "create" && (
@@ -1735,8 +1733,9 @@ const OpportunityDetails: NextPageWithLayout<{
                         name="verificationEnabled"
                         render={({ field: { onChange, value } }) => (
                           <>
-                            {/* automatic */}
-                            <label
+                            {/* AUTOMATIC */}
+                            {/* NB: automatic verification has been disabled temporarily */}
+                            {/* <label
                               htmlFor="verificationEnabledAutomatic"
                               className="label cursor-pointer justify-normal"
                             >
@@ -1762,8 +1761,9 @@ const OpportunityDetails: NextPageWithLayout<{
                               <span className="label-text ml-4">
                                 Youth verification happens automatically
                               </span>
-                            </label>
-                            {/* manual */}
+                            </label> */}
+
+                            {/* MANUAL */}
                             <label
                               htmlFor="verificationEnabledManual"
                               className="label cursor-pointer justify-normal"
@@ -1791,7 +1791,8 @@ const OpportunityDetails: NextPageWithLayout<{
                                 Youth should upload proof of completion
                               </span>
                             </label>
-                            {/* not required */}
+
+                            {/* NOT REQUIRED */}
                             <label
                               htmlFor="verificationEnabledNo"
                               className="label cursor-pointer justify-normal"
@@ -2345,8 +2346,8 @@ const OpportunityDetails: NextPageWithLayout<{
                         </label>
                       )}
                     </div>
-
-                    <div className="form-control">
+                    {/* NB: yoma rewards has been disabled temporarily */}
+                    {/* <div className="form-control">
                       <label className="label">
                         <span className="label-text font-bold">
                           Yoma Reward
@@ -2380,7 +2381,7 @@ const OpportunityDetails: NextPageWithLayout<{
                           </span>
                         </label>
                       )}
-                    </div>
+                    </div> */}
 
                     <div className="form-control">
                       <label className="label">

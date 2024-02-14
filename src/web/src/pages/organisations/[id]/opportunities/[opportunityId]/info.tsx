@@ -20,14 +20,7 @@ import Link from "next/link";
 import { IoIosSettings, IoMdArrowRoundBack, IoMdPerson } from "react-icons/io";
 import type { NextPageWithLayout } from "~/pages/_app";
 import ReactModal from "react-modal";
-import {
-  FaArrowCircleUp,
-  FaClipboard,
-  FaClock,
-  FaLink,
-  FaPencilAlt,
-  FaTrash,
-} from "react-icons/fa";
+import { FaClipboard, FaClock, FaPencilAlt, FaTrash } from "react-icons/fa";
 import Image from "next/image";
 import iconClock from "public/images/icon-clock.svg";
 import iconDifficulty from "public/images/icon-difficulty.svg";
@@ -263,22 +256,22 @@ const OpportunityDetails: NextPageWithLayout<{
               )}
 
               {/* TODO */}
-              <Link
+              {/* <Link
                 href={`/organisations/${id}/opportunities/${opportunityId}/edit`}
                 className="flex flex-row items-center text-gray-dark hover:brightness-50"
               >
                 <FaArrowCircleUp className="mr-2 h-3 w-3" />
                 Short link
-              </Link>
+              </Link> */}
 
               {/* TODO */}
-              <Link
+              {/* <Link
                 href={`/organisations/${id}/opportunities/${opportunityId}/edit`}
                 className="flex flex-row items-center text-gray-dark hover:brightness-50"
               >
                 <FaLink className="mr-2 h-3 w-3" />
                 Generate magic link
-              </Link>
+              </Link> */}
 
               <div className="divider -m-2" />
 
