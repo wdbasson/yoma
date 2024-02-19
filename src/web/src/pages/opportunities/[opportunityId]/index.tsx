@@ -701,6 +701,7 @@ const OpportunityDetails: NextPageWithLayout<{
                               </span>
                             </div>
                           )}
+
                           {/* STATUS BADGES */}
                           {opportunity?.status == "Active" && (
                             <>
