@@ -144,8 +144,11 @@ export const Global: React.FC = () => {
       setActiveNavigationRoleViewAtom(RoleView.User);
     }
 
-    // override for registration page
-    if (router.asPath.startsWith("/organisations/register")) {
+    // override for organisations & registration page (no active organisation yet)
+    if (
+      router.asPath == "/organisations" ||
+      router.asPath.startsWith("/organisations/register")
+    ) {
       setActiveNavigationRoleViewAtom(RoleView.User);
     }
     //  if organisation page, change navbar links & company logo
@@ -170,9 +173,7 @@ export const Global: React.FC = () => {
             if (res.logoURL) setCurrentOrganisationLogoAtom(res.logoURL);
             else setCurrentOrganisationLogoAtom(null);
 
-            if (res.status !== "Active") {
-              setCurrentOrganisationInactiveAtom(true);
-            }
+            setCurrentOrganisationInactiveAtom(res.status !== "Active");
           });
         }
 
