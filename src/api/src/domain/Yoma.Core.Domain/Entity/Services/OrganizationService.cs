@@ -21,6 +21,7 @@ using Yoma.Core.Domain.IdentityProvider.Helpers;
 using Microsoft.Extensions.Logging;
 using Yoma.Core.Domain.SSI.Interfaces;
 using Yoma.Core.Domain.Core.Exceptions;
+using Yoma.Core.Domain.Core.Extensions;
 
 namespace Yoma.Core.Domain.Entity.Services
 {
@@ -221,6 +222,8 @@ namespace Yoma.Core.Domain.Entity.Services
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
+            request.WebsiteURL = request.WebsiteURL?.EnsureHttpsScheme();
+
             await _organizationCreateRequestValidator.ValidateAndThrowAsync(request);
 
             var existingByName = GetByNameOrNull(request.Name, false, false);
@@ -237,11 +240,11 @@ namespace Yoma.Core.Domain.Entity.Services
 
             var result = new Organization
             {
-                Name = request.Name,
+                Name = request.Name.NormalizeTrim(),
                 NameHashValue = nameHashValue,
-                WebsiteURL = request.WebsiteURL,
-                PrimaryContactName = request.PrimaryContactName,
-                PrimaryContactEmail = request.PrimaryContactEmail,
+                WebsiteURL = request.WebsiteURL?.ToLower(),
+                PrimaryContactName = request.PrimaryContactName?.TitleCase(),
+                PrimaryContactEmail = request.PrimaryContactEmail?.ToLower(),
                 PrimaryContactPhone = request.PrimaryContactPhone,
                 VATIN = request.VATIN,
                 TaxNumber = request.TaxNumber,
@@ -334,9 +337,15 @@ namespace Yoma.Core.Domain.Entity.Services
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
+            request.WebsiteURL = request.WebsiteURL?.EnsureHttpsScheme();
+
             await _organizationUpdateRequestValidator.ValidateAndThrowAsync(request);
 
             var result = GetById(request.Id, true, true, ensureOrganizationAuthorization);
+
+            if (string.Equals(result.Name, _appSettings.SSIIssuerNameYomaOrganization, StringComparison.InvariantCultureIgnoreCase)
+                && !string.Equals(result.Name, request.Name))
+                throw new ValidationException($"{nameof(Organization)} '{result.Name}' is a system organization and its name cannot be changed");
 
             var statusCurrent = result.Status;
 
@@ -352,10 +361,10 @@ namespace Yoma.Core.Domain.Entity.Services
 
             var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, !ensureOrganizationAuthorization), false, false);
 
-            result.Name = request.Name;
-            result.WebsiteURL = request.WebsiteURL;
-            result.PrimaryContactName = request.PrimaryContactName;
-            result.PrimaryContactEmail = request.PrimaryContactEmail;
+            result.Name = request.Name.NormalizeTrim();
+            result.WebsiteURL = request.WebsiteURL?.ToLower();
+            result.PrimaryContactName = request.PrimaryContactName?.TitleCase();
+            result.PrimaryContactEmail = request.PrimaryContactEmail?.ToLower();
             result.PrimaryContactPhone = request.PrimaryContactPhone;
             result.VATIN = request.VATIN;
             result.TaxNumber = request.TaxNumber;

@@ -662,6 +662,8 @@ namespace Yoma.Core.Domain.Opportunity.Services
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
+            request.URL = request.URL?.EnsureHttpsScheme();
+
             await _opportunityRequestValidatorCreate.ValidateAndThrowAsync(request);
 
             request.DateStart = request.DateStart.RemoveTime();
@@ -691,7 +693,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
 
             var result = new Models.Opportunity
             {
-                Title = request.Title,
+                Title = request.Title.NormalizeTrim(),
                 Description = request.Description,
                 TypeId = request.TypeId,
                 Type = _opportunityTypeService.GetById(request.TypeId).Name,
@@ -758,6 +760,8 @@ namespace Yoma.Core.Domain.Opportunity.Services
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
+            request.URL = request.URL?.EnsureHttpsScheme();
+
             await _opportunityRequestValidatorUpdate.ValidateAndThrowAsync(request);
 
             request.DateStart = request.DateStart.RemoveTime();
@@ -788,7 +792,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
                 result.StatusId = _opportunityStatusService.GetByName(Status.Expired.ToString()).Id;
             }
 
-            result.Title = request.Title;
+            result.Title = request.Title.NormalizeTrim();
             result.Description = request.Description;
             result.TypeId = request.TypeId;
             result.Type = _opportunityTypeService.GetById(request.TypeId).Name;
