@@ -1,6 +1,6 @@
 --!!!THIS SCRIPT IS DESIGNED TO BE APPLIED TO AN EMPTY EF MIGRATED DATABASE WITH NO POST.SQL SCRIPTS EXECUTED!!!--
 
---ensure 'Yoma (Youth Agency Marketplace)' organization exist and is active
+--ensure 'Yoma (Youth Agency Marketplace)' system organization exist and is active
 DO $$
 DECLARE
     org_name CONSTANT VARCHAR := 'Yoma (Youth Agency Marketplace)';
@@ -302,7 +302,43 @@ SELECT DISTINCT
 FROM 
     dbo.files f
 INNER JOIN 
-    dbo.organisations o ON f.id = o.logoid;
+    dbo.organisations o ON f.id = o.logoid
+INNER JOIN 
+    dbo.opportunities opp ON o.id = opp.organisationid; -- Ensure only organizations with opportunities are included
+   
+--Enity.Organization (ensure unique names)
+WITH MappedOrganisations AS (
+    SELECT DISTINCT
+        o.id,
+        o.name,
+        o.createdat
+    FROM
+        dbo.organisations o
+    INNER JOIN
+        dbo.opportunities opp ON o.id = opp.organisationid -- Ensure only organizations with opportunities are included
+),
+CleanedOrganisations AS (
+    SELECT
+        mo.id,
+        mo.name,
+        LOWER(remove_double_spacing(mo.name)) AS CleanName,
+        ROW_NUMBER() OVER (PARTITION BY LOWER(remove_double_spacing(mo.name)) ORDER BY mo.createdat) AS DupNum
+    FROM
+        MappedOrganisations mo -- Use the filtered list of organizations
+),
+NumberedDuplicates AS (
+    SELECT
+        id,
+        CASE
+            WHEN DupNum > 1 THEN CleanName || ' - ' || CAST(DupNum - 1 AS TEXT)
+            ELSE name -- Preserve original name if not a duplicate
+        END AS FinalName
+    FROM CleanedOrganisations
+)
+UPDATE dbo.organisations o
+SET name = nd.FinalName
+FROM NumberedDuplicates nd
+WHERE o.id = nd.id AND LOWER(nd.FinalName) <> LOWER(o.name);
    
 --Entity.Organization
 INSERT INTO "Entity"."Organization" (
@@ -333,7 +369,7 @@ INSERT INTO "Entity"."Organization" (
     "ModifiedByUserId"
 )
 SELECT
-    o.id,
+    DISTINCT(o.id),
     remove_double_spacing(o.name) AS "Name",
     ENCODE(DIGEST(remove_double_spacing(o.name), 'sha256'), 'hex') as "NameHashValue",
     LOWER(ensure_valid_http_url(url)) as "WebsiteURL",
@@ -389,7 +425,9 @@ SELECT
 		) AS "DateModified",
 	  (SELECT "Id" FROM "Entity"."User" WHERE "Email" = 'system@yoma.world') as "ModifiedByUserId"
 FROM 
-	dbo.organisations o;
+	dbo.organisations o
+JOIN
+    dbo.opportunities opp ON o.id = opp.organisationid; -- Ensure only organizations with opportunities are included
 
 --SSI.TenantCreation (pending for active organizations)
 INSERT INTO "SSI"."TenantCreation"(
@@ -433,11 +471,29 @@ SELECT
     (
         SELECT "Id"
         FROM "Entity"."OrganizationProviderType"
-        WHERE "Name" = 'Education' --default to Education for all existing organizations
+        WHERE "Name" = 'Education'
     ) AS "ProviderTypeId",
     o.createdat AS "DateCreated"
 FROM
-    dbo.organisations o;
+    dbo.organisations o
+WHERE
+    EXISTS (
+        -- Ensures the organization has at least one associated opportunity
+        SELECT 1
+        FROM dbo.opportunities opp 
+        WHERE opp.organisationid = o.id
+    )
+    AND NOT EXISTS (
+        -- Prevents adding duplicates based on OrganizationId and ProviderTypeId
+        SELECT 1
+        FROM "Entity"."OrganizationProviderTypes" opt
+        WHERE opt."OrganizationId" = o.Id
+        AND opt."ProviderTypeId" = (
+            SELECT "Id"
+            FROM "Entity"."OrganizationProviderType"
+            WHERE "Name" = 'Education'
+        )
+    );
 
 --Entity.OrganizationUsers (organization admins)
 INSERT INTO "Entity"."OrganizationUsers" (
@@ -459,6 +515,12 @@ WHERE
         SELECT 1
         FROM "Entity"."Organization" o
         WHERE o."Id" = u.organisationid
+        AND EXISTS (
+        	-- Ensures the organization has at least one mapped opportunity
+            SELECT 1
+            FROM dbo.opportunities opp
+            WHERE opp.organisationid = o."Id"   
+        )
     );
  
 --Entity.OrganizationUsers (organization admins for orphans >> system@yoma.world)
@@ -471,7 +533,7 @@ INSERT INTO "Entity"."OrganizationUsers" (
 SELECT
     gen_random_uuid(),
     o."Id" AS "OrganizationId",
-    (SELECT id FROM dbo.users WHERE email = 'system@yoma.world') AS "UserId",
+    (SELECT "Id" FROM "Entity"."User" WHERE "Email" = 'system@yoma.world') AS "UserId",
     CURRENT_TIMESTAMP
 FROM
     "Entity"."Organization" o
@@ -505,7 +567,9 @@ SELECT DISTINCT
 FROM 
     dbo.files f
 INNER JOIN 
-    dbo.organisations o ON f.id = o.companyregistrationid;
+    dbo.organisations o ON f.id = o.companyregistrationid
+JOIN
+    dbo.opportunities opp ON o.id = opp.organisationid; -- Ensure only organizations with opportunities are included   
    
 --Enity.OrganizationDocuments (registration documents)
 INSERT INTO "Entity"."OrganizationDocuments" (
@@ -516,8 +580,8 @@ INSERT INTO "Entity"."OrganizationDocuments" (
     "DateCreated"
 )
 SELECT
-    gen_random_uuid(), -- Generates a unique ID for each document
-    o."Id" AS "OrganizationId",
+    gen_random_uuid() AS "Id", -- Generates a unique ID for each document
+    o.id AS "OrganizationId",
     o.companyregistrationid AS "FileId",
     'Registration' AS "Type",
     o.createdat AS "DateCreated"
@@ -525,9 +589,16 @@ FROM
     dbo.organisations o
 WHERE 
     EXISTS (
+        -- Checks if the company registration ID corresponds to an existing Blob
         SELECT 1
         FROM "Object"."Blob" b
         WHERE b."Id" = o.companyregistrationid
+    )
+    AND EXISTS (
+        -- Ensures the organization has at least one mapped opportunity
+        SELECT 1
+        FROM dbo.opportunities opp
+        WHERE opp.organisationid = o.id
     );
    
 --TODO: Entity.UserSkillOrganizations (populaterd from completed 'my' opportunities)
@@ -535,6 +606,30 @@ WHERE
 /***END: User & Organizations***/
    
 /***BEGIN: Opportunities***/
+--Opportunity.Opportunity (ensure unique titles)
+WITH CleanedTitles AS (
+    SELECT
+        o.id,
+        o.title,
+        LOWER(remove_double_spacing(o.title)) AS CleanTitle,
+        ROW_NUMBER() OVER (PARTITION BY LOWER(remove_double_spacing(o.title)) ORDER BY o.createdat) AS DupNum
+    FROM
+        dbo.opportunities o
+),
+UpdatedTitles AS (
+    SELECT
+        id,
+        CASE
+            WHEN DupNum > 1 THEN CleanTitle || ' - ' || CAST(DupNum - 1 AS TEXT)
+            ELSE title -- Preserve original title if not a duplicate
+        END AS FinalTitle
+    FROM CleanedTitles
+)
+UPDATE dbo.opportunities o
+SET title = ut.FinalTitle
+FROM UpdatedTitles ut
+WHERE o.id = ut.id AND LOWER(o.title) <> LOWER(ut.FinalTitle);
+   
 --Opportunity.Opportunity
 INSERT INTO "Opportunity"."Opportunity" (
     "Id", 
@@ -583,7 +678,7 @@ SELECT
 	    END
 	) AS "TypeId",
     o.organisationid AS "OrganizationId",
-    NULL:varchar(500) AS "Summary",
+    NULL::varchar(500) AS "Summary",
     remove_double_spacing(o.instructions) AS "Instructions",
     LOWER(ensure_valid_http_url(opportunityurl)) AS "URL",
     CASE 
@@ -595,10 +690,10 @@ SELECT
 	    WHEN o.zltorewardpool IS NOT NULL THEN CAST(ABS(o.zltorewardpool) AS numeric(12,2))
     	ELSE NULL
 	END AS "ZltoRewardPool",
-	NULL::numberic(12,2) as "ZltoRewardCumulative", --set below (running totals)
-	NULL::numberic(8,2) AS "YomaReward",
-	NULL::numberic(12,2) AS "YomaRewardPool",
-	NULL::numberic(12,2) AS "YomaRewardCumulative",
+	NULL::numeric(12,2) as "ZltoRewardCumulative", --set below (running totals)
+	NULL::numeric(8,2) AS "YomaReward",
+	NULL::numeric(12,2) AS "YomaRewardPool",
+	NULL::numeric(12,2) AS "YomaRewardCumulative",
 	true AS "VerificationEnabled",
 	'Manual' as "VerificationMethod",
 	(SELECT "Id" FROM "Opportunity"."OpportunityDifficulty" WHERE "Name" = 
@@ -607,15 +702,17 @@ SELECT
         	WHEN lower(o.difficulty) = 'advanced' THEN 'Advanced'
         	WHEN o.difficulty IS NULL OR lower(o.difficulty) = 'alllevels' THEN 'Any Level'
         	WHEN lower(o.difficulty) = 'intermediate' THEN 'Intermediate'
+        	ELSE 'Any Level'
 	    END
 	) AS "DifficultyId",
 	(SELECT "Id" FROM "Lookup"."TimeInterval" WHERE "Name" = 
 	    CASE
-    	    WHEN lower(o.commitmentInterval) = 'week' THEN 'Week'
-        	WHEN lower(o.commitmentInterval) = 'day' THEN 'Day'
-	        WHEN lower(o.commitmentInterval) = 'hour' THEN 'Hour'
-    	    WHEN o.commitmentInterval = '1' THEN 'Day'
-	        WHEN lower(o.commitmentInterval) = 'month' THEN 'Month'
+    	    WHEN lower(o.timeperiod) = 'week' THEN 'Week'
+        	WHEN lower(o.timeperiod) = 'day' THEN 'Day'
+	        WHEN lower(o.timeperiod) = 'hour' THEN 'Hour'
+    	    WHEN o.timeperiod = '1' THEN 'Day'
+	        WHEN lower(o.timeperiod) = 'month' THEN 'Month'
+	        ELSE 'Day'
 	    END
 	) AS "CommitmentIntervalId",
 	COALESCE(o.timevalue, 1)::int2 AS "CommitmentIntervalCount",
@@ -624,32 +721,46 @@ SELECT
 	    ELSE NULL
 	END AS "ParticipantLimit",
 	NULL::int4 as "ParticipantCount", --set below (running totals)
-	
-
-
+	(SELECT "Id" FROM "Opportunity"."OpportunityStatus" WHERE "Name" = 
+       CASE
+           WHEN o.deletedat IS NOT NULL THEN 'Deleted'
+           WHEN o.enddate IS NULL OR o.enddate > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') THEN 'Active'
+           WHEN o.enddate IS NOT NULL AND o.enddate <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') THEN 'Expired'
+           ELSE 'Inactive'
+       END
+    ) AS "StatusId",
+    NULL::varchar(500) AS "Keywords",
+    o.startdate AS "DateStart",
+    o.enddate AS "DateEnd",
+    true AS "CredentialIssuanceEnabled",
+    'Opportunity|Default' AS "SSISchemaName",
+    o.createdat as "DateCreated",
+    (SELECT "Id" FROM "Entity"."User" WHERE "Email" = 'system@yoma.world') as "CreatedByUserId",
+    GREATEST(
+	    COALESCE(o.deletedat, '1900-01-01'::timestamp),
+    	o.createdat
+	) AS "DateModified",
+	(SELECT "Id" FROM "Entity"."User" WHERE "Email" = 'system@yoma.world') as "ModifiedByUserId"
 FROM dbo.opportunities o
 
-SELECT id, title, "type", description, createdat, organisationid, createdbyadmin, zltoreward, deletedat, zltorewardpool, enddate, startdate, published, 
-difficulty, instructions, timeperiod, timevalue, templateid, opportunityurl, participantcount, participantlimit, noenddate, sharing
-FROM dbo.opportunities;
-
 --Opportunity.Opportunity (update running totals based on completed opportunities)
-SELECT
-    O."Id" AS "OpportunityId",
-    COUNT(MO."Id") AS "Count",
-    SUM(MO."ZltoReward") AS "ZltoRewardTotal",
-FROM "Opportunity"."Opportunity" O
-LEFT JOIN "Opportunity"."MyOpportunity" MO ON O."Id" = MO."OpportunityId"
-WHERE MO."ActionId" = (SELECT "Id" FROM "Opportunity"."MyOpportunityAction" WHERE "Name" = 'Verification')
-    AND MO."VerificationStatusId" = (SELECT "Id" FROM "Opportunity"."MyOpportunityVerificationStatus" WHERE "Name" = 'Completed')
-GROUP BY O."Id"
+WITH AggregatedData AS (
+	SELECT
+	    o."Id" AS "OpportunityId",
+	    COUNT(mo."Id") AS "Count",
+	    SUM(mo."ZltoReward") AS "ZltoRewardTotal"
+	FROM "Opportunity"."Opportunity" o
+	LEFT JOIN "Opportunity"."MyOpportunity" mo ON o."Id" = mo."OpportunityId"
+	WHERE mo."ActionId" = (SELECT "Id" FROM "Opportunity"."MyOpportunityAction" WHERE "Name" = 'Verification')
+	    AND mo."VerificationStatusId" = (SELECT "Id" FROM "Opportunity"."MyOpportunityVerificationStatus" WHERE "Name" = 'Completed')
+	GROUP BY o."Id"
 )
-UPDATE "Opportunity"."Opportunity" O
+UPDATE "Opportunity"."Opportunity" o
 SET
-    "ParticipantCount" = A."Count",
-    "ZltoRewardCumulative" = A."ZltoRewardTotal",
-FROM AggregatedData A
-WHERE O."Id" = A."OpportunityId";
+    "ParticipantCount" = a."Count",
+    "ZltoRewardCumulative" = a."ZltoRewardTotal"
+FROM AggregatedData a
+WHERE o."Id" = a."OpportunityId";
 
 
 /***END: Opportunities***/
@@ -662,4 +773,3 @@ DROP FUNCTION format_phone_number(phone text);
 DROP FUNCTION start_of_day(timestamp with time zone);
 DROP FUNCTION ensure_valid_http_url(text);
 DROP FUNCTION ensure_valid_email(text);
-
