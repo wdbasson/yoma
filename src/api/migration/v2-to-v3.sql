@@ -1,4 +1,6 @@
---!!!THIS SCRIPT IS DESIGNED TO BE APPLIED TO AN EMPTY EF MIGRATED DATABASE WITH NO POST.SQL SCRIPTS EXECUTED!!!--
+--!!!THIS SCRIPT IS DESIGNED TO BE APPLIED TO AN EMPTY EF MIGRATED DATABASE, POST V2 MIGRATION AND FILES CLEANUP, WITH NO POST.SQL SCRIPT EXECUTED!!!--
+
+SET TIMEZONE='UTC';
 
 --ensure 'Yoma (Youth Agency Marketplace)' system organization exist and is active
 DO $$
@@ -32,6 +34,10 @@ BEGIN
 END $$;
 
 --extentions
+-- Drop the pgcrypto extension if it exists (gets corrupted)
+DROP EXTENSION IF EXISTS pgcrypto;
+
+-- Recreate the pgcrypto extension
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 --create temporary functions 
@@ -112,14 +118,27 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 CREATE OR REPLACE FUNCTION start_of_day(input_timestamp timestamp with time zone)
-RETURNS date AS $$
+RETURNS timestamp with time zone AS $$
 BEGIN
     -- Check if the input is NULL and return NULL if so
     IF input_timestamp IS NULL THEN
         RETURN NULL;
     ELSE
-        -- Return the date part only, which corresponds to the start of the day
-        RETURN input_timestamp::date;
+        -- Truncate to the start of the day in UTC
+        RETURN (date_trunc('day', input_timestamp AT TIME ZONE 'UTC')) AT TIME ZONE 'UTC';
+    END IF;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION end_of_day(input_timestamp timestamp with time zone)
+RETURNS timestamp with time zone AS $$
+BEGIN
+    -- Check if the input is NULL and return NULL if so
+    IF input_timestamp IS NULL THEN
+        RETURN NULL;
+    ELSE
+        -- Set to the end of the day in UTC
+        RETURN ((date_trunc('day', input_timestamp AT TIME ZONE 'UTC') + INTERVAL '1 DAY' - INTERVAL '1 millisecond') AT TIME ZONE 'UTC');
     END IF;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
@@ -186,7 +205,7 @@ SELECT DISTINCT
     f.contenttype AS "ContentType",
     split_part(f.s3objectid, '/', array_length(string_to_array(f.s3objectid, '/'), 1)) AS "OriginalFileName",
     NULL::uuid AS "ParentId", 
-    f.createdat AS "DateCreated"
+    f.createdat AT TIME ZONE 'UTC' AS "DateCreated"
 FROM 
     dbo.files f
 INNER JOIN 
@@ -236,12 +255,12 @@ SELECT
         WHEN u.gender = 'FM' THEN (SELECT "Id" FROM "Lookup"."Gender" WHERE "Name" = 'Female')
         ELSE (SELECT "Id" FROM "Lookup"."Gender" WHERE "Name" = 'Prefer not to say')
     END AS "GenderId",
-    start_of_day(u.dateofbirth) AS "DateOfBirth",
-    u.lastlogin AS "DateLastLogin",
+    start_of_day(u.dateofbirth) AT TIME ZONE 'UTC' AS "DateOfBirth",
+    u.lastlogin AT TIME ZONE 'UTC' AS "DateLastLogin",
     u.externalid AS "ExternalId",
     FALSE AS "YoIDOnboarded",
      NULL::timestamptz AS "DateYoIDOnboarded",
-    u.createdat AS "DateCreated",
+    u.createdat AT TIME ZONE 'UTC' AS "DateCreated",
     (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AS "DateModified"
 FROM
     dbo.users u
@@ -265,7 +284,7 @@ SELECT
     (SELECT WCS."Id" FROM "Reward"."WalletCreationStatus" WCS WHERE WCS."Name" = 'Created') AS "StatusId",
     u.id AS "UserId",
     TRIM(u.zltowalletid) AS "WalletId",
-    NULL::numeric(12, 2) AS "Balance", -- Awarded inline in v2, so no pending transactions can exist; new concept in v3
+    NULL::numeric(12, 2) AS "Balance", -- Updated after populating Reward.Trnasaction for VerifiedAt credentials and users not yet migrated to new zlto wallet (see 'My' Opportunities section)
     NULL::text AS "ErrorReason", 
     0 AS "RetryCount", -- Assuming retry count should be initialized to 0 rather than NULL
     (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AS "DateCreated",
@@ -277,7 +296,7 @@ WHERE
     AND u.zltowalletid IS NOT NULL
     AND u.email IS NOT NULL;
 
---TODO: Entity.UserSkills (needs to be populated for complete 'my' opportunities)
+--SSI.TenantCreation (scheduled upon 1st login and acceptance of YoId onboarding)
 
 --Object.Blob (organization logos)
 INSERT INTO "Object"."Blob" (
@@ -298,7 +317,7 @@ SELECT DISTINCT
     f.contenttype AS "ContentType",
     split_part(f.s3objectid, '/', array_length(string_to_array(f.s3objectid, '/'), 1)) AS "OriginalFileName",
     NULL::uuid AS "ParentId", 
-    f.createdat AS "DateCreated"
+    f.createdat AT TIME ZONE 'UTC' AS "DateCreated"
 FROM 
     dbo.files f
 INNER JOIN 
@@ -339,7 +358,7 @@ UPDATE dbo.organisations o
 SET name = nd.FinalName
 FROM NumberedDuplicates nd
 WHERE o.id = nd.id AND LOWER(nd.FinalName) <> LOWER(o.name);
-   
+
 --Entity.Organization
 INSERT INTO "Entity"."Organization" (
     "Id", 
@@ -413,16 +432,16 @@ SELECT
           WHEN o.approvedat IS NOT NULL THEN o.approvedat
           WHEN o.deletedat IS NOT NULL THEN o.deletedat
           ELSE o.createdat
-      END AS "DateStatusModified",
+      END AT TIME ZONE 'UTC' AS "DateStatusModified",
       o.logoid as "LogoId",
-      o.createdat as "DateCreated",
+      o.createdat AT TIME ZONE 'UTC' as "DateCreated",
       (SELECT "Id" FROM "Entity"."User" WHERE "Email" = 'system@yoma.world') as "CreatedByUserId",
       GREATEST(
 		    COALESCE(o.approvedat, '1900-01-01'::timestamp),
 		    COALESCE(o.deletedat, '1900-01-01'::timestamp),
 		    COALESCE(o.updatedat, '1900-01-01'::timestamp),
 		    o.createdat
-		) AS "DateModified",
+		) AT TIME ZONE 'UTC' AS "DateModified",
 	  (SELECT "Id" FROM "Entity"."User" WHERE "Email" = 'system@yoma.world') as "ModifiedByUserId"
 FROM 
 	dbo.organisations o
@@ -458,6 +477,63 @@ FROM
 WHERE 
     "StatusId" = (SELECT "Id" FROM "Entity"."OrganizationStatus" WHERE "Name" = 'Active');
 
+--Object.Blob (registration documents)
+INSERT INTO "Object"."Blob" (
+    "Id", 
+    "StorageType", 
+    "FileType", 
+    "Key", 
+    "ContentType", 
+    "OriginalFileName", 
+    "ParentId", 
+    "DateCreated"
+)
+SELECT DISTINCT
+    f.id AS "Id", 
+    'Private' AS "StorageType", 
+    'Documents' AS "FileType", 
+    f.s3objectid AS "Key", 
+    f.contenttype AS "ContentType",
+    split_part(f.s3objectid, '/', array_length(string_to_array(f.s3objectid, '/'), 1)) AS "OriginalFileName",
+    NULL::uuid AS "ParentId", 
+    f.createdat AT TIME ZONE 'UTC' AS "DateCreated"
+FROM 
+    dbo.files f
+INNER JOIN 
+    dbo.organisations o ON f.id = o.companyregistrationid
+JOIN
+    dbo.opportunities opp ON o.id = opp.organisationid; -- Ensure only organizations with opportunities are included   
+   
+--Enity.OrganizationDocuments (registration documents)
+INSERT INTO "Entity"."OrganizationDocuments" (
+    "Id", 
+    "OrganizationId", 
+    "FileId", 
+    "Type", 
+    "DateCreated"
+)
+SELECT
+    gen_random_uuid() AS "Id", -- Generates a unique ID for each document
+    o.id AS "OrganizationId",
+    o.companyregistrationid AS "FileId",
+    'Registration' AS "Type",
+    o.createdat AT TIME ZONE 'UTC' AS "DateCreated"
+FROM 
+    dbo.organisations o
+WHERE 
+    EXISTS (
+        -- Checks if the company registration ID corresponds to an existing Blob
+        SELECT 1
+        FROM "Object"."Blob" b
+        WHERE b."Id" = o.companyregistrationid
+    )
+    AND EXISTS (
+        -- Ensures the organization has at least one mapped opportunity
+        SELECT 1
+        FROM dbo.opportunities opp
+        WHERE opp.organisationid = o.id
+    );
+   
 --Entity.OrganizationProviderTypes
 INSERT INTO "Entity"."OrganizationProviderTypes" (
     "Id", 
@@ -473,7 +549,7 @@ SELECT
         FROM "Entity"."OrganizationProviderType"
         WHERE "Name" = 'Education'
     ) AS "ProviderTypeId",
-    o.createdat AS "DateCreated"
+    o.createdat AT TIME ZONE 'UTC' AS "DateCreated"
 FROM
     dbo.organisations o
 WHERE
@@ -506,7 +582,7 @@ SELECT
     gen_random_uuid() AS "Id", 
     u.organisationid AS "OrganizationId", 
     u.id AS "UserId", 
-    u.createdat AS "DateCreated"
+    u.createdat AT TIME ZONE 'UTC' AS "DateCreated"
 FROM
     dbo.users u
 WHERE
@@ -534,7 +610,7 @@ SELECT
     gen_random_uuid(),
     o."Id" AS "OrganizationId",
     (SELECT "Id" FROM "Entity"."User" WHERE "Email" = 'system@yoma.world') AS "UserId",
-    CURRENT_TIMESTAMP
+    CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
 FROM
     "Entity"."Organization" o
 WHERE
@@ -543,66 +619,6 @@ WHERE
         FROM "Entity"."OrganizationUsers" ou
         WHERE ou."OrganizationId" = o."Id"
     );
-   
---Object.Blob (registration documents)
-INSERT INTO "Object"."Blob" (
-    "Id", 
-    "StorageType", 
-    "FileType", 
-    "Key", 
-    "ContentType", 
-    "OriginalFileName", 
-    "ParentId", 
-    "DateCreated"
-)
-SELECT DISTINCT
-    f.id AS "Id", 
-    'Private' AS "StorageType", 
-    'Documents' AS "FileType", 
-    f.s3objectid AS "Key", 
-    f.contenttype AS "ContentType",
-    split_part(f.s3objectid, '/', array_length(string_to_array(f.s3objectid, '/'), 1)) AS "OriginalFileName",
-    NULL::uuid AS "ParentId", 
-    f.createdat AS "DateCreated"
-FROM 
-    dbo.files f
-INNER JOIN 
-    dbo.organisations o ON f.id = o.companyregistrationid
-JOIN
-    dbo.opportunities opp ON o.id = opp.organisationid; -- Ensure only organizations with opportunities are included   
-   
---Enity.OrganizationDocuments (registration documents)
-INSERT INTO "Entity"."OrganizationDocuments" (
-    "Id", 
-    "OrganizationId", 
-    "FileId", 
-    "Type", 
-    "DateCreated"
-)
-SELECT
-    gen_random_uuid() AS "Id", -- Generates a unique ID for each document
-    o.id AS "OrganizationId",
-    o.companyregistrationid AS "FileId",
-    'Registration' AS "Type",
-    o.createdat AS "DateCreated"
-FROM 
-    dbo.organisations o
-WHERE 
-    EXISTS (
-        -- Checks if the company registration ID corresponds to an existing Blob
-        SELECT 1
-        FROM "Object"."Blob" b
-        WHERE b."Id" = o.companyregistrationid
-    )
-    AND EXISTS (
-        -- Ensures the organization has at least one mapped opportunity
-        SELECT 1
-        FROM dbo.opportunities opp
-        WHERE opp.organisationid = o.id
-    );
-   
---TODO: Entity.UserSkillOrganizations (populaterd from completed 'my' opportunities)
-   
 /***END: User & Organizations***/
    
 /***BEGIN: Opportunities***/
@@ -690,7 +706,7 @@ SELECT
 	    WHEN o.zltorewardpool IS NOT NULL THEN CAST(ABS(o.zltorewardpool) AS numeric(12,2))
     	ELSE NULL
 	END AS "ZltoRewardPool",
-	NULL::numeric(12,2) as "ZltoRewardCumulative", --set below (running totals)
+	NULL::numeric(12,2) as "ZltoRewardCumulative", --set below (see 'My' Opportunities section)
 	NULL::numeric(8,2) AS "YomaReward",
 	NULL::numeric(12,2) AS "YomaRewardPool",
 	NULL::numeric(12,2) AS "YomaRewardCumulative",
@@ -720,7 +736,7 @@ SELECT
     	WHEN o.participantlimit IS NOT NULL THEN ABS(o.participantlimit)
 	    ELSE NULL
 	END AS "ParticipantLimit",
-	NULL::int4 as "ParticipantCount", --set below (running totals)
+	NULL::int4 as "ParticipantCount", --set below (see 'My' Opportunities section)
 	(SELECT "Id" FROM "Opportunity"."OpportunityStatus" WHERE "Name" = 
        CASE
            WHEN o.deletedat IS NOT NULL THEN 'Deleted'
@@ -730,19 +746,298 @@ SELECT
        END
     ) AS "StatusId",
     NULL::varchar(500) AS "Keywords",
-    o.startdate AS "DateStart",
-    o.enddate AS "DateEnd",
+    start_of_day(o.startdate) AT TIME ZONE 'UTC' AS "DateStart",
+    end_of_day(o.enddate) AT TIME ZONE 'UTC' AS "DateEnd",
     true AS "CredentialIssuanceEnabled",
     'Opportunity|Default' AS "SSISchemaName",
-    o.createdat as "DateCreated",
+    o.createdat AT TIME ZONE 'UTC' as "DateCreated",
     (SELECT "Id" FROM "Entity"."User" WHERE "Email" = 'system@yoma.world') as "CreatedByUserId",
     GREATEST(
 	    COALESCE(o.deletedat, '1900-01-01'::timestamp),
     	o.createdat
-	) AS "DateModified",
+	) AT TIME ZONE 'UTC' AS "DateModified",
 	(SELECT "Id" FROM "Entity"."User" WHERE "Email" = 'system@yoma.world') as "ModifiedByUserId"
 FROM dbo.opportunities o
 
+--Opportunity.OpportunityCategories - No mappings; New concept in V3; To be updated by operations
+
+--Opportunity.OpportunityCountries
+INSERT INTO "Opportunity"."OpportunityCountries" ("Id", "OpportunityId", "CountryId", "DateCreated")
+SELECT DISTINCT ON (oo."Id", lc."Id")
+    gen_random_uuid() AS "Id",
+    oo."Id" AS "OpportunityId",
+    lc."Id" AS "CountryId",
+    oo."DateCreated" AT TIME ZONE 'UTC' AS "DateCreated"
+FROM
+    "Opportunity"."Opportunity" oo
+JOIN
+    dbo.opportunitycountry ooc ON oo."Id" = ooc.opportunityid
+JOIN
+    "Lookup"."Country" lc ON lc."CodeAlpha2" = ooc.country
+WHERE
+    NOT EXISTS (
+        SELECT 1
+        FROM "Opportunity"."OpportunityCountries" existing
+        WHERE existing."OpportunityId" = oo."Id"
+        AND existing."CountryId" = lc."Id"
+    )
+
+-- Opportunity.OpportunityLanguages
+INSERT INTO "Opportunity"."OpportunityLanguages" ("Id", "OpportunityId", "LanguageId", "DateCreated")
+SELECT DISTINCT ON (oo."Id", ll."Id")
+    gen_random_uuid() AS "Id",
+    oo."Id" AS "OpportunityId",
+    ll."Id" AS "LanguageId",
+    oo."DateCreated" AT TIME ZONE 'UTC' AS "DateCreated"
+FROM
+    "Opportunity"."Opportunity" oo
+JOIN
+    dbo.opportunitylanguages ool ON oo."Id" = ool.opportunityid
+JOIN
+    "Lookup"."Language" ll ON ll."CodeAlpha2" = ool.language
+WHERE
+    NOT EXISTS (
+        SELECT 1
+        FROM "Opportunity"."OpportunityLanguages" existing
+        WHERE existing."OpportunityId" = oo."Id"
+        AND existing."LanguageId" = ll."Id"
+    )
+
+--Opportunity.Skills
+INSERT INTO "Opportunity"."OpportunitySkills" ("Id", "OpportunityId", "SkillId", "DateCreated")
+SELECT DISTINCT ON (oo."Id", ls."Id")
+    gen_random_uuid() AS "Id",
+    oo."Id" AS "OpportunityId",
+    ls."Id" AS "SkillId",
+    oo."DateCreated" AT TIME ZONE 'UTC' AS "DateCreated"
+FROM
+    "Opportunity"."Opportunity" oo
+JOIN
+    dbo.opportunityskills os ON oo."Id" = os.opportunityid
+JOIN
+    dbo.skills ds ON ds.id = os.skillid  
+JOIN
+    "Lookup"."Skill" ls ON lower(ls."Name") = lower(ds."name")
+ORDER BY oo."Id", ls."Id";
+    
+--Opportunity.OpportunityVerificationTypes
+INSERT INTO "Opportunity"."OpportunityVerificationTypes" ("Id", "OpportunityId", "VerificationTypeId", "Description", "DateCreated", "DateModified")
+SELECT
+    gen_random_uuid() AS "Id",
+    oo."Id" AS "OpportunityId",
+    (SELECT "Id" FROM "Opportunity"."OpportunityVerificationType" WHERE "Name" = 'FileUpload') AS "VerificationTypeId",
+    NULL::text AS "Description", 
+    oo."DateCreated" AT TIME ZONE 'UTC' AS "DateCreated",
+    oo."DateCreated" AT TIME ZONE 'UTC' AS "DateModified" 
+FROM
+    "Opportunity"."Opportunity" oo;
+/***END: Opportunities***/   
+   
+/***BEGIN: 'My' Opportunities***/
+
+--Opptorunity.MyOpportunity (Saved: dbo.myopportunities entries)
+INSERT INTO "Opportunity"."MyOpportunity" (
+    "Id", 
+    "UserId", 
+    "OpportunityId", 
+    "ActionId", 
+    "VerificationStatusId", 
+    "CommentVerification", 
+    "DateStart",
+    "DateEnd", 
+    "DateCompleted", 
+    "ZltoReward", 
+    "YomaReward", 
+    "DateCreated", 
+    "DateModified"
+)
+SELECT DISTINCT ON (U."Id", O."Id", A."Id")
+    gen_random_uuid() AS "Id",
+    U."Id" AS "UserId",
+    O."Id" AS "OpportunityId",
+    A."Id" AS "ActionId",
+    NULL AS "VerificationStatusId",
+    NULL AS "CommentVerification",
+    NULL AS "DateStart",
+    NULL AS "DateEnd",
+    NULL AS "DateCompleted",
+    NULL AS "ZltoReward",
+    NULL AS "YomaReward",
+    CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AS "DateCreated",
+    CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AS "DateModified"
+FROM
+    dbo.myopportunities MO
+JOIN
+    "Entity"."User" U ON U."Id" = MO.userid
+JOIN
+    "Opportunity"."Opportunity" O ON O."Id" = MO.opportunityid
+JOIN
+    (SELECT "Id" FROM "Opportunity"."MyOpportunityAction" WHERE "Name" = 'Saved') AS A ON TRUE
+    
+--Opptorunity.MyOpportunity (Verificaton: Pending [VerifiedAt=null] | Verificaton: Completed [VerifiedAt!=null] & Approved=true | Verificaton: Rejected [VerifiedAt!=null] & Approved=false)
+-- Create temporary tables if they do not exist
+CREATE TEMP TABLE IF NOT EXISTS TempOpportunityDetails (
+    MyOpportunityId UUID,
+    UserId UUID,
+    OpportunityId UUID,
+    FileId UUID
+);
+
+CREATE TEMP TABLE IF NOT EXISTS TempInsertedOpportunity (
+    "Id" UUID,
+    "UserId" UUID,
+    "OpportunityId" UUID,
+    "ActionId" UUID,
+    "VerificationStatusId" UUID,
+    "CommentVerification" TEXT,
+    "DateStart" TIMESTAMP,
+    "DateEnd" TIMESTAMP,
+    "DateCompleted" TIMESTAMP,
+    "ZltoReward" NUMERIC(8,2),
+    "YomaReward" NUMERIC(8,2),
+    "DateCreated" TIMESTAMP,
+    "DateModified" TIMESTAMP,
+    "FileId" UUID
+);
+
+WITH Inserted AS (
+    INSERT INTO TempInsertedOpportunity (
+        "Id", 
+        "UserId", 
+        "OpportunityId", 
+        "ActionId", 
+        "VerificationStatusId", 
+        "CommentVerification", 
+        "DateStart",
+        "DateEnd", 
+        "DateCompleted", 
+        "ZltoReward", 
+        "YomaReward", 
+        "DateCreated", 
+        "DateModified",
+        "FileId"
+    )
+    SELECT DISTINCT ON (U."Id", O."Id")
+        gen_random_uuid() AS "Id",
+        U."Id" AS "UserId",
+        O."Id" AS "OpportunityId",
+        (SELECT "Id" FROM "Opportunity"."MyOpportunityAction" WHERE "Name" = 'Verification') AS "ActionId",
+        CASE 
+            WHEN C.verifiedat IS NULL THEN (SELECT "Id" FROM "Opportunity"."MyOpportunityVerificationStatus" WHERE "Name" = 'Pending')
+            WHEN C.verifiedat IS NOT NULL AND (C.approved IS NULL OR C.approved = FALSE) THEN (SELECT "Id" FROM "Opportunity"."MyOpportunityVerificationStatus" WHERE "Name" = 'Rejected')
+            WHEN C.verifiedat IS NOT NULL AND C.approved = TRUE THEN (SELECT "Id" FROM "Opportunity"."MyOpportunityVerificationStatus" WHERE "Name" = 'Completed')
+        END AS "VerificationStatusId",
+        CASE 
+            WHEN C.verifiedat IS NOT NULL THEN remove_double_spacing(C.approvalmessage)
+            ELSE NULL 
+        END AS "CommentVerification",
+        start_of_day(C.startdate) AT TIME ZONE 'UTC' AS "DateStart",
+        end_of_day(C.enddate) AT TIME ZONE 'UTC' AS "DateEnd",
+        C.verifiedat AS "DateCompleted",
+        CASE 
+            WHEN C.verifiedat IS NOT NULL AND C.approved = TRUE AND ABS(C.zltoreward) > 0 THEN CAST(ABS(C.zltoreward) AS numeric(8,2))
+            ELSE NULL
+        END AS "ZltoReward",
+        NULL AS "YomaReward",
+        C.createdat AT TIME ZONE 'UTC' AS "DateCreated",
+        C.createdat AT TIME ZONE 'UTC' AS "DateModified",
+        C.fileId AS "FileId"
+    FROM
+        dbo.credentials C
+    JOIN
+        "Entity"."User" U ON U."Id" = C.userid
+    JOIN
+        "Opportunity"."Opportunity" O ON O."Id" = C.opportunityid
+    WHERE
+        C.fileId IS NOT NULL
+    ORDER BY 
+        U."Id", 
+        O."Id", 
+        C.createdat DESC
+    RETURNING *
+)
+INSERT INTO TempOpportunityDetails (MyOpportunityId, UserId, OpportunityId, FileId)
+SELECT "Id", "UserId", "OpportunityId", "FileId" FROM Inserted;
+
+-- Insert into "Opportunity"."MyOpportunity" from the Inserted CTE
+INSERT INTO "Opportunity"."MyOpportunity" (
+    "Id", 
+    "UserId", 
+    "OpportunityId", 
+    "ActionId", 
+    "VerificationStatusId", 
+    "CommentVerification", 
+    "DateStart",
+    "DateEnd", 
+    "DateCompleted", 
+    "ZltoReward", 
+    "YomaReward", 
+    "DateCreated", 
+    "DateModified",
+    "FileId"
+)
+SELECT "Id", "UserId", "OpportunityId", "ActionId", "VerificationStatusId", "CommentVerification", "DateStart",
+       "DateEnd", "DateCompleted", "ZltoReward", "YomaReward", "DateCreated", "DateModified", "FileId"
+FROM TempInsertedOpportunity;
+  
+--Object.Blob (credential certificates / 'my' opportinity verifcation file upload)
+INSERT INTO "Object"."Blob" (
+    "Id", 
+    "StorageType", 
+    "FileType", 
+    "Key", 
+    "ContentType", 
+    "OriginalFileName", 
+    "ParentId", 
+    "DateCreated"
+)
+SELECT DISTINCT
+    f.id AS "Id", 
+    'Private' AS "StorageType", 
+    'Certificates' AS "FileType", 
+    f.s3objectid AS "Key", 
+    f.contenttype AS "ContentType",
+    split_part(f.s3objectid, '/', array_length(string_to_array(f.s3objectid, '/'), 1)) AS "OriginalFileName",
+    NULL::uuid AS "ParentId", 
+    f.createdat AT TIME ZONE 'UTC' AS "DateCreated"
+FROM 
+    TempOpportunityDetails TOD
+JOIN 
+    dbo.files f ON TOD.FileId = f.id;
+   
+--Opportunity.MyOpportunityVerifications (type FileUpload <> dbo.credentials.fileid)
+INSERT INTO "Opportunity"."MyOpportunityVerifications" (
+    "Id",
+    "MyOpportunityId",
+    "VerificationTypeId",
+    "GeometryProperties",
+    "FileId",
+    "DateCreated"
+)
+SELECT
+    gen_random_uuid() AS "Id",
+    TOD.MyOpportunityId AS "MyOpportunityId",
+    (SELECT "Id" FROM "Opportunity"."OpportunityVerificationType" WHERE "Name" = 'FileUpload') AS "VerificationTypeId",
+    NULL AS "GeometryProperties",
+    TOD.FileId AS "FileId",
+    CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AS "DateCreated"
+FROM
+    TempOpportunityDetails TOD;
+
+DROP TABLE IF EXISTS TempOpportunityDetails;
+DROP TABLE IF EXISTS TempInsertedOpportunity;
+   
+   
+--TODO: SSI.CredentialIssuance (for 'My' Opportunities with verification completed)
+   
+--TODO: Reward.Transaction (for 'My' Opportunities with verification completed: for users with no zlto wallet added as pending; for user with zlto wallet added as processed)
+   
+--TODO: Reward.WalletCreation (Update balance and set to sum of pending Reward.Transactions)
+
+--TODO: Entity.UserSkills (populated for 'My' Opportunities with verification completed)
+   
+--TODO: Entity.UserSkillOrganizations (populated for 'My' Opportunities with verification completed)
+   
 --Opportunity.Opportunity (update running totals based on completed opportunities)
 WITH AggregatedData AS (
 	SELECT
@@ -761,9 +1056,7 @@ SET
     "ZltoRewardCumulative" = a."ZltoRewardTotal"
 FROM AggregatedData a
 WHERE o."Id" = a."OpportunityId";
-
-
-/***END: Opportunities***/
+/***END: 'My' Opportunities***/
    
 --drop temporary functions
 DROP FUNCTION remove_double_spacing(text);
@@ -771,5 +1064,6 @@ DROP FUNCTION title_case(text, boolean);
 DROP FUNCTION construct_display_name(text, text);
 DROP FUNCTION format_phone_number(phone text);
 DROP FUNCTION start_of_day(timestamp with time zone);
+DROP FUNCTION end_of_day(timestamp with time zone);
 DROP FUNCTION ensure_valid_http_url(text);
 DROP FUNCTION ensure_valid_email(text);
