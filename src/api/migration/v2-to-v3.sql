@@ -2,6 +2,10 @@
 
 SET TIMEZONE='UTC';
 
+--!!!DESTINATION ENVIRONMENT TOGGLE!!!-- 
+--with 'staging' zlto wallets will not be migrated and subsequintly no transactions added as processed
+SET SESSION "myvars.environment" = 'staging'; --staging or production
+
 --ensure 'Yoma (Youth Agency Marketplace)' system organization exist and is active
 DO $$
 DECLARE
@@ -268,33 +272,46 @@ WHERE
     u.email IS NOT NULL;
 
 --Reward.WalletCreation (users that were migrated to new zlto wallet)
-INSERT INTO "Reward"."WalletCreation" (
-    "Id", 
-    "StatusId", 
-    "UserId", 
-    "WalletId", 
-    "Balance", 
-    "ErrorReason", 
-    "RetryCount", 
-    "DateCreated", 
-    "DateModified"
-)
-SELECT
-    gen_random_uuid() AS "Id",
-    (SELECT WCS."Id" FROM "Reward"."WalletCreationStatus" WCS WHERE WCS."Name" = 'Created') AS "StatusId",
-    u.id AS "UserId",
-    TRIM(u.zltowalletid) AS "WalletId",
-    NULL::numeric(12, 2) AS "Balance", -- Updated after populating Reward.Trnasaction for VerifiedAt credentials and users not yet migrated to new zlto wallet (see 'My' Opportunities section)
-    NULL::text AS "ErrorReason", 
-    0 AS "RetryCount", -- Assuming retry count should be initialized to 0 rather than NULL
-    (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AS "DateCreated",
-    (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AS "DateModified"
-FROM
-    dbo.users u
-WHERE
-    u.migratedtonewzlto = true
-    AND u.zltowalletid IS NOT NULL
-    AND u.email IS NOT NULL;
+DO $$
+DECLARE
+    environment TEXT;
+BEGIN
+    --get the current environment setting
+    environment := current_setting('myvars.environment');
+    
+    --wallet migration occurs exclusively in the production environment; staging does not migrate wallets. Instead, 
+    --staging ensures wallet availability upon user login. This distinction is necessary because the staging environment uses a separate Zlto instance, 
+    --leading to differences in wallet ids between staging and production
+    IF environment <> 'staging' THEN
+        INSERT INTO "Reward"."WalletCreation" (
+		    "Id", 
+		    "StatusId", 
+		    "UserId", 
+		    "WalletId", 
+		    "Balance", 
+		    "ErrorReason", 
+		    "RetryCount", 
+		    "DateCreated", 
+		    "DateModified"
+		)
+		SELECT
+		    gen_random_uuid() AS "Id",
+		    (SELECT WCS."Id" FROM "Reward"."WalletCreationStatus" WCS WHERE WCS."Name" = 'Created') AS "StatusId",
+		    u.id AS "UserId",
+		    TRIM(u.zltowalletid) AS "WalletId",
+		    NULL::numeric(12, 2) AS "Balance", -- Updated after populating Reward.Transaction for VerifiedAt credentials and users not yet migrated to new zlto wallet (see 'My' Opportunities section)
+		    NULL::text AS "ErrorReason", 
+		    NULL::int2 AS "RetryCount",
+		    (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AS "DateCreated",
+		    (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') AS "DateModified"
+		FROM
+		    dbo.users u
+		WHERE
+		    u.migratedtonewzlto = true
+		    AND u.zltowalletid IS NOT NULL
+		    AND u.email IS NOT NULL;
+		    END IF;
+END $$;
 
 --SSI.TenantCreation (scheduled upon 1st login and acceptance of YoId onboarding)
 
@@ -391,7 +408,7 @@ SELECT
     DISTINCT(o.id),
     remove_double_spacing(o.name) AS "Name",
     ENCODE(DIGEST(remove_double_spacing(o.name), 'sha256'), 'hex') as "NameHashValue",
-    LOWER(ensure_valid_http_url(url)) as "WebsiteURL",
+    ensure_valid_http_url(url) as "WebsiteURL",
     title_case(primarycontactname, false) as "PrimaryContactName",
     ensure_valid_email(primarycontactemail) as "PrimaryContactEmail",
     format_phone_number(primarycontactphone) as "PrimaryContactPhone",
@@ -647,6 +664,23 @@ FROM UpdatedTitles ut
 WHERE o.id = ut.id AND LOWER(o.title) <> LOWER(ut.FinalTitle);
    
 --Opportunity.Opportunity
+--checks for any opportunities with a type not listed among the expected values and raises an exception if found.
+DO $$
+DECLARE
+    v_invalid_type_exists BOOLEAN;
+BEGIN
+    -- Check for any o.type that does not match the expected values
+    SELECT EXISTS (
+        SELECT 1
+        FROM dbo.opportunities o
+        WHERE lower(o.type) NOT IN ('task', 'learning', 'learningopportunity', 'impactopportunity', 'taskopportunity')
+    ) INTO v_invalid_type_exists;
+
+    IF v_invalid_type_exists THEN
+        RAISE EXCEPTION 'One or more opportunities have an invalid type.';
+    END IF;
+END $$;
+
 INSERT INTO "Opportunity"."Opportunity" (
     "Id", 
     "Title", 
@@ -696,16 +730,17 @@ SELECT
     o.organisationid AS "OrganizationId",
     NULL::varchar(500) AS "Summary",
     remove_double_spacing(o.instructions) AS "Instructions",
-    LOWER(ensure_valid_http_url(opportunityurl)) AS "URL",
-    CASE 
-    	WHEN o.zltoreward IS NOT NULL THEN CAST(ABS(o.zltoreward) AS numeric(8,2))
-	    ELSE NULL
-	END AS "ZltoReward",
+    ensure_valid_http_url(opportunityurl) AS "URL",
 	CASE 
     	WHEN o.zltoreward IS NULL THEN NULL
-	    WHEN o.zltorewardpool IS NOT NULL THEN CAST(ABS(o.zltorewardpool) AS numeric(12,2))
-    	ELSE NULL
-	END AS "ZltoRewardPool",
+    	WHEN ABS(o.zltoreward) = 0 THEN NULL
+    	ELSE CAST(ABS(o.zltoreward) AS numeric(8,2))
+	END AS "ZltoReward",
+	CASE 
+    	WHEN o.zltoreward IS NULL OR ABS(o.zltoreward) = 0 THEN NULL
+    	WHEN o.zltorewardpool IS NULL OR ABS(o.zltorewardpool) = 0 THEN NULL
+	    ELSE CAST(ABS(o.zltorewardpool) AS numeric(12,2))
+		END AS "ZltoRewardPool",
 	NULL::numeric(12,2) as "ZltoRewardCumulative", --set below (see 'My' Opportunities section)
 	NULL::numeric(8,2) AS "YomaReward",
 	NULL::numeric(12,2) AS "YomaRewardPool",
@@ -1076,7 +1111,8 @@ WHERE
     )
     AND O."CredentialIssuanceEnabled" = true;
 
---Reward.Transaction (for 'My' Opportunities with verification completed: for users with no zlto wallet added as pending; for user with zlto wallet added as processed)
+--Reward.Transaction (for 'My' Opportunities with verification completed: for users with no zlto wallet added as pending; 
+--for user with zlto wallet added as processed [only on production])
 INSERT INTO "Reward"."Transaction" (
     "Id", 
     "UserId", 
@@ -1150,7 +1186,7 @@ WHERE
     )
     AND MO."ZltoReward" > 0;
    
---Reward.WalletCreation (Update balance and set to sum of processed Reward.Transactions for users with wallets)
+--Reward.WalletCreation (Update balance and set to sum of processed Reward.Transactions for users with wallets [only on production])
 UPDATE "Reward"."WalletCreation" WC
 SET "Balance" = COALESCE(WC."Balance", 0) + T.SumZltoReward
 FROM (

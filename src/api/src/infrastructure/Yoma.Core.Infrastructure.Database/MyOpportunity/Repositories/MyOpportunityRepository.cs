@@ -27,10 +27,11 @@ namespace Yoma.Core.Infrastructure.Database.MyOpportunity.Repositories
                 Id = entity.Id,
                 UserId = entity.UserId,
                 UserEmail = entity.User.Email,
-                UserCountry = entity.User.Country == null ? null : entity.User.Country.Name,
-                UserEducation = entity.User.Education == null ? null : entity.User.Education.Name,
                 UserDisplayName = entity.User.DisplayName,
                 UserDateOfBirth = entity.User.DateOfBirth,
+                UserGender = entity.User.Gender == null ? null : entity.User.Gender.Name,
+                UserCountry = entity.User.Country == null ? null : entity.User.Country.Name,
+                UserEducation = entity.User.Education == null ? null : entity.User.Education.Name,
                 UserPhotoId = entity.User.PhotoId,
                 OpportunityId = entity.OpportunityId,
                 OpportunityTitle = entity.Opportunity.Title,
@@ -79,7 +80,7 @@ namespace Yoma.Core.Infrastructure.Database.MyOpportunity.Repositories
                         Name = o.Skill.Name,
                         InfoURL = o.Skill.InfoURL
                     }).OrderBy(o => o.Name).ToList() : null,
-            }).AsSplitQuery();
+            }).AsSingleQuery(); //MS SQL: .AsSplitQuery();
         }
 
         public async Task<Domain.MyOpportunity.Models.MyOpportunity> Create(Domain.MyOpportunity.Models.MyOpportunity item)
