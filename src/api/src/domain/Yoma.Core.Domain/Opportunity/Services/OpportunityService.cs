@@ -39,7 +39,8 @@ namespace Yoma.Core.Domain.Opportunity.Services
 
         private readonly OpportunityRequestValidatorCreate _opportunityRequestValidatorCreate;
         private readonly OpportunityRequestValidatorUpdate _opportunityRequestValidatorUpdate;
-        private readonly OpportunitySearchFilterValidator _searchFilterValidator;
+        private readonly OpportunitySearchFilterValidator _opportunitySearchFilterValidator;
+        private readonly OpportunitySearchFilterCriteriaValidator _opportunitySearchFilterCriteriaValidator;
 
         private readonly IRepositoryBatchedValueContainsWithNavigation<Models.Opportunity> _opportunityRepository;
         private readonly IRepository<OpportunityCategory> _opportunityCategoryRepository;
@@ -75,7 +76,8 @@ namespace Yoma.Core.Domain.Opportunity.Services
             IUserService userService,
             OpportunityRequestValidatorCreate opportunityRequestValidatorCreate,
             OpportunityRequestValidatorUpdate opportunityRequestValidatorUpdate,
-            OpportunitySearchFilterValidator searchFilterValidator,
+            OpportunitySearchFilterValidator opportunitySearchFilterValidator,
+            OpportunitySearchFilterCriteriaValidator opportunitySearchFilterCriteriaValidator,
             IRepositoryBatchedValueContainsWithNavigation<Models.Opportunity> opportunityRepository,
             IRepository<OpportunityCategory> opportunityCategoryRepository,
             IRepository<OpportunityCountry> opportunityCountryRepository,
@@ -102,7 +104,8 @@ namespace Yoma.Core.Domain.Opportunity.Services
 
             _opportunityRequestValidatorCreate = opportunityRequestValidatorCreate;
             _opportunityRequestValidatorUpdate = opportunityRequestValidatorUpdate;
-            _searchFilterValidator = searchFilterValidator;
+            _opportunitySearchFilterValidator = opportunitySearchFilterValidator;
+            _opportunitySearchFilterCriteriaValidator = opportunitySearchFilterCriteriaValidator;
 
             _opportunityRepository = opportunityRepository;
             _opportunityCategoryRepository = opportunityCategoryRepository;
@@ -182,17 +185,30 @@ namespace Yoma.Core.Domain.Opportunity.Services
             return results;
         }
 
-        public List<OpportunitySearchCriteriaOpportunity> ListSearchCriteriaOpportunities(Guid organizationId, bool ensureOrganizationAuthorization)
+        public OpportunitySearchResultsCriteria SearchCriteriaOpportunities(OpportunitySearchFilterCriteria filter, bool ensureOrganizationAuthorization)
         {
-            if (organizationId == Guid.Empty)
-                throw new ArgumentNullException(nameof(organizationId));
+            if (filter == null)
+                throw new ArgumentNullException(nameof(filter));
+
+            _opportunitySearchFilterCriteriaValidator.ValidateAndThrow(filter);
 
             if (ensureOrganizationAuthorization)
-                _organizationService.IsAdmin(organizationId, true);
+                _organizationService.IsAdmin(filter.Organization, true);
 
-            var query = _opportunityRepository.Query().Where(o => o.OrganizationId == organizationId);
+            var query = _opportunityRepository.Query().Where(o => o.OrganizationId == filter.Organization);
 
-            var results = query.ToList().Select(o => o.ToOpportunitySearchCriteria()).ToList();
+            if (!string.IsNullOrEmpty(filter.TitleContains))
+                query = _opportunityRepository.Contains(query, filter.TitleContains);
+
+            var results = new OpportunitySearchResultsCriteria();
+            query = query.OrderBy(o => o.Title);
+
+            if (filter.PaginationEnabled)
+            {
+                results.TotalCount = query.Count();
+                query = query.Skip((filter.PageNumber.Value - 1) * filter.PageSize.Value).Take(filter.PageSize.Value);
+            }
+            results.Items = query.ToList().Select(o => o.ToOpportunitySearchCriteria()).ToList();
 
             return results;
         }
@@ -482,7 +498,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
             ParseOpportunitySearchFilterCommitmentIntervals(filter);
             ParseOpportunitySearchFilterZltoRewardRanges(filter);
 
-            _searchFilterValidator.ValidateAndThrow(filter);
+            _opportunitySearchFilterValidator.ValidateAndThrow(filter);
 
             var query = _opportunityRepository.Query(true);
 
