@@ -31,7 +31,7 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
     private readonly IRepositoryBatchedWithNavigation<Models.MyOpportunity> _myOpportunityRepository;
     private readonly IRepository<MyOpportunityVerification> _myOpportunityVerificationRepository;
 
-    private static readonly VerificationStatus[] Statuses_Rejectable = { VerificationStatus.Pending };
+    private static readonly VerificationStatus[] Statuses_Rejectable = [VerificationStatus.Pending];
 
     private static readonly object _lock_Object = new();
     #endregion
@@ -106,7 +106,7 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
               var data = new EmailOpportunityVerification
               {
                 YoIDURL = _emailURLFactory.OpportunityVerificationYoIDURL(emailType),
-                Opportunities = new List<EmailOpportunityVerificationItem>()
+                Opportunities = []
               };
 
               foreach (var myOp in group)
@@ -260,7 +260,7 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
                 request.Geometry = new Geometry
                 {
                   Type = Core.SpatialType.Point,
-                  Coordinates = new List<double[]> { new[] { -0.09394821166991196, 51.50525376803295, 0 } }
+                  Coordinates = [[-0.09394821166991196, 51.50525376803295, 0]]
                 };
                 break;
 

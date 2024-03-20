@@ -16,7 +16,6 @@ namespace Yoma.Core.Domain.Opportunity.Services
   {
     #region Class Variables
     private readonly ILogger<OpportunityBackgroundService> _logger;
-    private readonly AppSettings _appSettings;
     private readonly ScheduleJobOptions _scheduleJobOptions;
     private readonly IOpportunityStatusService _opportunityStatusService;
     private readonly IOrganizationService _organizationService;
@@ -24,15 +23,14 @@ namespace Yoma.Core.Domain.Opportunity.Services
     private readonly IUserService _userService;
     private readonly IEmailURLFactory _emailURLFactory;
     private readonly IRepositoryBatchedValueContainsWithNavigation<Models.Opportunity> _opportunityRepository;
-    private static readonly Status[] Statuses_Expirable = { Status.Active, Status.Inactive };
-    private static readonly Status[] Statuses_Deletion = { Status.Inactive, Status.Expired };
+    private static readonly Status[] Statuses_Expirable = [Status.Active, Status.Inactive];
+    private static readonly Status[] Statuses_Deletion = [Status.Inactive, Status.Expired];
 
     private static readonly object _lock_Object = new();
     #endregion
 
     #region Constructor
     public OpportunityBackgroundService(ILogger<OpportunityBackgroundService> logger,
-        IOptions<AppSettings> appSettings,
         IOptions<ScheduleJobOptions> scheduleJobOptions,
         IOpportunityStatusService opportunityStatusService,
         IOrganizationService organizationService,
@@ -42,7 +40,6 @@ namespace Yoma.Core.Domain.Opportunity.Services
         IRepositoryBatchedValueContainsWithNavigation<Models.Opportunity> opportunityRepository)
     {
       _logger = logger;
-      _appSettings = appSettings.Value;
       _scheduleJobOptions = scheduleJobOptions.Value;
       _opportunityStatusService = opportunityStatusService;
       _organizationService = organizationService;
@@ -160,7 +157,7 @@ namespace Yoma.Core.Domain.Opportunity.Services
           var data = new EmailOpportunityExpiration
           {
             WithinNextDays = _scheduleJobOptions.OpportunityExpirationNotificationIntervalInDays,
-            Opportunities = new List<EmailOpportunityExpirationItem>()
+            Opportunities = []
           };
 
           foreach (var op in group)

@@ -779,10 +779,10 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
         recipients = type switch
         {
           EmailType.Opportunity_Verification_Rejected or EmailType.Opportunity_Verification_Completed or EmailType.Opportunity_Verification_Pending => [
-                                      new() { Email = myOpportunity.UserEmail, DisplayName = myOpportunity.UserDisplayName }
-                                  ],
+                          new() { Email = myOpportunity.UserEmail, DisplayName = myOpportunity.UserDisplayName }
+                      ],
           EmailType.Opportunity_Verification_Pending_Admin => _organizationService.ListAdmins(myOpportunity.OrganizationId, false, false)
-                                      .Select(o => new EmailRecipient { Email = o.Email, DisplayName = o.DisplayName }).ToList(),
+                          .Select(o => new EmailRecipient { Email = o.Email, DisplayName = o.DisplayName }).ToList(),
           _ => throw new ArgumentOutOfRangeException(nameof(type), $"Type of '{type}' not supported"),
         };
         if (recipients == null || recipients.Count == 0) return;
@@ -791,18 +791,17 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
         {
           YoIDURL = _emailURLFactory.OpportunityVerificationYoIDURL(type),
           VerificationURL = _emailURLFactory.OpportunityVerificationURL(type, myOpportunity.OrganizationId),
-          Opportunities =
-            [
-                new()
-                {
-                  Title = myOpportunity.OpportunityTitle,
-                  DateStart = myOpportunity.DateStart,
-                  DateEnd = myOpportunity.DateEnd,
-                  Comment = myOpportunity.CommentVerification,
-                  URL = _emailURLFactory.OpportunityVerificationItemURL(type, myOpportunity.OpportunityId, myOpportunity.OrganizationId),
-                  ZltoReward = myOpportunity.ZltoReward,
-                  YomaReward = myOpportunity.YomaReward
-                }
+          Opportunities = [
+            new()
+            {
+              Title = myOpportunity.OpportunityTitle,
+              DateStart = myOpportunity.DateStart,
+              DateEnd = myOpportunity.DateEnd,
+              Comment = myOpportunity.CommentVerification,
+              URL = _emailURLFactory.OpportunityVerificationItemURL(type, myOpportunity.OpportunityId, myOpportunity.OrganizationId),
+              ZltoReward = myOpportunity.ZltoReward,
+              YomaReward = myOpportunity.YomaReward
+            }
             ]
         };
 

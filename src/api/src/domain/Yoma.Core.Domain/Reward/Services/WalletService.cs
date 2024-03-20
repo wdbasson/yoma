@@ -128,8 +128,7 @@ namespace Yoma.Core.Domain.Reward.Services
 
     public async Task<WalletVoucherSearchResults> SearchVouchers(WalletVoucherSearchFilter filter)
     {
-      if (filter == null)
-        throw new ArgumentNullException(nameof(filter));
+      ArgumentNullException.ThrowIfNull(filter);
 
       await _walletVoucherSearchFilterValidator.ValidateAndThrowAsync(filter);
 
@@ -236,8 +235,7 @@ namespace Yoma.Core.Domain.Reward.Services
 
     public List<WalletCreation> ListPendingCreationSchedule(int batchSize, List<Guid> idsToSkip)
     {
-      if (batchSize <= default(int))
-        throw new ArgumentOutOfRangeException(nameof(batchSize));
+      ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(batchSize, default);
 
       var statusPendingId = _walletCreationStatusService.GetByName(TenantCreationStatus.Pending.ToString()).Id;
 
@@ -253,8 +251,7 @@ namespace Yoma.Core.Domain.Reward.Services
 
     public async Task UpdateScheduleCreation(WalletCreation item)
     {
-      if (item == null)
-        throw new ArgumentNullException(nameof(item));
+      ArgumentNullException.ThrowIfNull(item);
 
       item.WalletId = item.WalletId?.Trim();
 

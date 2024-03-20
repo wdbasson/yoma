@@ -257,7 +257,7 @@ namespace Yoma.Core.Domain.Analytics.Services
 
       //demogrpahics
       var currentDate = DateTimeOffset.UtcNow;
-#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons; Projections fail
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
       result.Demographics = new OrganizationDemographic
       {
         //countries
@@ -319,7 +319,7 @@ namespace Yoma.Core.Domain.Analytics.Services
               .ToDictionary(age => age.AgeBracket, age => age.Count)
         }
       };
-#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons; Projections fail
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
 
       result.DateStamp = DateTimeOffset.UtcNow;
       return result;
@@ -330,8 +330,6 @@ namespace Yoma.Core.Domain.Analytics.Services
       ArgumentNullException.ThrowIfNull(filter);
 
       _organizationSearchFilterOpportunityValidator.ValidateAndThrow(filter);
-
-      _organizationService.IsAdmin(filter.Organization, true);
 
       var query = SearchOrganizationOpportunitiesQueryBase(filter);
 
@@ -381,8 +379,6 @@ namespace Yoma.Core.Domain.Analytics.Services
       ArgumentNullException.ThrowIfNull(filter);
 
       _organizationSearchFilterYouthValidator.ValidateAndThrow(filter);
-
-      _organizationService.IsAdmin(filter.Organization, true);
 
       var query = MyOpportunityQueryCompleted(MyOpportunityQueryBase(filter))
           .Select(o => new YouthInfo

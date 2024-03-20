@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Reflection;
@@ -27,8 +26,8 @@ namespace Yoma.Core.Domain.Entity.Services
     private readonly IEmailURLFactory _emailURLFactory;
     private readonly IRepositoryBatchedValueContainsWithNavigation<Organization> _organizationRepository;
     private readonly IRepository<OrganizationDocument> _organizationDocumentRepository;
-    private static readonly OrganizationStatus[] Statuses_Declination = { OrganizationStatus.Inactive };
-    private static readonly OrganizationStatus[] Statuses_Deletion = { OrganizationStatus.Declined };
+    private static readonly OrganizationStatus[] Statuses_Declination = [OrganizationStatus.Inactive];
+    private static readonly OrganizationStatus[] Statuses_Deletion = [OrganizationStatus.Declined];
 
     private static readonly object _lock_Object = new();
     #endregion
@@ -103,7 +102,7 @@ namespace Yoma.Core.Domain.Entity.Services
                             new() { Email = group.Key.Email, DisplayName = group.Key.DisplayName }
                         };
 
-              var data = new EmailOrganizationApproval { Organizations = new List<EmailOrganizationApprovalItem>() };
+              var data = new EmailOrganizationApproval { Organizations = [] };
               foreach (var org in group)
               {
                 data.Organizations.Add(new EmailOrganizationApprovalItem
@@ -238,17 +237,17 @@ namespace Yoma.Core.Domain.Entity.Services
       foreach (var item in items)
         _organizationService.AddDocuments(
             item.Id, OrganizationDocumentType.Registration,
-            new List<IFormFile> { FileHelper.FromByteArray(fileName, $"application/{fileExtension}", resourceBytes) }, false).Wait();
+            [FileHelper.FromByteArray(fileName, $"application/{fileExtension}", resourceBytes)], false).Wait();
 
       foreach (var item in myItemsEducation)
         _organizationService.AddDocuments(
             item.Id, OrganizationDocumentType.EducationProvider,
-            new List<IFormFile> { FileHelper.FromByteArray(fileName, $"application/{fileExtension}", resourceBytes) }, false).Wait();
+            [FileHelper.FromByteArray(fileName, $"application/{fileExtension}", resourceBytes)], false).Wait();
 
       foreach (var item in myItemsMarketplace)
         _organizationService.AddDocuments(
             item.Id, OrganizationDocumentType.Business,
-            new List<IFormFile> { FileHelper.FromByteArray(fileName, $"application/{fileExtension}", resourceBytes) }, false).Wait();
+            [FileHelper.FromByteArray(fileName, $"application/{fileExtension}", resourceBytes)], false).Wait();
     }
     #endregion
   }

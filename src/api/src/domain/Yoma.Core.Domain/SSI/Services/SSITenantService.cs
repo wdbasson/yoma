@@ -50,6 +50,7 @@ namespace Yoma.Core.Domain.SSI.Services
       var statusCreatedId = _ssiTenantCreationStatusService.GetByName(TenantCreationStatus.Created.ToString()).Id;
 
       SSITenantCreation? result = null;
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
       result = entityType switch
       {
         EntityType.User =>
@@ -58,6 +59,7 @@ namespace Yoma.Core.Domain.SSI.Services
             _ssiTenantCreationRepository.Query().SingleOrDefault(o => o.EntityType.ToLower() == entityType.ToString().ToLower() && o.OrganizationId == entityId && o.StatusId == statusCreatedId),
         _ => throw new InvalidOperationException($"Entity type of '{entityType}' not supported"),
       };
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
 
       if (result != null && string.IsNullOrEmpty(result.TenantId))
         throw new DataInconsistencyException($"Tenant id expected with tenant creation status of 'Created' for item with id '{result.Id}'");
@@ -78,11 +80,15 @@ namespace Yoma.Core.Domain.SSI.Services
       switch (entityType)
       {
         case EntityType.User:
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
           existingItem = _ssiTenantCreationRepository.Query().SingleOrDefault(o => o.EntityType.ToLower() == entityType.ToString().ToLower() && o.UserId == entityId);
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
           item.UserId = entityId;
           break;
         case EntityType.Organization:
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
           existingItem = _ssiTenantCreationRepository.Query().SingleOrDefault(o => o.EntityType.ToLower() == entityType.ToString().ToLower() && o.OrganizationId == entityId);
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
           item.OrganizationId = entityId;
           break;
 
@@ -101,8 +107,7 @@ namespace Yoma.Core.Domain.SSI.Services
 
     public List<SSITenantCreation> ListPendingCreationSchedule(int batchSize, List<Guid> idsToSkip)
     {
-      if (batchSize <= default(int))
-        throw new ArgumentOutOfRangeException(nameof(batchSize));
+      ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(batchSize, default);
 
       var statusPendingId = _ssiTenantCreationStatusService.GetByName(TenantCreationStatus.Pending.ToString()).Id;
 
@@ -118,8 +123,7 @@ namespace Yoma.Core.Domain.SSI.Services
 
     public async Task UpdateScheduleCreation(SSITenantCreation item)
     {
-      if (item == null)
-        throw new ArgumentNullException(nameof(item));
+      ArgumentNullException.ThrowIfNull(item);
 
       item.TenantId = item.TenantId?.Trim();
 

@@ -51,7 +51,9 @@ namespace Yoma.Core.Domain.Lookups.Services
         throw new ArgumentNullException(nameof(name));
       name = name.Trim();
 
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
       return _skillRepository.Query().SingleOrDefault(o => o.Name.ToLower() == name.ToLower());
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
     }
 
     public Skill GetById(Guid id)
@@ -75,13 +77,12 @@ namespace Yoma.Core.Domain.Lookups.Services
         throw new ArgumentNullException(nameof(value));
       value = value.Trim();
 
-      return _skillRepository.Contains(_skillRepository.Query(), value).ToList();
+      return [.. _skillRepository.Contains(_skillRepository.Query(), value)];
     }
 
     public SkillSearchResults Search(SkillSearchFilter filter)
     {
-      if (filter == null)
-        throw new ArgumentNullException(nameof(filter));
+      ArgumentNullException.ThrowIfNull(filter);
 
       _searchFilterValidator.ValidateAndThrow(filter);
 
@@ -97,7 +98,7 @@ namespace Yoma.Core.Domain.Lookups.Services
         results.TotalCount = query.Count();
         query = query.Skip((filter.PageNumber.Value - 1) * filter.PageSize.Value).Take(filter.PageSize.Value);
       }
-      results.Items = query.ToList();
+      results.Items = [.. query];
 
       return results;
     }

@@ -20,12 +20,12 @@ namespace Yoma.Core.Domain.SSI.Services
     private readonly SchemaRequestValidatorCreate _schemaRequestValidatorCreate;
     private readonly SchemaRequestValidatorUpdate _schemaRequestValidatorUpdate;
 
-    public static readonly char[] SchemaName_SystemCharacters = { ':' };
+    public static readonly char[] SchemaName_SystemCharacters = [':'];
     public const char SchemaName_TypeDelimiter = '|';
     public const char SchemaAttribute_Internal_Prefix = '_';
     public const string SchemaAttribute_Internal_DateIssued = "_Date_Issued";
     public const string SchemaAttribute_Internal_ReferentClient = "_Referent_Client";
-    public static readonly string[] SchemaAttributes_Internal = { SchemaAttribute_Internal_DateIssued, SchemaAttribute_Internal_ReferentClient };
+    public static readonly string[] SchemaAttributes_Internal = [SchemaAttribute_Internal_DateIssued, SchemaAttribute_Internal_ReferentClient];
     #endregion
 
     #region Constructor
@@ -87,7 +87,7 @@ namespace Yoma.Core.Domain.SSI.Services
             MatchedProperties = entity.Properties?
                   .Where(property => schema.AttributeNames
                       .Contains(property.AttributeName, StringComparer.InvariantCultureIgnoreCase))
-                  .ToList() ?? new List<SSISchemaEntityProperty>()
+                  .ToList() ?? []
           })
           )
           .GroupBy(item => item.SchemaId, item => new SSISchemaEntity
@@ -126,8 +126,7 @@ namespace Yoma.Core.Domain.SSI.Services
 
     public async Task<SSISchema> Update(SSISchemaRequestUpdate request)
     {
-      if (request == null)
-        throw new ArgumentNullException(nameof(request));
+      ArgumentNullException.ThrowIfNull(request);
 
       await _schemaRequestValidatorUpdate.ValidateAndThrowAsync(request);
 
@@ -143,7 +142,7 @@ namespace Yoma.Core.Domain.SSI.Services
       //prefix system attributes of not already included
       var systemProperties = _ssiSchemaEntityService.List(null)
           .Where(o => o.Types?.Any(t => t.Id == schemaExisting.TypeId) == true)
-          .SelectMany(entity => entity.Properties?.Where(property => property.System) ?? Enumerable.Empty<SSISchemaEntityProperty>())
+          .SelectMany(entity => entity.Properties?.Where(property => property.System) ?? [])
           .Where(systemProperty => !request.Attributes.Contains(systemProperty.AttributeName, StringComparer.InvariantCultureIgnoreCase))
           .Select(systemProperty => systemProperty.AttributeName)
           .ToList();
@@ -164,8 +163,7 @@ namespace Yoma.Core.Domain.SSI.Services
 
     public async Task<SSISchema> Create(SSISchemaRequestCreate request)
     {
-      if (request == null)
-        throw new ArgumentNullException(nameof(request));
+      ArgumentNullException.ThrowIfNull(request);
 
       await _schemaRequestValidatorCreate.ValidateAndThrowAsync(request);
 
@@ -196,7 +194,7 @@ namespace Yoma.Core.Domain.SSI.Services
       //prefix system attributes of not already included
       var systemProperties = _ssiSchemaEntityService.List(null)
           .Where(o => o.Types?.Any(t => t.Id == request.TypeId) == true)
-          .SelectMany(entity => entity.Properties?.Where(property => property.System) ?? Enumerable.Empty<SSISchemaEntityProperty>())
+          .SelectMany(entity => entity.Properties?.Where(property => property.System) ?? [])
           .Where(systemProperty => !request.Attributes.Contains(systemProperty.AttributeName, StringComparer.InvariantCultureIgnoreCase))
           .Select(systemProperty => systemProperty.AttributeName)
           .ToList();
@@ -248,7 +246,7 @@ namespace Yoma.Core.Domain.SSI.Services
          Properties = entity.Properties?
                .Where(property =>
                    schema.AttributeNames.Contains(property.AttributeName, StringComparer.InvariantCultureIgnoreCase))
-               .ToList() ?? new List<SSISchemaEntityProperty>()
+               .ToList() ?? []
        })
        .ToList();
 
@@ -276,7 +274,7 @@ namespace Yoma.Core.Domain.SSI.Services
         TypeDescription = schemaType.Description,
         Version = schema.Version.ToString(),
         ArtifactType = schema.ArtifactType,
-        Entities = matchedEntities ?? new List<SSISchemaEntity>(),
+        Entities = matchedEntities ?? [],
         PropertyCount = matchedEntities?.Sum(o => o.Properties?.Count)
       };
     }

@@ -48,11 +48,11 @@ namespace Yoma.Core.Domain.Entity.Services
     private readonly IRepository<OrganizationDocument> _organizationDocumentRepository;
     private readonly IExecutionStrategyService _executionStrategyService;
 
-    private static readonly OrganizationStatus[] Statuses_Updatable = { OrganizationStatus.Active, OrganizationStatus.Inactive, OrganizationStatus.Declined };
-    private static readonly OrganizationStatus[] Statuses_Activatable = { OrganizationStatus.Inactive };
-    private static readonly OrganizationStatus[] Statuses_CanDelete = { OrganizationStatus.Active, OrganizationStatus.Inactive, OrganizationStatus.Declined };
-    private static readonly OrganizationStatus[] Statuses_DeActivatable = { OrganizationStatus.Active, OrganizationStatus.Declined };
-    private static readonly OrganizationStatus[] Statuses_Declinable = { OrganizationStatus.Inactive };
+    private static readonly OrganizationStatus[] Statuses_Updatable = [OrganizationStatus.Active, OrganizationStatus.Inactive, OrganizationStatus.Declined];
+    private static readonly OrganizationStatus[] Statuses_Activatable = [OrganizationStatus.Inactive];
+    private static readonly OrganizationStatus[] Statuses_CanDelete = [OrganizationStatus.Active, OrganizationStatus.Inactive, OrganizationStatus.Declined];
+    private static readonly OrganizationStatus[] Statuses_DeActivatable = [OrganizationStatus.Active, OrganizationStatus.Declined];
+    private static readonly OrganizationStatus[] Statuses_Declinable = [OrganizationStatus.Inactive];
     #endregion
 
     #region Constructor
@@ -145,7 +145,9 @@ namespace Yoma.Core.Domain.Entity.Services
         throw new ArgumentNullException(nameof(name));
       name = name.Trim();
 
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
       var result = _organizationRepository.Query(includeChildItems).SingleOrDefault(o => o.Name.ToLower() == name.ToLower());
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
       if (result == null) return null;
 
       if (includeComputed)
@@ -173,8 +175,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
     public OrganizationSearchResults Search(OrganizationSearchFilter filter, bool ensureOrganizationAuthorization)
     {
-      if (filter == null)
-        throw new ArgumentNullException(nameof(filter));
+      ArgumentNullException.ThrowIfNull(filter);
 
       _organizationSearchFilterValidator.ValidateAndThrow(filter);
 
@@ -221,8 +222,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
     public async Task<Organization> Create(OrganizationRequestCreate request)
     {
-      if (request == null)
-        throw new ArgumentNullException(nameof(request));
+      ArgumentNullException.ThrowIfNull(request);
 
       request.WebsiteURL = request.WebsiteURL?.EnsureHttpsScheme();
 
@@ -283,7 +283,7 @@ namespace Yoma.Core.Domain.Entity.Services
           blobObjects.Add(resultLogo.ItemAdded);
 
           //assign admins
-          var admins = request.AdminEmails ??= new List<string>();
+          var admins = request.AdminEmails ??= [];
           if (request.AddCurrentUserAsAdmin)
             admins.Add(user.Email);
           else if (HttpContextAccessorHelper.IsUserRoleOnly(_httpContextAccessor))
@@ -336,8 +336,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
     public async Task<Organization> Update(OrganizationRequestUpdate request, bool ensureOrganizationAuthorization)
     {
-      if (request == null)
-        throw new ArgumentNullException(nameof(request));
+      ArgumentNullException.ThrowIfNull(request);
 
       request.WebsiteURL = request.WebsiteURL?.EnsureHttpsScheme();
 
@@ -406,7 +405,7 @@ namespace Yoma.Core.Domain.Entity.Services
           }
 
           //admins
-          var admins = request.AdminEmails ??= new List<string>();
+          var admins = request.AdminEmails ??= [];
           if (request.AddCurrentUserAsAdmin)
             admins.Add(user.Email);
           result = await RemoveAdmins(result, result.Administrators?.Where(o => !admins.Contains(o.Email)).Select(o => o.Email).ToList(), OrganizationReapprovalAction.None);
@@ -493,8 +492,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
     public async Task<Organization> UpdateStatus(Guid id, OrganizationRequestUpdateStatus request, bool ensureOrganizationAuthorization)
     {
-      if (request == null)
-        throw new ArgumentNullException(nameof(request));
+      ArgumentNullException.ThrowIfNull(request);
 
       await _organizationRequestUpdateStatusValidator.ValidateAndThrowAsync(request);
 
@@ -777,7 +775,7 @@ namespace Yoma.Core.Domain.Entity.Services
     public List<UserInfo> ListAdmins(Guid id, bool includeComputed, bool ensureOrganizationAuthorization)
     {
       var org = GetById(id, true, includeComputed, ensureOrganizationAuthorization);
-      return org.Administrators ?? new List<UserInfo>();
+      return org.Administrators ?? [];
     }
 
     public List<OrganizationInfo> ListAdminsOf(bool includeComputed)
@@ -830,7 +828,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
           await _organizationProviderTypeRepository.Create(item);
 
-          organization.ProviderTypes ??= new List<Models.Lookups.OrganizationProviderType>();
+          organization.ProviderTypes ??= [];
           organization.ProviderTypes.Add(new Models.Lookups.OrganizationProviderType { Id = type.Id, Name = type.Name });
 
           updated = true;
@@ -886,8 +884,7 @@ namespace Yoma.Core.Domain.Entity.Services
     private async Task<(Organization Organization, BlobObject ItemAdded)> UpdateLogo(
         Organization organization, IFormFile? file, OrganizationReapprovalAction reapprovalAction)
     {
-      if (file == null)
-        throw new ArgumentNullException(nameof(file));
+      ArgumentNullException.ThrowIfNull(file);
 
       var currentLogoId = organization.LogoId;
 
@@ -951,14 +948,14 @@ namespace Yoma.Core.Domain.Entity.Services
 
             await _organizationUserRepository.Create(item);
 
-            organization.Administrators ??= new List<UserInfo>();
+            organization.Administrators ??= [];
             organization.Administrators.Add(user.ToInfo());
 
             updated = true;
           }
 
           //ensure organization admin role
-          await _identityProviderClient.EnsureRoles(user.ExternalId.Value, new List<string> { Constants.Role_OrganizationAdmin });
+          await _identityProviderClient.EnsureRoles(user.ExternalId.Value, [Constants.Role_OrganizationAdmin]);
         }
 
         if (updated) organization = await SendForReapproval(organization, reapprovalAction, OrganizationStatus.Declined, null);
@@ -999,7 +996,7 @@ namespace Yoma.Core.Domain.Entity.Services
           }
 
           if (items.Count == 0) //no longer an admin of any organization, remove organization admin role
-            await _identityProviderClient.RemoveRoles(user.ExternalId.Value, new List<string> { Constants.Role_OrganizationAdmin });
+            await _identityProviderClient.RemoveRoles(user.ExternalId.Value, [Constants.Role_OrganizationAdmin]);
         }
 
         if (updated) organization = await SendForReapproval(organization, reapprovalAction, OrganizationStatus.Declined, null);
@@ -1090,7 +1087,7 @@ namespace Yoma.Core.Domain.Entity.Services
         throw;
       }
 
-      organization.Documents ??= new List<OrganizationDocument>();
+      organization.Documents ??= [];
       organization.Documents.AddRange(itemsNew);
       organization.Documents?.ForEach(o => o.Url = GetBlobObjectURL(o.FileId));
 
@@ -1194,7 +1191,7 @@ namespace Yoma.Core.Domain.Entity.Services
 
         var data = new EmailOrganizationApproval
         {
-          Organizations = new List<EmailOrganizationApprovalItem>() { dataOrg }
+          Organizations = [dataOrg]
         };
 
         await _emailProviderClient.Send(type, recipients, data);

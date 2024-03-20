@@ -52,8 +52,7 @@ namespace Yoma.Core.Domain.SSI.Services
 
     public async Task<SSIWalletSearchResults> SearchUserCredentials(SSIWalletFilter filter)
     {
-      if (filter == null)
-        throw new ArgumentNullException(nameof(filter));
+      ArgumentNullException.ThrowIfNull(filter);
 
       var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false), false, false);
 
@@ -74,12 +73,11 @@ namespace Yoma.Core.Domain.SSI.Services
 
     private async Task<SSIWalletSearchResults> Search(SSIWalletFilter filter)
     {
-      if (filter == null)
-        throw new ArgumentNullException(nameof(filter));
+      ArgumentNullException.ThrowIfNull(filter);
 
       await _ssiWalletFilterValidator.ValidateAndThrowAsync(filter);
 
-      var result = new SSIWalletSearchResults { Items = new List<SSICredentialInfo>() };
+      var result = new SSIWalletSearchResults { Items = [] };
 
       var tenantId = _ssiTenantService.GetTenantIdOrNull(filter.EntityType, filter.EntityId);
       if (string.IsNullOrEmpty(tenantId)) return result; //tenant pending creation
@@ -99,7 +97,7 @@ namespace Yoma.Core.Domain.SSI.Services
       if (filter.SchemaType.HasValue)
         result.Items = result.Items.Where(o => o.SchemaType == filter.SchemaType.Value).ToList();
 
-      result.Items = result.Items.OrderByDescending(o => o.DateIssued).ToList();
+      result.Items = [.. result.Items.OrderByDescending(o => o.DateIssued)];
 
       //pagination (client side)
       if (filter.PaginationEnabled)
@@ -162,7 +160,7 @@ namespace Yoma.Core.Domain.SSI.Services
 
       if (typeof(T) == typeof(SSICredentialInfo)) return result;
 
-      result.Attributes = new List<SSICredentialAttribute>();
+      result.Attributes = [];
 
       var additionalProperties = schema.Entities.SelectMany(entity => entity.Properties ?? Enumerable.Empty<SSISchemaEntityProperty>())
           .Where(property => !property.System
@@ -175,7 +173,7 @@ namespace Yoma.Core.Domain.SSI.Services
         result.Attributes.Add(new SSICredentialAttribute { Name = property.AttributeName, NameDisplay = property.NameDisplay, ValueDisplay = ParseCredentialAttributeValue(property, attribute) });
       }
 
-      result.Attributes = result.Attributes.OrderBy(o => o.NameDisplay).ToList();
+      result.Attributes = [.. result.Attributes.OrderBy(o => o.NameDisplay)];
       return result;
     }
 

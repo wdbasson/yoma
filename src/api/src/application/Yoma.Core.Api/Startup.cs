@@ -1,5 +1,4 @@
 using Hangfire;
-using Hangfire.Dashboard;
 using Hangfire.Dashboard.BasicAuthorization;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -144,24 +143,13 @@ namespace Yoma.Core.Api
         * https://github.com/aws/aws-ssm-data-protection-provider-for-aspnet
         */
         IgnoreAntiforgeryToken = true, //replicas >=2 will cause antiforgery token issues
-        Authorization = new IDashboardAuthorizationFilter[]
-          {
-                    new BasicAuthAuthorizationFilter(
-                        new BasicAuthAuthorizationFilterOptions
-                        {
-                            RequireSsl = false, //handled by AWS
-                            SslRedirect = false, //handled by AWS
-                            LoginCaseSensitive = true,
-                            Users = new[]
-                            {
-                                new BasicAuthAuthorizationUser
-                                {
-                                    Login = _appSettings.Hangfire.Username,
-                                    PasswordClear = _appSettings.Hangfire.Password
-                                }
-                            }
-                        })
-          }
+        Authorization = [new BasicAuthAuthorizationFilter(new BasicAuthAuthorizationFilterOptions
+        {
+          RequireSsl = false, //handled by AWS
+          SslRedirect = false, //handled by AWS
+          LoginCaseSensitive = true,
+          Users = [new BasicAuthAuthorizationUser { Login = _appSettings.Hangfire.Username, PasswordClear = _appSettings.Hangfire.Password }]
+        })]
       });
 
       app.UseSSIProvider();
@@ -189,7 +177,7 @@ namespace Yoma.Core.Api
 
       var origins = _configuration.GetSection(_config_Section).Get<string>() ?? throw new InvalidOperationException($"Failed to retrieve configuration section 'Config_Section'");
       var values = origins.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToArray();
-      if (!values.Any())
+      if (values.Length == 0)
         throw new InvalidOperationException($"Configuration section '{_config_Section}' contains no configured hosts");
 
       services.AddCors(options =>
@@ -208,19 +196,15 @@ namespace Yoma.Core.Api
 
     private void ConfigureAuthorization(IServiceCollection services, IConfiguration configuration)
     {
-      services.AddAuthorization(options =>
-      {
-        // Authorization policy for Authorization Code flow
-        options.AddPolicy(Constants.Authorization_Policy, policy =>
+      services.AddAuthorizationBuilder()
+          .AddPolicy(Constants.Authorization_Policy, policy =>
               {
                 policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
                 policy.RequireAuthenticatedUser();
                 policy.Requirements.Add(new RequireAudienceClaimRequirement(_appSettings.AuthorizationPolicyAudience));
                 policy.Requirements.Add(new RequireScopeAuthorizationRequirement(_appSettings.AuthorizationPolicyScope));
-              });
-
-        // Authorization policy for Client Credentials flow
-        options.AddPolicy(Constants.Authorization_Policy_External_Partner, policy =>
+              })
+          .AddPolicy(Constants.Authorization_Policy_External_Partner, policy =>
               {
                 policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
                 policy.RequireAuthenticatedUser();
@@ -228,7 +212,6 @@ namespace Yoma.Core.Api
                 policy.Requirements.Add(new RequireClientIdClaimRequirement());
                 policy.Requirements.Add(new RequireScopeAuthorizationRequirement(_appSettings.AuthorizationPolicyScope));
               });
-      });
       services.AddSingleton<IAuthorizationHandler, RequireAudienceClaimHandler>();
       services.AddSingleton<IAuthorizationHandler, RequireClientIdClaimHandler>();
       services.AddSingleton<IAuthorizationHandler, RequireScopeAuthorizationHandler>();
@@ -258,11 +241,11 @@ namespace Yoma.Core.Api
     private void ConfigureSwagger(IServiceCollection services)
     {
       var scopesAuthorizationCode = _appSettings.SwaggerScopesAuthorizationCode.Split(_oAuth_Scope_Separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToArray();
-      if (!scopesAuthorizationCode.Any())
+      if (scopesAuthorizationCode.Length == 0)
         throw new InvalidOperationException($"Configuration section '{AppSettings.Section}' contains no configured swagger 'Authorization Code' scopes");
 
       var scopesClientCredentials = _appSettings.SwaggerScopesClientCredentials.Split(_oAuth_Scope_Separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToArray();
-      if (!scopesClientCredentials.Any())
+      if (scopesClientCredentials.Length == 0)
         throw new InvalidOperationException($"Configuration section '{AppSettings.Section}' contains no configured swagger 'Client Credentials' scopes");
 
       services.AddSwaggerGen(c =>
