@@ -19,14 +19,15 @@
 												<label for="password" class="${properties.kcLabelClass!}">
 													${msg("password")}
 												</label> *
-                         <p id="password-instructions"> ${msg("passwordInstructions")}</p>
+                         <div id="password-instructions"> ${msg("passwordInstructions")}</div>
 											</div>
 											<div class="${properties.kcInputWrapperClass!}">
 												<div class="password-container">
-													<input type="password" id="password" class="${properties.kcInputClass!}" name="password"
+                          <i class="fa fa-eye-slash" id="toggle-password" onclick="togglePassword()"></i>
+													<input type="password" id="register-password" class="${properties.kcInputClass!}" name="password"
 													autocomplete="new-password"
-													aria-invalid="<#if messagesPerField.existsError('password','password-confirm')>true</#if>" />
-													<i class="fa fa-eye-slash" id="toggle-password" onclick="togglePassword()"></i>
+													aria-invalid="<#if messagesPerField.existsError('password','register-password-confirm')>true</#if>" />
+
 												</div>
 												<#if messagesPerField.existsError('password')>
 													<span id="input-error-password" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
@@ -37,19 +38,20 @@
 										</div>
 										<div class="${properties.kcFormGroupClass!}">
 											<div class="${properties.kcLabelWrapperClass!}">
-												<label for="password-confirm"
+												<label for="register-password-confirm"
 													class="${properties.kcLabelClass!}">
 													${msg("passwordConfirm")}
 												</label> *
 											</div>
 											<div class="${properties.kcInputWrapperClass!}">
 												<div class="password-confirm-container">
-													<input type="password" id="password-confirm" class="${properties.kcInputClass!}"
+                          <i class="fa fa-eye-slash" id="toggle-password-confirm" onclick="togglePasswordConfirm()"></i>
+													<input type="password" id="register-password-confirm" class="${properties.kcInputClass!}"
 													name="password-confirm"
-													aria-invalid="<#if messagesPerField.existsError('password-confirm')>true</#if>" />
-													<i class="fa fa-eye-slash" id="toggle-password-confirm" onclick="togglePasswordConfirm()"></i>
+													aria-invalid="<#if messagesPerField.existsError('register-password-confirm')>true</#if>" />
+
 												</div>
-												<#if messagesPerField.existsError('password-confirm')>
+												<#if messagesPerField.existsError('register-password-confirm')>
 													<span id="input-error-password-confirm" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
 														${kcSanitize(messagesPerField.get('password-confirm'))?no_esc}
 													</span>
@@ -109,7 +111,7 @@
 
 		<script>
 			function togglePassword() {
-				var password = document.getElementById("password");
+				var password = document.getElementById("register-password");
 				var toggle = document.getElementById("toggle-password");
 				if (password.type === "password") {
 					password.type = "text";
@@ -120,7 +122,7 @@
 				}
 			}
 			function togglePasswordConfirm() {
-				var passwordConfirm = document.getElementById("password-confirm");
+				var passwordConfirm = document.getElementById("register-password-confirm");
 				var toggle = document.getElementById("toggle-password-confirm");
 				if (passwordConfirm.type === "password") {
 					passwordConfirm.type = "text";

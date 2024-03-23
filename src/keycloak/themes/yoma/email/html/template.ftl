@@ -13,7 +13,7 @@
       font-size: 16px;
       padding: 20px;
       text-align: right;
-      margin-bottom: 20px;
+      margin-bottom: 50px;
       line-height: 0.6;
     }
 
@@ -86,10 +86,21 @@
     .nested-content {
       text-align: center;
       margin-bottom: 10px;
+      padding-top: 50px;
+      padding-bottom: 25px;
     }
 
     .nested-content a {
-      color: white;
+      background-color: #387F6B;
+      border-radius: 25px;
+      color: white !important;
+      display: inline-block;
+      font-size: 16px;
+      margin: 20px auto;
+      margin-bottom: 50px;
+      padding: 15px 85px;
+      cursor: pointer;
+      text-decoration: none;
     }
 
     .bottom-content-section h2 {
@@ -125,6 +136,10 @@
       margin: 0 auto;
     }
 
+    .header-msg {
+      color: white;
+    }
+
     @media screen and (max-width: 1000px) {
       .banner-container {
         width: 100%;
@@ -141,7 +156,7 @@
           <tr>
             <td align="left"> <img src="https://yoma-v3-public-storage.s3.eu-west-1.amazonaws.com/shared-resources/yoma.png" alt="Yoma" id="logo" /> </td>
             <td align="right">
-              <h1>Hello,</h1>
+              <h1 class="header-msg">Hello,</h1>
               <h1 id="username">${(user.firstName)!} ${(user.lastName)!}</h1>
             </td>
           </tr>
@@ -189,7 +204,7 @@
                       </tr>
                       <tr>
                         <td width="10%" valign="middle" align="center"> <img id="zlto-icon"
-                            src="https://yoma-v3-public-storage.s3.eu-west-1.amazonaws.com/shared-resources/icon-zlto.svg" alt="zlto-icon" /> </td>
+                            src="https://yoma-v3-public-storage.s3.eu-west-1.amazonaws.com/shared-resources/icon-zlto.png" alt="zlto-icon" /> </td>
                         <td width="90%" valign="middle" align="left">
                           <p>Earn ZLTO, the platform's digital token, by completing opportunities</p>
                         </td>
