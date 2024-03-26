@@ -22,7 +22,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV CI=true
 
-# Server environment variables don't appear to be needed at build time
+# Client environment variables are needed at build time
 ARG NEXT_PUBLIC_ENVIRONMENT
 ENV NEXT_PUBLIC_ENVIRONMENT=${NEXT_PUBLIC_ENVIRONMENT}
 ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
