@@ -22,6 +22,12 @@ export default function Document() {
           src="//translate.google.com/translate_a/element.js?cb=TranslateInit"
           strategy="afterInteractive"
         />
+        <Script src="/scripts/help-scout.js" strategy="afterInteractive" />
+        <Script
+          id="hs-script-loader"
+          src="//js.hs-scripts.com/20355202.js"
+          strategy="afterInteractive"
+        />
       </Head>
       <body>
         <Main />
