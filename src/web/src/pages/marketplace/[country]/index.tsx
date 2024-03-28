@@ -28,7 +28,6 @@ import {
 import type { Country } from "~/api/models/lookups";
 import Select from "react-select";
 import { useRouter } from "next/router";
-import { StoreItemsCarousel } from "~/components/Marketplace/StoreItemsCarousel";
 import type { ParsedUrlQuery } from "querystring";
 import { AvatarImage } from "~/components/AvatarImage";
 import { IoMdClose, IoMdFingerPrint, IoMdWarning } from "react-icons/io";
@@ -48,6 +47,7 @@ import { Unauthenticated } from "~/components/Status/Unauthenticated";
 import { Unauthorized } from "~/components/Status/Unauthorized";
 import { env } from "process";
 import { MarketplaceDown } from "~/components/Status/MarketplaceDown";
+import StoreItemsCarousel2 from "~/components/Marketplace/StoreItemsCarousel2";
 
 interface IParams extends ParsedUrlQuery {
   country: string;
@@ -748,7 +748,17 @@ const MarketplaceStoreCategories: NextPageWithLayout<{
               <div
                 key={`category_${category_storeItems.category.id}_${index}_${index2}`}
               >
-                <StoreItemsCarousel
+                <StoreItemsCarousel2
+                  id={`storeItem_${category_storeItems.category.id}_${index}_${index2}`}
+                  title={storeItem.store?.name}
+                  data={storeItem.items}
+                  loadData={(startRow) =>
+                    loadData(startRow, storeItem.store.id)
+                  }
+                  onClick={onBuyClick}
+                />
+
+                {/* <StoreItemsCarousel
                   id={`storeItem_${category_storeItems.category.id}_${index}_${index2}`}
                   title={storeItem.store?.name}
                   data={storeItem.items}
@@ -757,7 +767,7 @@ const MarketplaceStoreCategories: NextPageWithLayout<{
                     loadData(startRow, storeItem.store.id)
                   }
                   onClick={onBuyClick}
-                />
+                /> */}
               </div>
             ))}
           </div>
