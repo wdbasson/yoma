@@ -1,6 +1,6 @@
 import type { GetStaticPaths, GetStaticProps } from "next";
 import { useQueryClient } from "@tanstack/react-query";
-import React, { useCallback, type ReactElement, useState } from "react";
+import React, { useCallback, type ReactElement, useState, useRef } from "react";
 import { type NextPageWithLayout } from "~/pages/_app";
 import NoRowsMessage from "~/components/NoRowsMessage";
 import {
@@ -226,6 +226,7 @@ const MarketplaceStoreCategories: NextPageWithLayout<{
   const setUserProfile = useSetAtom(userProfileAtom);
   const setUserCountrySelection = useSetAtom(userCountrySelectionAtom);
   const modalContext = useConfirmationModalContext();
+  const myRef = useRef<HTMLDivElement>(null);
 
   const onFilterCountry = useCallback(
     (value: string) => {
@@ -692,6 +693,9 @@ const MarketplaceStoreCategories: NextPageWithLayout<{
         </div>
       </ReactModal>
 
+      {/* REFERENCE FOR FILTER POPUP: fix menu z-index issue */}
+      <div ref={myRef} />
+
       {/* FILTER: COUNTRY */}
       <div className="flex flex-row items-center justify-start gap-4">
         <div className="text-sm font-semibold text-gray-dark">Filter by:</div>
@@ -706,9 +710,12 @@ const MarketplaceStoreCategories: NextPageWithLayout<{
             (c) => c.value === (country?.toString() ?? COUNTRY_WW),
           )}
           placeholder="Country"
+          // fix menu z-index issue
+          menuPortalTarget={myRef.current}
+          styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
         />
       </div>
-      <div className=" flex flex-col gap-6 px-2 pb-4 md:p-0 md:pb-0">
+      <div className="flex flex-col gap-6 px-2 pb-4 md:p-0 md:pb-0">
         {data_storeItems.length == 0 && (
           <NoRowsMessage title="No items found" />
         )}
