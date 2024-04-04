@@ -205,7 +205,7 @@ namespace Yoma.Core.Domain.Entity.Services
         query = query.Where(o => organizationIds.Contains(o.Id));
 
       var results = new OrganizationSearchResults();
-      query = query.OrderBy(o => o.Name);
+      query = query.OrderBy(o => o.Name).ThenBy(o => o.Id); //ensure deterministic sorting / consistent pagination results
 
       if (filter.PaginationEnabled)
       {

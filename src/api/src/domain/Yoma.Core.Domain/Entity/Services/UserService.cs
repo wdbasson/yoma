@@ -162,7 +162,7 @@ namespace Yoma.Core.Domain.Entity.Services
         query = _userRepository.Contains(query, filter.ValueContains);
 
       var results = new UserSearchResults();
-      query = query.OrderBy(o => o.DisplayName);
+      query = query.OrderBy(o => o.DisplayName).ThenBy(o => o.Id); //ensure deterministic sorting / consistent pagination results
 
       if (filter.PaginationEnabled)
       {

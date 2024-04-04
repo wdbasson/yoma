@@ -91,7 +91,7 @@ namespace Yoma.Core.Domain.Lookups.Services
         query = _skillRepository.Contains(query, filter.NameContains);
 
       var results = new SkillSearchResults();
-      query = query.OrderBy(o => o.Name);
+      query = query.OrderBy(o => o.Name).ThenBy(o => o.Id); //ensure deterministic sorting / consistent pagination results
 
       if (filter.PaginationEnabled)
       {

@@ -273,7 +273,7 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
           //published: relating to active opportunities (irrespective of started) that relates to active organizations
           query = query.Where(o => o.OpportunityStatusId == opportunityStatusActiveId);
           query = query.Where(o => o.OrganizationStatusId == organizationStatusActiveId);
-          query = query.OrderByDescending(o => o.DateModified);
+          query = query.OrderByDescending(o => o.DateModified).ThenBy(o => o.Id); //ensure deterministic sorting / consistent pagination results
           break;
 
         case Action.Verification:
@@ -305,7 +305,7 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
           }
 
           query = query.Where(predicate);
-          query = query.OrderByDescending(o => o.DateModified).ThenByDescending(o => o.DateCompleted);
+          query = query.OrderByDescending(o => o.DateModified).ThenByDescending(o => o.DateCompleted).ThenBy(o => o.Id); //ensure deterministic sorting / consistent pagination results
 
           break;
 
