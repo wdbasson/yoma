@@ -134,6 +134,8 @@ volumeMounts: {}
 volumes: {}
 persistence: {}
 
+initContainers: []
+
 postInstallHook:
   enabled: false
   ref: master
