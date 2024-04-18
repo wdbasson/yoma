@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getOrganisationById } from "~/api/services/organisations";
 import { getUserProfile, patchYoIDOnboarding } from "~/api/services/user";
 import {
+  COOKIE_KEYCLOAK_SESSION,
   GA_ACTION_USER_LOGIN_BEFORE,
   GA_ACTION_USER_YOIDONBOARDINGCONFIRMED,
   GA_CATEGORY_USER,
@@ -35,12 +36,13 @@ import {
   UserProfileFilterOptions,
   UserProfileForm,
 } from "./User/UserProfileForm";
+import { parseCookies } from "nookies";
 
 // * GLOBAL APP CONCERNS
 // * needs to be done here as jotai atoms are not available in _app.tsx
 export const Global: React.FC = () => {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const userProfile = useAtomValue(userProfileAtom);
   const setUserProfile = useSetAtom(userProfileAtom);
   const setActiveNavigationRoleViewAtom = useSetAtom(
@@ -112,13 +114,43 @@ export const Global: React.FC = () => {
     return true;
   }, [userProfile]);
 
+  const onSignIn = useCallback(async () => {
+    setIsButtonLoading(true);
+
+    // 📊 GOOGLE ANALYTICS: track event
+    trackGAEvent(
+      GA_CATEGORY_USER,
+      GA_ACTION_USER_LOGIN_BEFORE,
+      "User Logging In. Redirected to External Authentication Provider",
+    );
+
+    signIn(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      ((await fetchClientEnv()).NEXT_PUBLIC_KEYCLOAK_DEFAULT_PROVIDER ||
+        "") as string,
+    );
+  }, [setIsButtonLoading]);
+
   // 🔔 USER PROFILE
   useEffect(() => {
     //TODO: disabled for now. need to fix issue with GA login event beging tracked twice
     // skip if not logged in or userProfile atom already set (atomWithStorage)
     //if (!session || userProfile) return;
+    console.warn("sessionStatus", sessionStatus);
+    if (sessionStatus === "loading") return;
 
-    if (session && !session?.error && !userProfile) {
+    // check error
+    if (session?.error) {
+      setLoginMessage("There was an error signing in. Please sign in again.");
+      return;
+    }
+
+    // check existing session
+    if (session) {
+      // skip if userProfile already set
+      if (userProfile) return;
+
+      // get user profile
       getUserProfile()
         .then((res) => {
           // update atom
@@ -149,13 +181,30 @@ export const Global: React.FC = () => {
           console.error(e);
         });
     }
+    // check if external partner session exists i.e keycloak session cookie
+    // if it does, perform the sign-in action (SSO)
+    // this will redirect to keycloak, automatically sign the user in and redirect back to the app
+    else {
+      console.warn("checking for existing keycloak session");
+      const cookies = parseCookies();
+      const existingSessionCookieValue = cookies[COOKIE_KEYCLOAK_SESSION];
+
+      console.warn("existingSessionCookieValue", existingSessionCookieValue);
+      if (existingSessionCookieValue) {
+        onSignIn().then(() => {
+          toast.info("Hold on while we sign you in...");
+        });
+      }
+    }
   }, [
     session,
+    sessionStatus,
     userProfile,
     setUserProfile,
     setOnboardingDialogVisible,
     setUpdateProfileDialogVisible,
     isUserProfileCompleted,
+    onSignIn,
   ]);
 
   // 🔔 VIEWPORT DETECTION
@@ -279,24 +328,6 @@ export const Global: React.FC = () => {
     }
   }, [setUserProfile, setOnboardingDialogVisible, isUserProfileCompleted]);
 
-  const onLogin = useCallback(async () => {
-    setIsButtonLoading(true);
-
-    // 📊 GOOGLE ANALYTICS: track event
-    trackGAEvent(
-      GA_CATEGORY_USER,
-      GA_ACTION_USER_LOGIN_BEFORE,
-      "User Logging In. Redirected to External Authentication Provider",
-    );
-
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    signIn(
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      ((await fetchClientEnv()).NEXT_PUBLIC_KEYCLOAK_DEFAULT_PROVIDER ||
-        "") as string,
-    );
-  }, [setIsButtonLoading]);
-
   return (
     <>
       {/* YoID ONBOARDING DIALOG */}
@@ -410,7 +441,7 @@ export const Global: React.FC = () => {
               <button
                 type="button"
                 className="bg-theme btn rounded-full normal-case text-white hover:brightness-95 md:w-[150px]"
-                onClick={onLogin}
+                onClick={onSignIn}
               >
                 {isButtonLoading && (
                   <span className="loading loading-spinner loading-md mr-2 text-warning"></span>
