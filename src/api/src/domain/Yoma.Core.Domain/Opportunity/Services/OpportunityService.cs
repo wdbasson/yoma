@@ -1,8 +1,12 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Transactions;
+using Yoma.Core.Domain.ActionLink.Extensions;
+using Yoma.Core.Domain.ActionLink.Interfaces;
+using Yoma.Core.Domain.ActionLink.Models;
 using Yoma.Core.Domain.BlobProvider;
 using Yoma.Core.Domain.Core;
 using Yoma.Core.Domain.Core.Exceptions;
@@ -25,7 +29,6 @@ using Yoma.Core.Domain.Opportunity.Interfaces;
 using Yoma.Core.Domain.Opportunity.Interfaces.Lookups;
 using Yoma.Core.Domain.Opportunity.Models;
 using Yoma.Core.Domain.Opportunity.Validators;
-using Yoma.Core.Domain.ShortLinkProvider.Interfaces;
 
 namespace Yoma.Core.Domain.Opportunity.Services
 {
@@ -49,10 +52,10 @@ namespace Yoma.Core.Domain.Opportunity.Services
     private readonly ITimeIntervalService _timeIntervalService;
     private readonly IBlobService _blobService;
     private readonly IUserService _userService;
+    private readonly ILinkService _linkService;
     private readonly IEmailURLFactory _emailURLFactory;
     private readonly IEmailProviderClient _emailProviderClient;
     private readonly IIdentityProviderClient _identityProviderClient;
-    private readonly IShortLinkProviderClient _shortLinkProviderClient;
 
     private readonly OpportunityRequestValidatorCreate _opportunityRequestValidatorCreate;
     private readonly OpportunityRequestValidatorUpdate _opportunityRequestValidatorUpdate;
@@ -93,10 +96,10 @@ namespace Yoma.Core.Domain.Opportunity.Services
         ITimeIntervalService timeIntervalService,
         IBlobService blobService,
         IUserService userService,
+        ILinkService linkService,
         IEmailURLFactory emailURLFactory,
         IEmailProviderClientFactory emailProviderClientFactory,
         IIdentityProviderClientFactory identityProviderClientFactory,
-        IShortLinkProviderClientFactory shortLinkProviderClientFactory,
         OpportunityRequestValidatorCreate opportunityRequestValidatorCreate,
         OpportunityRequestValidatorUpdate opportunityRequestValidatorUpdate,
         OpportunitySearchFilterValidator opportunitySearchFilterValidator,
@@ -126,10 +129,10 @@ namespace Yoma.Core.Domain.Opportunity.Services
       _timeIntervalService = timeIntervalService;
       _blobService = blobService;
       _userService = userService;
+      _linkService = linkService;
       _emailURLFactory = emailURLFactory;
       _emailProviderClient = emailProviderClientFactory.CreateClient();
       _identityProviderClient = identityProviderClientFactory.CreateClient();
-      _shortLinkProviderClient = shortLinkProviderClientFactory.CreateClient();
 
       _opportunityRequestValidatorCreate = opportunityRequestValidatorCreate;
       _opportunityRequestValidatorUpdate = opportunityRequestValidatorUpdate;
@@ -196,46 +199,6 @@ namespace Yoma.Core.Domain.Opportunity.Services
       }
 
       return result;
-    }
-
-    public async Task<OpportunitySharingResult> GetSharingDetails(Guid id, bool publishedOrExpiredOnly, bool? includeQRCode)
-    {
-      if (id == Guid.Empty)
-        throw new ArgumentNullException(nameof(id));
-
-      var opportunity = GetById(id, false, false, false);
-
-      if (publishedOrExpiredOnly)
-      {
-        var (result, message) = opportunity.PublishedOrExpired();
-
-        if (!result)
-        {
-          ArgumentException.ThrowIfNullOrEmpty(message);
-          throw new EntityNotFoundException(message);
-        }
-      }
-
-      if (string.IsNullOrEmpty(opportunity.ShortURL))
-      {
-        var request = new ShortLinkProvider.Models.ShortLinkRequest
-        {
-          Type = ShortLinkProvider.EntityType.Opportunity,
-          Action = ShortLinkProvider.Action.Sharing,
-          Title = opportunity.Title,
-          URL = opportunity.YomaInfoURL(_appSettings.AppBaseURL)
-        };
-
-        var response = await _shortLinkProviderClient.CreateShortLink(request);
-        opportunity.ShortURL = response.Link;
-        await _opportunityRepository.Update(opportunity);
-      }
-
-      return new OpportunitySharingResult
-      {
-        ShortURL = opportunity.ShortURL,
-        QRCodeBase64 = includeQRCode == true ? QRCodeHelper.GenerateQRCodeBase64(opportunity.ShortURL) : null
-      };
     }
 
     public List<Models.Opportunity> Contains(string value, bool includeComputed)
@@ -1409,6 +1372,85 @@ namespace Yoma.Core.Domain.Opportunity.Services
 
       return result;
     }
+
+    public async Task<LinkInfo> CreateLinkSharing(Guid id, bool publishedOrExpiredOnly, bool? includeQRCode, bool ensureOrganizationAuthorization)
+    {
+      if (id == Guid.Empty)
+        throw new ArgumentNullException(nameof(id));
+
+      var opportunity = GetById(id, false, false, ensureOrganizationAuthorization);
+
+      if (publishedOrExpiredOnly)
+      {
+        var (found, message) = opportunity.PublishedOrExpired();
+
+        if (!found)
+        {
+          ArgumentException.ThrowIfNullOrEmpty(message);
+          throw new EntityNotFoundException(message);
+        }
+      }
+
+      var request = new LinkRequestCreate
+      {
+        Name = opportunity.Title.RemoveSpecialCharacters(),
+        EntityType = ActionLink.LinkEntityType.Opportunity,
+        Action = ActionLink.LinkAction.Share,
+        EntityId = opportunity.Id,
+        URL = opportunity.YomaInfoURL(_appSettings.AppBaseURL)
+      };
+
+      Link? result = null;
+      await _executionStrategyService.ExecuteInExecutionStrategyAsync(async () =>
+      {
+        using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
+
+        result = await _linkService.Create(request, ensureOrganizationAuthorization);
+        result = await _linkService.LogUsage(result.Id);
+
+        scope.Complete();
+      });
+
+      if (result == null)
+        throw new InvalidOperationException("Failed to create sharing link");
+
+      return result.ToLinkInfo(includeQRCode);
+    }
+
+    public async Task<LinkInfo> CreateLinkInstantVerify(Guid id, OpportunityRequestLinkInstantVerify request, bool ensureOrganizationAuthorization)
+    {
+      ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+      var opportunity = GetById(id, false, false, ensureOrganizationAuthorization);
+
+      //TODO: Validator
+
+      if (opportunity.Status != Status.Active)
+        throw new ValidationException($"Link cannot be created as the opportunity '{opportunity.Title}' is not active");
+
+      if (string.IsNullOrEmpty(request.Name)) request.Name = opportunity.Title.RemoveSpecialCharacters();
+
+      if (request.DistributionList != null) request.DistributionList = request.DistributionList.Distinct().ToList();
+
+      var requestLink = new LinkRequestCreate
+      {
+        Name = request.Name,
+        Description = request.Description,
+        EntityType = ActionLink.LinkEntityType.Opportunity,
+        Action = ActionLink.LinkAction.Verify,
+        EntityId = opportunity.Id,
+        URL = opportunity.YomaInstantVerifyURL(_appSettings.AppBaseURL),
+        UsagesLimit = request.UsagesLimit,
+        DateEnd = request.DateEnd
+      };
+
+      var result = await _linkService.Create(requestLink, ensureOrganizationAuthorization);
+
+      //send emails if needed
+
+      return result.ToLinkInfo(request.IncludeQRCode);
+    }
+
     #endregion
 
     #region Private Members
@@ -1847,7 +1889,6 @@ namespace Yoma.Core.Domain.Opportunity.Services
       if (!Statuses_Updatable.Contains(opportunity.Status))
         throw new ValidationException($"{nameof(Models.Opportunity)} can no longer be updated (current status '{opportunity.Status}'). Required state '{string.Join(" / ", Statuses_Updatable)}'");
     }
-
     #endregion
   }
 }
