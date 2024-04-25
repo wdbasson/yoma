@@ -6,13 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { type GetServerSidePropsContext } from "next";
 import { type ParsedUrlQuery } from "querystring";
-import {
-  useState,
-  type ReactElement,
-  useMemo,
-  useCallback,
-  useEffect,
-} from "react";
+import { useState, type ReactElement, useCallback, useEffect } from "react";
 import { type OpportunityInfo } from "~/api/models/opportunity";
 import {
   getOpportunityInfoById,
@@ -25,21 +19,15 @@ import {
   IoMdClose,
   IoMdFingerPrint,
   IoMdArrowRoundBack,
-  IoMdPlay,
   IoMdBookmark,
-  IoMdPerson,
-  IoIosBook,
-  IoMdCalendar,
-  IoMdCloudUpload,
+  IoMdShare,
 } from "react-icons/io";
 import type { NextPageWithLayout } from "~/pages/_app";
 import ReactModal from "react-modal";
 import iconUpload from "public/images/icon-upload.svg";
 import iconOpen from "public/images/icon-open.svg";
 import iconClock from "public/images/icon-clock.svg";
-import iconZlto from "public/images/icon-zlto.svg";
 import iconBookmark from "public/images/icon-bookmark.svg";
-// import iconShare from "public/images/icon-share.svg";
 import iconDifficulty from "public/images/icon-difficulty.svg";
 import iconLanguage from "public/images/icon-language.svg";
 import iconTopics from "public/images/icon-topics.svg";
@@ -84,6 +72,8 @@ import { AvatarImage } from "~/components/AvatarImage";
 import { useRouter } from "next/router";
 import { Unauthenticated } from "~/components/Status/Unauthenticated";
 import { Unauthorized } from "~/components/Status/Unauthorized";
+import Badges from "~/components/Opportunity/Badges";
+import Share from "~/components/Opportunity/Share";
 
 interface IParams extends ParsedUrlQuery {
   id: string;
@@ -162,7 +152,9 @@ const OpportunityDetails: NextPageWithLayout<{
   user: User;
   error?: number;
 }> = ({ opportunityId, user, error }) => {
+  const router = useRouter();
   const queryClient = useQueryClient();
+
   const [loginDialogVisible, setLoginDialogVisible] = useState(false);
   const [gotoOpportunityDialogVisible, setGotoOpportunityDialogVisible] =
     useState(false);
@@ -176,8 +168,9 @@ const OpportunityDetails: NextPageWithLayout<{
   ] = useState(false);
   const [cancelOpportunityDialogVisible, setCancelOpportunityDialogVisible] =
     useState(false);
+  const [shareOpportunityDialogVisible, setShareOpportunityDialogVisible] =
+    useState(false);
   const [isOppSaved, setIsOppSaved] = useState(false);
-  const router = useRouter();
 
   const {
     data: opportunity,
@@ -211,13 +204,6 @@ const OpportunityDetails: NextPageWithLayout<{
         } else return null;
       },
     });
-
-  // memo for spots left i.e participantLimit - participantCountTotal
-  const spotsLeft = useMemo(() => {
-    const participantLimit = opportunity?.participantLimit ?? 0;
-    const participantCountTotal = opportunity?.participantCountTotal ?? 0;
-    return Math.max(participantLimit - participantCountTotal, 0);
-  }, [opportunity]);
 
   useEffect(() => {
     if (!user) return;
@@ -328,6 +314,26 @@ const OpportunityDetails: NextPageWithLayout<{
 
     setCancelOpportunityDialogVisible(false);
   }, [opportunityId, queryClient]);
+
+  const onShareOpportunity = useCallback(() => {
+    if (!user) {
+      toast.warning("You need to be logged in to save an opportunity");
+      return;
+    }
+    setShareOpportunityDialogVisible(true);
+  }, [user, setShareOpportunityDialogVisible]);
+
+  // const [showQRCode, setShowQRCode] = useState(false);
+
+  // const copyToClipboard = () => {
+  //   navigator.clipboard.writeText(
+  //     "Lorem ipsum dolor sit amet, consectetuer adipiscing elit.",
+  //   );
+  //   toast("URL copied to clipboard!");
+  // };
+  // const generateQRCode = () => {
+  //   setShowQRCode(true);
+  // };
 
   if (error) {
     if (error === 401) return <Unauthenticated />;
@@ -503,11 +509,12 @@ const OpportunityDetails: NextPageWithLayout<{
                       this page upon finishing to{" "}
                       <strong>earn your ZLTO</strong>.
                     </div>
-                    {/* <div>Don’t show me this message again</div> */}
+
                     <div className="text-center md:w-[450px]">
                       Be mindful of external sites&apos; privacy policy and keep
                       your data private.
                     </div>
+
                     <div className="mt-4 flex w-full flex-grow flex-col justify-center gap-4 md:flex-row">
                       <button
                         type="button"
@@ -520,15 +527,6 @@ const OpportunityDetails: NextPageWithLayout<{
                           }`
                         }
                         onClick={onUpdateSavedOpportunity}
-                        // ensure user is logged in and opportunity is published and active
-                        // disabled={
-                        //   !user ||
-                        //   !(
-                        //     opportunity?.published &&
-                        //     opportunity?.status != "Inactive" &&
-                        //     new Date(opportunity?.dateStart) > new Date()
-                        //   )
-                        // }
                       >
                         <IoMdBookmark
                           style={{ width: "20px", height: "20px" }}
@@ -696,6 +694,25 @@ const OpportunityDetails: NextPageWithLayout<{
                 </div>
               </ReactModal>
 
+              {/* SHARE OPPORTUNITY DIALOG */}
+              {opportunity && (
+                <ReactModal
+                  isOpen={shareOpportunityDialogVisible}
+                  shouldCloseOnOverlayClick={false}
+                  onRequestClose={() => {
+                    setShareOpportunityDialogVisible(false);
+                  }}
+                  className={`fixed bottom-0 left-0 right-0 top-0 flex-grow overflow-hidden bg-white animate-in fade-in md:m-auto md:max-h-[650px] md:w-[600px] md:rounded-3xl`}
+                  portalClassName={"fixed z-40"}
+                  overlayClassName="fixed inset-0 bg-overlay"
+                >
+                  <Share
+                    opportunity={opportunity}
+                    onClose={() => setShareOpportunityDialogVisible(false)}
+                  />
+                </ReactModal>
+              )}
+
               {opportunity && (
                 <div className="flex flex-col gap-4">
                   <div className="relative flex flex-grow flex-row gap-1 rounded-lg bg-white p-4 shadow-lg md:p-6">
@@ -720,88 +737,7 @@ const OpportunityDetails: NextPageWithLayout<{
                         </h6>
 
                         {/* BADGES */}
-                        <div className="mb-2 mt-4 flex flex-row flex-wrap gap-1 text-xs font-bold text-green-dark md:my-2">
-                          <div className="badge bg-green-light text-green">
-                            <Image
-                              src={iconClock}
-                              alt="Icon Clock"
-                              width={20}
-                              height={20}
-                              sizes="100vw"
-                              priority={true}
-                              style={{ width: "20px", height: "20px" }}
-                            />
-
-                            <span className="ml-1 text-xs">{`${
-                              opportunity.commitmentIntervalCount
-                            } ${opportunity.commitmentInterval}${
-                              opportunity.commitmentIntervalCount > 1 ? "s" : ""
-                            }`}</span>
-                          </div>
-                          {spotsLeft > 0 && (
-                            <div className="badge bg-blue-light text-blue">
-                              <IoMdPerson />
-
-                              <span className="ml-1 text-xs">
-                                {spotsLeft} Spots left
-                              </span>
-                            </div>
-                          )}
-                          {opportunity?.type && (
-                            <div className="badge bg-[#E7E8F5] text-[#5F65B9]">
-                              <IoIosBook />
-                              <span className="ml-1 text-xs">
-                                {opportunity.type}
-                              </span>
-                            </div>
-                          )}
-                          {(opportunity.zltoReward ?? 0) > 0 && (
-                            <div className="badge bg-orange-light text-orange">
-                              <Image
-                                src={iconZlto}
-                                alt="Icon Zlto"
-                                width={16}
-                                height={16}
-                                sizes="100vw"
-                                priority={true}
-                                style={{ width: "16px", height: "16px" }}
-                              />
-                              <span className="ml-1 text-xs">
-                                {opportunity.zltoReward}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* STATUS BADGES */}
-                          {opportunity?.status == "Active" && (
-                            <>
-                              {new Date(opportunity.dateStart) > new Date() && (
-                                <div className="badge bg-yellow-tint text-yellow">
-                                  <IoMdCalendar className="h-4 w-4" />
-                                  <Moment
-                                    format={DATE_FORMAT_HUMAN}
-                                    utc={true}
-                                    className="ml-1"
-                                  >
-                                    {opportunity.dateStart}
-                                  </Moment>
-                                </div>
-                              )}
-                              {new Date(opportunity.dateStart) < new Date() && (
-                                <div className="badge bg-purple-tint text-purple-shade">
-                                  <IoMdPlay />
-                                  <span className="ml-1">Ongoing</span>
-                                </div>
-                              )}
-                            </>
-                          )}
-                          {opportunity?.status == "Expired" && (
-                            <div className="badge bg-red-100 text-error">
-                              <IoMdCloudUpload className="h-4 w-4" />
-                              <span className="ml-1">Upload Only</span>
-                            </div>
-                          )}
-                        </div>
+                        <Badges opportunity={opportunity} />
 
                         {/* DATES */}
                         {opportunity.status == "Active" && (
@@ -842,7 +778,7 @@ const OpportunityDetails: NextPageWithLayout<{
                         )}
 
                         {/* BUTTONS */}
-                        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        <div className="mt-4 flex flex-col gap-4 md:flex-row">
                           <div className="flex flex-grow flex-col gap-4 md:flex-row">
                             {opportunity.url && (
                               <button
@@ -942,11 +878,11 @@ const OpportunityDetails: NextPageWithLayout<{
                               )}
                           </div>
 
-                          <div className="flex justify-between gap-2 md:justify-end md:gap-4 lg:justify-end">
+                          <div className="flex gap-2">
                             <button
                               type="button"
                               className={
-                                "btn btn-sm h-10 w-full flex-shrink rounded-full border-gray-dark normal-case text-gray-dark md:w-[120px]" +
+                                "btn btn-sm h-10 w-full flex-shrink flex-nowrap rounded-full border-gray-dark normal-case text-gray-dark md:max-w-[120px]" +
                                 ` ${
                                   isOppSaved
                                     ? "border-yellow bg-yellow-light text-yellow"
@@ -954,50 +890,27 @@ const OpportunityDetails: NextPageWithLayout<{
                                 }`
                               }
                               onClick={onUpdateSavedOpportunity}
-                              // ensure user is logged in and opportunity is published and active
-                              // disabled={
-                              //   !user ||
-                              //   !(
-                              //     opportunity?.published &&
-                              //     opportunity?.status != "Inactive" &&
-                              //     new Date(opportunity?.dateStart) > new Date()
-                              //   )
-                              // }
                             >
-                              <IoMdBookmark
-                                style={{ width: "20px", height: "20px" }}
-                              />
+                              <IoMdBookmark className="mr-1 h-5 w-5" />
 
-                              <span className="ml-1">
-                                {isOppSaved ? "Saved" : "Save"}
-                              </span>
+                              {isOppSaved ? "Saved" : "Save"}
                             </button>
 
-                            {/* <button
+                            <button
                               type="button"
-                              className="btn btn-sm h-10 w-1/2 flex-shrink rounded-full border-gray-dark bg-white normal-case text-gray-dark hover:bg-green-dark hover:text-white md:w-[120px]"
-                              // ensure user is logged in and opportunity is published and active
-                              // disabled={
-                              //   !user ||
-                              //   !(
-                              //     opportunity?.published &&
-                              //     opportunity?.status != "Inactive" &&
-                              //     new Date(opportunity?.dateStart) > new Date()
-                              //   )
-                              // }
+                              className="btn btn-sm h-10 w-full flex-shrink flex-nowrap rounded-full border-gray-dark bg-white normal-case text-gray-dark hover:bg-green-dark hover:text-white md:max-w-[120px]"
+                              onClick={onShareOpportunity}
+                              // ensure opportunity is published and active (user logged in check is done in function)
+                              disabled={
+                                !(
+                                  opportunity?.published &&
+                                  opportunity?.status == "Active"
+                                )
+                              }
                             >
-                              <Image
-                                src={iconShare}
-                                alt="Icon Share"
-                                width={20}
-                                height={20}
-                                sizes="100vw"
-                                priority={true}
-                                style={{ width: "20px", height: "20px" }}
-                              />
-
-                              <span className="ml-1">Share</span>
-                            </button> */}
+                              <IoMdShare className="mr-1 h-5 w-5" />
+                              Share
+                            </button>
                           </div>
                         </div>
                       </div>
