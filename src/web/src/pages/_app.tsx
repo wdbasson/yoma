@@ -104,7 +104,7 @@ const MyApp = ({
                     containerId="toastContainer"
                     bodyClassName={"test1"}
                     toastClassName={"test2"}
-                    className="mt-16 w-full md:mt-10 md:w-[340px]"
+                    className="mt-2 w-full md:mt-0 md:w-[340px]"
                     theme="colored"
                   />
                   <GoogleAnalytics />

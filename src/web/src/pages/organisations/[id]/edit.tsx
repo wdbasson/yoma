@@ -39,10 +39,11 @@ import { Unauthorized } from "~/components/Status/Unauthorized";
 import {
   GA_ACTION_ORGANISATION_UPATE,
   GA_CATEGORY_ORGANISATION,
+  ROLE_ADMIN,
 } from "~/lib/constants";
 import { config } from "~/lib/react-query-config";
 import { getCountries } from "~/api/services/lookups";
-import { IoMdArrowRoundBack, IoMdWarning } from "react-icons/io";
+import { IoIosWarning, IoMdArrowRoundBack } from "react-icons/io";
 import { trackGAEvent } from "~/lib/google-analytics";
 import { getSafeUrl, getThemeFromRole } from "~/lib/utils";
 import axios from "axios";
@@ -132,7 +133,7 @@ const OrganisationUpdate: NextPageWithLayout<{
   const setCurrentOrganisationInactiveAtom = useSetAtom(
     currentOrganisationInactiveAtom,
   );
-
+  const isAdmin = user?.roles?.includes(ROLE_ADMIN);
   const isUserAdminOfCurrentOrg =
     userProfile?.adminsOf?.find((x) => x.id == id) != null;
 
@@ -173,6 +174,8 @@ const OrganisationUpdate: NextPageWithLayout<{
       registrationDocumentsDelete: [],
       educationProviderDocumentsDelete: [],
       businessDocumentsDelete: [],
+      ssoClientIdInbound: organisation?.ssoClientIdInbound ?? "",
+      ssoClientIdOutbound: organisation?.ssoClientIdOutbound ?? "",
     });
 
   const onSubmit = useCallback(
@@ -395,8 +398,8 @@ const OrganisationUpdate: NextPageWithLayout<{
                   </h5>
                 </div>
 
-                <p className="my-2 flex flex-row border-2 border-dotted border-warning p-2 text-warning">
-                  <IoMdWarning className="mr-2 inline-block h-12 w-12" />
+                <p className="my-2 flex flex-row items-center gap-4 rounded-xl bg-green px-4 py-2 text-sm text-white">
+                  <IoIosWarning className="inline-block h-6 w-6" />
                   Kindly note that expanding the roles your organization plays
                   in Yoma will necessitate re-verification of your organization.
                   <br /> During this process, functionalities such as creating
@@ -421,6 +424,7 @@ const OrganisationUpdate: NextPageWithLayout<{
                 <OrgAdminsEdit
                   organisation={OrganizationRequestBase}
                   onSubmit={(data) => onSubmitStep(4, data)}
+                  isAdmin={isAdmin}
                 />
               </>
             )}

@@ -24,7 +24,7 @@
 }
 
 .badge {
-  @apply h-6 whitespace-nowrap rounded-md border-none text-xs font-bold;
+  @apply h-6 overflow-hidden whitespace-nowrap rounded-md border-none text-xs font-bold;
 }
 
 .btn {
@@ -109,6 +109,9 @@ body {
   }
   // Gleac chat
   .widget {
+    visibility: hidden !important;
+  }
+  #hubspot-messages-iframe-container {
     visibility: hidden !important;
   }
 }
