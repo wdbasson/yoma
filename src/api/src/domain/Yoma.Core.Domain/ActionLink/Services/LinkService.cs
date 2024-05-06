@@ -43,6 +43,7 @@ namespace Yoma.Core.Domain.ActionLink.Services
     private readonly IRepository<LinkUsageLog> _linkUsageLogRepository;
     private readonly IExecutionStrategyService _executionStrategyService;
     private readonly IEmailProviderClient _emailProviderClient;
+    private readonly IEmailURLFactory _emailURLFactory;
 
     private readonly LinkRequestCreateValidatorShare _linkRequestCreateValidatorShare;
     private readonly LinkRequestCreateValidatorVerify _linkRequestCreateValidatorVerify;
@@ -65,6 +66,7 @@ namespace Yoma.Core.Domain.ActionLink.Services
       IRepository<LinkUsageLog> linkUsageLogRepository,
       IExecutionStrategyService executionStrategyService,
       IEmailProviderClientFactory emailProviderClientFactory,
+      IEmailURLFactory emailURLFactory,
       LinkRequestCreateValidatorShare linkRequestCreateValidatorShare,
       LinkRequestCreateValidatorVerify linkRequestCreateValidatorVerify,
       LinkSearchFilterValidator linkSearchFilterValidator)
@@ -81,6 +83,7 @@ namespace Yoma.Core.Domain.ActionLink.Services
       _linkUsageLogRepository = linkUsageLogRepository;
       _executionStrategyService = executionStrategyService;
       _emailProviderClient = emailProviderClientFactory.CreateClient();
+      _emailURLFactory = emailURLFactory;
       _linkRequestCreateValidatorShare = linkRequestCreateValidatorShare;
       _linkRequestCreateValidatorVerify = linkRequestCreateValidatorVerify;
       _linkSearchFilterValidator = linkSearchFilterValidator;
@@ -241,7 +244,11 @@ namespace Yoma.Core.Domain.ActionLink.Services
       item.DistributionList = request.DistributionList == null ? null : JsonConvert.SerializeObject(request.DistributionList);
       item.LockToDistributionList = request.LockToDistributionList;
 
-      EmailActionLinkVerify? data = null;
+      var data = new EmailActionLinkVerify
+      {
+        YoIDURL = _emailURLFactory.OpportunityVerificationYoIDURL(EmailType.ActionLink_Verify_Created)
+      };
+
       switch (request.EntityType)
       {
         case LinkEntityType.Opportunity:
@@ -264,23 +271,20 @@ namespace Yoma.Core.Domain.ActionLink.Services
             throw new ValidationException($"Link with name '{item.Name}' already exists for the opportunity");
 
           if (request.DistributionList == null) break;
-
-          data = new EmailActionLinkVerify
           {
-            Items = [
-              new()
-              {
-                EntityType = request.EntityType.ToString(),
-                OrganizationName = opportunity.OrganizationName,
-                Title = opportunity.Title,
-                DateStart = opportunity.DateStart,
-                DateEnd = opportunity.DateEnd,
-                URL = item.URL,
-                ZltoReward = opportunity.ZltoReward,
-                YomaReward = opportunity.YomaReward
-              }
-              ]
-          };
+            data.EntityTypeDesc = $"{request.EntityType.ToString().ToLower()}(ies)";
+            data.Items = [
+            new()
+            {
+              Title = opportunity.Title,
+              DateStart = opportunity.DateStart,
+              DateEnd = opportunity.DateEnd,
+              URL = item.URL,
+              ZltoReward = opportunity.ZltoReward,
+              YomaReward = opportunity.YomaReward
+            }
+            ];
+          }
 
           break;
 
@@ -533,7 +537,11 @@ namespace Yoma.Core.Domain.ActionLink.Services
         });
 
         link.UsagesTotal = (link.UsagesTotal ?? 0) + 1;
-        if (link.UsagesLimit.HasValue && link.UsagesTotal == link.UsagesLimit) link.Status = LinkStatus.LimitReached;
+        if (link.UsagesLimit.HasValue && link.UsagesTotal >= link.UsagesLimit)
+        {
+          link.StatusId = _linkStatusService.GetByName(LinkStatus.LimitReached.ToString()).Id;
+          link.Status = LinkStatus.LimitReached;
+        }
         link = await _linkRepository.Update(link);
 
         scope.Complete();
