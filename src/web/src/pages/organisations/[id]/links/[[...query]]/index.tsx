@@ -803,7 +803,6 @@ const Links: NextPageWithLayout<{
                     >
                       {item.entityTitle}
                     </Link>
-
                     <div className="mb-2 flex flex-col">
                       <span className="overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold text-gray-dark">
                         {item.name}
@@ -817,13 +816,16 @@ const Links: NextPageWithLayout<{
                     <div className="flex flex-col gap-1">
                       <div className="flex justify-between">
                         <p className="text-sm tracking-wider">Usage</p>
-                        <span className="badge bg-green-light text-green">
-                          <IoMdPerson className="h-4 w-4" />
-                          <span className="ml-1 text-xs">
-                            {item.usagesTotal ?? "0"} /{" "}
-                            {item.usagesLimit ?? "0"}
+                        {item.usagesLimit == null && <>N/A</>}
+                        {item.usagesLimit != null && (
+                          <span className="badge bg-green-light text-green">
+                            <IoMdPerson className="h-4 w-4" />
+                            <span className="ml-1 text-xs">
+                              {item.usagesTotal ?? "0"} /{" "}
+                              {item.usagesLimit ?? "0"}
+                            </span>
                           </span>
-                        </span>
+                        )}
                       </div>
 
                       <div className="flex justify-between">
@@ -887,8 +889,6 @@ const Links: NextPageWithLayout<{
 
                         <div className="dropdown dropdown-left -mr-3 w-10 md:-mr-4">
                           <button
-                            //className="bg-theme xl:hover:bg-theme flex flex-row items-center justify-center whitespace-nowrap rounded-full p-1 text-xs text-white brightness-105 disabled:cursor-not-allowed disabled:bg-gray-dark xl:hover:brightness-110"
-
                             className="badge bg-green-light text-green"
                             disabled={item?.status == "Deleted"}
                           >
@@ -935,9 +935,8 @@ const Links: NextPageWithLayout<{
               <table className="hidden border-separate rounded-lg border-x-2 border-t-2 border-gray-light md:table">
                 <thead>
                   <tr className="border-gray text-gray-dark">
-                    <th className="border-b-2 border-gray-light !py-4">ID</th>
                     <th className="border-b-2 border-gray-light !py-4">
-                      Entity
+                      Opportunity
                     </th>
                     <th className="border-b-2 border-gray-light !py-4">Name</th>
                     <th className="border-b-2 border-gray-light">
@@ -954,10 +953,6 @@ const Links: NextPageWithLayout<{
                 <tbody>
                   {links.items.map((item) => (
                     <tr key={`grid_md_${item.id}`} className="">
-                      <td className="  truncate border-b-2 border-gray-light !py-4">
-                        <div className=" ">{item.id}</div>
-                      </td>
-
                       <td className="max-w-[200px] truncate border-b-2 border-gray-light !py-4">
                         <Link
                           href={`/organisations/${id}/opportunities/${
@@ -983,13 +978,16 @@ const Links: NextPageWithLayout<{
                       </td>
 
                       <td className="border-b-2 border-gray-light">
-                        <span className="badge bg-green-light text-green">
-                          <IoMdPerson className="h-4 w-4" />
-                          <span className="ml-1 text-xs">
-                            {item.usagesTotal ?? "0"} /{" "}
-                            {item.usagesLimit ?? "0"}
+                        {item.usagesLimit == null && <>N/A</>}
+                        {item.usagesLimit != null && (
+                          <span className="badge bg-green-light text-green">
+                            <IoMdPerson className="h-4 w-4" />
+                            <span className="ml-1 text-xs">
+                              {item.usagesTotal ?? "0"} /{" "}
+                              {item.usagesLimit ?? "0"}
+                            </span>
                           </span>
-                        </span>
+                        )}
                       </td>
 
                       <td className="border-b-2 border-gray-light">
