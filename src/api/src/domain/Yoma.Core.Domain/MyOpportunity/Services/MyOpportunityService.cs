@@ -55,6 +55,7 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
     private readonly MyOpportunitySearchFilterValidator _myOpportunitySearchFilterValidator;
     private readonly MyOpportunityRequestValidatorVerify _myOpportunityRequestValidatorVerify;
     private readonly MyOpportunityRequestValidatorVerifyFinalize _myOpportunityRequestValidatorVerifyFinalize;
+    private readonly MyOpportunityRequestValidatorVerifyFinalizeBatch _myOpportunityRequestValidatorVerifyFinalizeBatch;
     private readonly IRepositoryBatchedWithNavigation<Models.MyOpportunity> _myOpportunityRepository;
     private readonly IRepository<MyOpportunityVerification> _myOpportunityVerificationRepository;
     private readonly IExecutionStrategyService _executionStrategyService;
@@ -80,6 +81,7 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
         MyOpportunitySearchFilterValidator myOpportunitySearchFilterValidator,
         MyOpportunityRequestValidatorVerify myOpportunityRequestValidatorVerify,
         MyOpportunityRequestValidatorVerifyFinalize myOpportunityRequestValidatorVerifyFinalize,
+        MyOpportunityRequestValidatorVerifyFinalizeBatch myOpportunityRequestValidatorVerifyFinalizeBatch,
         IRepositoryBatchedWithNavigation<Models.MyOpportunity> myOpportunityRepository,
         IRepository<MyOpportunityVerification> myOpportunityVerificationRepository,
         IExecutionStrategyService executionStrategyService)
@@ -103,6 +105,7 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
       _myOpportunitySearchFilterValidator = myOpportunitySearchFilterValidator;
       _myOpportunityRequestValidatorVerify = myOpportunityRequestValidatorVerify;
       _myOpportunityRequestValidatorVerifyFinalize = myOpportunityRequestValidatorVerifyFinalize;
+      _myOpportunityRequestValidatorVerifyFinalizeBatch = myOpportunityRequestValidatorVerifyFinalizeBatch;
       _myOpportunityRepository = myOpportunityRepository;
       _myOpportunityVerificationRepository = myOpportunityVerificationRepository;
       _executionStrategyService = executionStrategyService;
@@ -458,6 +461,7 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
 
       //send for verification
       var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false), false, false);
+      var opportunity = _opportunityService.GetById(link.EntityId, true, true, false);
 
       await _executionStrategyService.ExecuteInExecutionStrategyAsync(async () =>
       {
@@ -468,14 +472,7 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
         var request = new MyOpportunityRequestVerify { InstantVerification = true };
         await PerformActionSendForVerificationManual(user, link.EntityId, request);
 
-        await FinalizeVerificationManual(new MyOpportunityRequestVerifyFinalize
-        {
-          OpportunityId = link.EntityId,
-          UserId = user.Id,
-          Status = VerificationStatus.Completed,
-          Comment = "Auto-verification",
-          InstantVerification = true
-        });
+        await FinalizeVerificationManual(user, opportunity, VerificationStatus.Completed, true, "Auto-verification");
 
         scope.Complete();
       });
@@ -547,34 +544,63 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
       }
     }
 
-    public async Task FinalizeVerificationManual(MyOpportunityRequestVerifyFinalizeBatch request)
+    public async Task<MyOpportunityResponseVerifyFinalizeBatch> FinalizeVerificationManual(MyOpportunityRequestVerifyFinalizeBatch request)
     {
       ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-      if (request.Items == null)
-        throw new ArgumentNullException(nameof(request), "No items specified");
+      await _myOpportunityRequestValidatorVerifyFinalizeBatch.ValidateAndThrowAsync(request);
 
-      await _executionStrategyService.ExecuteInExecutionStrategyAsync(async () =>
+      request.Items = request.Items.GroupBy(i => new { i.OpportunityId, i.UserId }).Select(g => g.First()).ToList();
+
+      User? user = null;
+      Opportunity.Models.Opportunity? opportunity = null;
+      var resultItems = new List<MyOpportunityResponseVerifyFinalizeBatchItem>();
+      foreach (var item in request.Items)
       {
-        // request validated by FinalizeVerification
-        using var scope = new TransactionScope(TransactionScopeOption.RequiresNew, TransactionScopeAsyncFlowOption.Enabled);
-
-        foreach (var item in request.Items)
+        try
         {
-          await FinalizeVerificationManual(new MyOpportunityRequestVerifyFinalize
+          user = _userService.GetById(item.UserId, false, false);
+          opportunity = _opportunityService.GetById(item.OpportunityId, true, true, false);
+
+          await FinalizeVerificationManual(user, opportunity, request.Status, false, request.Comment);
+
+          var successItem = new MyOpportunityResponseVerifyFinalizeBatchItem
           {
             OpportunityId = item.OpportunityId,
+            OpportunityTitle = opportunity.Title,
             UserId = item.UserId,
-            Status = request.Status,
-            Comment = request.Comment
-          });
+            UserDisplayName = user.DisplayName,
+            Failure = null
+          };
+          resultItems.Add(successItem);
         }
+        catch (Exception ex)
+        {
+          var failedItem = new MyOpportunityResponseVerifyFinalizeBatchItem
+          {
+            OpportunityId = item.OpportunityId,
+            OpportunityTitle = opportunity?.Title ?? "Unknown",
+            UserId = item.UserId,
+            UserDisplayName = user?.DisplayName ?? "Unknown",
+            Failure = new ErrorResponseItem
+            {
+              Type = ex.GetType().Name,
+              Message = ex.Message
+            }
+          };
+          resultItems.Add(failedItem);
 
-        scope.Complete();
-      });
+          _logger.LogError(ex, "Failed to finalizing verification for opportunity '{OpportunityTitle}' and user '{UserDisplayName}'", failedItem.OpportunityTitle, failedItem.UserDisplayName);
+        }
+      }
+
+      return new MyOpportunityResponseVerifyFinalizeBatch()
+      {
+        Status = request.Status,
+        Items = [.. resultItems.OrderBy(o => o.UserDisplayName).ThenBy(o => o.OpportunityTitle)]
+      };
     }
 
-    //supported statuses: Rejected or Completed
     public async Task FinalizeVerificationManual(MyOpportunityRequestVerifyFinalize request)
     {
       ArgumentNullException.ThrowIfNull(request, nameof(request));
@@ -582,80 +608,9 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
       await _myOpportunityRequestValidatorVerifyFinalize.ValidateAndThrowAsync(request);
 
       var user = _userService.GetById(request.UserId, false, false);
-
-      //can complete, provided opportunity is published (and started) or expired (actioned prior to expiration)
       var opportunity = _opportunityService.GetById(request.OpportunityId, true, true, false);
-      var canFinalize = opportunity.Status == Status.Expired;
-      if (!canFinalize) canFinalize = opportunity.Published && opportunity.DateStart <= DateTimeOffset.UtcNow;
-      if (!canFinalize)
-        throw new ValidationException(PerformActionNotPossibleValidationMessage(opportunity, "verification cannot be finalized"));
 
-      var actionVerificationId = _myOpportunityActionService.GetByName(Action.Verification.ToString()).Id;
-      var item = _myOpportunityRepository.Query(false).SingleOrDefault(o => o.UserId == user.Id && o.OpportunityId == opportunity.Id && o.ActionId == actionVerificationId)
-          ?? throw new ValidationException($"Opportunity '{opportunity.Title}' has not been sent for verification for user '{user.Email}'");
-
-      if (item.VerificationStatus != VerificationStatus.Pending)
-        throw new ValidationException($"Verification is not {VerificationStatus.Pending.ToString().ToLower()} for 'my' opportunity '{opportunity.Title}'");
-
-      if (item.VerificationStatus == request.Status) return;
-
-      var statusId = _myOpportunityVerificationStatusService.GetByName(request.Status.ToString()).Id;
-
-      EmailType? emailType = null;
-      await _executionStrategyService.ExecuteInExecutionStrategyAsync(async () =>
-      {
-        using var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
-
-        item.VerificationStatusId = statusId;
-        item.CommentVerification = request.Comment;
-
-        switch (request.Status)
-        {
-          case VerificationStatus.Rejected:
-            emailType = EmailType.Opportunity_Verification_Rejected;
-            break;
-
-          case VerificationStatus.Completed:
-            if (item.DateEnd.HasValue && item.DateEnd.Value > DateTimeOffset.UtcNow.ToEndOfDay())
-              throw new ValidationException($"Verification can not be completed as the end date for 'my' opportunity '{opportunity.Title}' has not been reached (end date '{item.DateEnd:yyyy-MM-dd}')");
-
-            //with instant-verifications ensureOrganizationAuthorization not checked as finalized immediately by the user (youth)
-            var result = await _opportunityService.AllocateRewards(opportunity.Id, user.Id, !request.InstantVerification);
-            item.ZltoReward = result.ZltoReward;
-            item.YomaReward = result.YomaReward;
-            item.DateCompleted = DateTimeOffset.UtcNow;
-
-            await _userService.AssignSkills(user, opportunity);
-
-            if (item.OpportunityCredentialIssuanceEnabled)
-            {
-              if (string.IsNullOrEmpty(item.OpportunitySSISchemaName))
-                throw new InvalidOperationException($"Credential Issuance Enabled: Schema name expected for opportunity with id '{item.Id}'");
-              await _ssiCredentialService.ScheduleIssuance(item.OpportunitySSISchemaName, item.Id);
-            }
-
-            if (result.ZltoReward.HasValue && result.ZltoReward.Value > default(decimal))
-              await _rewardService.ScheduleRewardTransaction(user.Id, Reward.RewardTransactionEntityType.MyOpportunity, item.Id, result.ZltoReward.Value);
-
-            if (result.ZltoRewardPoolDepleted == true) item.CommentVerification = CommentVerificationAppendInfo(item.CommentVerification, "ZLTO not awarded as reward pool has been depleted");
-            if (result.YomaRewardPoolDepleted == true) item.CommentVerification = CommentVerificationAppendInfo(item.CommentVerification, "Yoma not awarded as reward pool has been depleted");
-
-            emailType = EmailType.Opportunity_Verification_Completed;
-            break;
-
-          default:
-            throw new ArgumentOutOfRangeException(nameof(request), $"{nameof(request.Status)} of '{request.Status}' not supported");
-        }
-
-        item = await _myOpportunityRepository.Update(item);
-
-        scope.Complete();
-      });
-
-      if (!emailType.HasValue)
-        throw new InvalidOperationException($"Email type expected");
-
-      await SendEmail(item, emailType.Value);
+      await FinalizeVerificationManual(user, opportunity, request.Status, false, request.Comment);
     }
 
     public Dictionary<Guid, int>? ListAggregatedOpportunityByViewed(bool includeExpired)
@@ -687,6 +642,83 @@ namespace Yoma.Core.Domain.MyOpportunity.Services
     #endregion
 
     #region Private Members
+    //supported statuses: Rejected or Completed
+    private async Task FinalizeVerificationManual(User user, Opportunity.Models.Opportunity opportunity, VerificationStatus status, bool instantVerification, string? comment)
+    {
+      //can complete, provided opportunity is published (and started) or expired (actioned prior to expiration)
+      var canFinalize = opportunity.Status == Status.Expired;
+      if (!canFinalize) canFinalize = opportunity.Published && opportunity.DateStart <= DateTimeOffset.UtcNow;
+      if (!canFinalize)
+        throw new ValidationException(PerformActionNotPossibleValidationMessage(opportunity, "verification cannot be finalized"));
+
+      var actionVerificationId = _myOpportunityActionService.GetByName(Action.Verification.ToString()).Id;
+      var item = _myOpportunityRepository.Query(false).SingleOrDefault(o => o.UserId == user.Id && o.OpportunityId == opportunity.Id && o.ActionId == actionVerificationId)
+          ?? throw new ValidationException($"Opportunity '{opportunity.Title}' has not been sent for verification for user '{user.Email}'");
+
+      if (item.VerificationStatus != VerificationStatus.Pending)
+        throw new ValidationException($"Verification is not {VerificationStatus.Pending.ToString().ToLower()} for 'my' opportunity '{opportunity.Title}'");
+
+      if (item.VerificationStatus == status) return;
+
+      var statusId = _myOpportunityVerificationStatusService.GetByName(status.ToString()).Id;
+
+      EmailType? emailType = null;
+      await _executionStrategyService.ExecuteInExecutionStrategyAsync(async () =>
+      {
+        using var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);
+
+        item.VerificationStatusId = statusId;
+        item.CommentVerification = comment;
+
+        switch (status)
+        {
+          case VerificationStatus.Rejected:
+            emailType = EmailType.Opportunity_Verification_Rejected;
+            break;
+
+          case VerificationStatus.Completed:
+            if (item.DateEnd.HasValue && item.DateEnd.Value > DateTimeOffset.UtcNow.ToEndOfDay())
+              throw new ValidationException($"Verification can not be completed as the end date for 'my' opportunity '{opportunity.Title}' has not been reached (end date '{item.DateEnd:yyyy-MM-dd}')");
+
+            //with instant-verifications ensureOrganizationAuthorization not checked as finalized immediately by the user (youth)
+            var result = await _opportunityService.AllocateRewards(opportunity.Id, user.Id, !instantVerification);
+            item.ZltoReward = result.ZltoReward;
+            item.YomaReward = result.YomaReward;
+            item.DateCompleted = DateTimeOffset.UtcNow;
+
+            await _userService.AssignSkills(user, opportunity);
+
+            if (item.OpportunityCredentialIssuanceEnabled)
+            {
+              if (string.IsNullOrEmpty(item.OpportunitySSISchemaName))
+                throw new InvalidOperationException($"Credential Issuance Enabled: Schema name expected for opportunity with id '{item.Id}'");
+              await _ssiCredentialService.ScheduleIssuance(item.OpportunitySSISchemaName, item.Id);
+            }
+
+            if (result.ZltoReward.HasValue && result.ZltoReward.Value > default(decimal))
+              await _rewardService.ScheduleRewardTransaction(user.Id, Reward.RewardTransactionEntityType.MyOpportunity, item.Id, result.ZltoReward.Value);
+
+            if (result.ZltoRewardPoolDepleted == true) item.CommentVerification = CommentVerificationAppendInfo(item.CommentVerification, "ZLTO not awarded as reward pool has been depleted");
+            if (result.YomaRewardPoolDepleted == true) item.CommentVerification = CommentVerificationAppendInfo(item.CommentVerification, "Yoma not awarded as reward pool has been depleted");
+
+            emailType = EmailType.Opportunity_Verification_Completed;
+            break;
+
+          default:
+            throw new ArgumentOutOfRangeException(nameof(status), $"Status of '{status}' not supported");
+        }
+
+        item = await _myOpportunityRepository.Update(item);
+
+        scope.Complete();
+      });
+
+      if (!emailType.HasValue)
+        throw new InvalidOperationException($"Email type expected");
+
+      await SendEmail(item, emailType.Value);
+    }
+
     private static string CommentVerificationAppendInfo(string? currentComment, string info)
     {
       ArgumentException.ThrowIfNullOrWhiteSpace(info, nameof(info));

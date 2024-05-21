@@ -1,13 +1,8 @@
-import { QueryClient, dehydrate } from "@tanstack/react-query";
-import { type GetServerSidePropsContext } from "next";
-import { getServerSession } from "next-auth";
 import { type ReactElement, useCallback } from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import MainLayout from "~/components/Layout/Main";
-import { authOptions, type User } from "~/server/auth";
 import type { NextPageWithLayout } from "./_app";
 import Link from "next/link";
-import { config } from "~/lib/react-query-config";
 import { PageBackground } from "~/components/PageBackground";
 import { RoundedImage } from "~/components/RoundedImage";
 import { THEME_ORANGE } from "~/lib/constants";
@@ -46,29 +41,8 @@ import { useRouter } from "next/router";
 import stamps from "public/images/stamps.svg";
 import MarketplaceCard from "~/components/Home/MarketplaceCard";
 
-export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const queryClient = new QueryClient(config);
-  const session = await getServerSession(context.req, context.res, authOptions);
-
-  return {
-    props: {
-      dehydratedState: dehydrate(queryClient),
-      user: session?.user ?? null,
-    },
-  };
-}
-
-const Home: NextPageWithLayout<{
-  id: string;
-  user: User;
-}> = () => {
+const Home: NextPageWithLayout = () => {
   const router = useRouter();
-  // const [email, setEmail] = useState("");
-
-  // 🔔 CHANGE EVENTS
-  // const onSubscribe = useCallback(() => {
-  //   alert("TODO: API - " + email);
-  // }, [email]);
 
   const onSearchInputSubmit = useCallback(
     (query: string) => {

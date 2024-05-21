@@ -2,9 +2,9 @@ import ApiClient from "~/lib/axiosClient";
 import type { Opportunity } from "../models/opportunity";
 import type {
   MyOpportunityRequestVerify,
-  MyOpportunityRequestVerifyFinalize,
   MyOpportunityRequestVerifyFinalizeBatch,
   MyOpportunityResponseVerify,
+  MyOpportunityResponseVerifyFinalizeBatch,
   MyOpportunitySearchCriteriaOpportunity,
   MyOpportunitySearchFilter,
   MyOpportunitySearchFilterAdmin,
@@ -93,18 +93,18 @@ export const searchMyOpportunitiesAdmin = async (
   return data;
 };
 
-export const performActionVerifyManual = async (
-  model: MyOpportunityRequestVerifyFinalize,
-): Promise<any> => {
-  await (await ApiClient).patch(`/myopportunity/verification/finalize`, model);
-};
-
 export const performActionVerifyBulk = async (
   model: MyOpportunityRequestVerifyFinalizeBatch,
-): Promise<any> => {
-  await (
-    await ApiClient
-  ).patch(`/myopportunity/verification/finalize/batch`, model);
+  context?: GetServerSidePropsContext,
+): Promise<MyOpportunityResponseVerifyFinalizeBatch> => {
+  const instance = context ? ApiServer(context) : await ApiClient;
+
+  const { data } = await instance.patch(
+    `/myopportunity/verification/finalize/batch`,
+    model,
+  );
+
+  return data;
 };
 
 export const performActionViewed = async (
