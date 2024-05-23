@@ -542,16 +542,44 @@ namespace Yoma.Core.Domain.Opportunity.Services
 
       query = query.Where(predicate);
 
-      var results = query
-              .Select(item => new OpportunitySearchCriteriaCommitmentInterval
-              {
-                Id = $"{item.CommitmentIntervalCount}|{item.CommitmentIntervalId}",
-                Name = $"{item.CommitmentIntervalCount} {item.CommitmentInterval}{(item.CommitmentIntervalCount > 1 ? "s" : string.Empty)}",
-              })
-          .Distinct()
-          .ToList();
+      var queryResults = query
+        .Select(item => new
+        {
+          Id = item.CommitmentIntervalId,
+          Count = item.CommitmentIntervalCount,
+          Interval = item.CommitmentInterval
+        })
+        .GroupBy(item => new { item.Count, item.Id })
+        .Select(group => group.First())
+        .ToList();
 
-      return [.. results.OrderBy(o => o.Name)];
+      var results = queryResults
+        .Select(item =>
+        {
+          if (!Enum.TryParse<TimeInterval>(item.Interval, true, out var interval))
+            throw new InvalidOperationException($"{nameof(item.Interval)} of '{item.Interval}' is not supported");
+
+          return new OpportunitySearchCriteriaCommitmentInterval
+          {
+            Id = $"{item.Count}|{item.Id}",
+            Name = $"{item.Count} {item.Interval}{(item.Count > 1 ? "s" : string.Empty)}",
+            Order = interval switch
+            {
+              TimeInterval.Minute => 1,
+              TimeInterval.Hour => 2,
+              TimeInterval.Day => 3,
+              TimeInterval.Week => 4,
+              TimeInterval.Month => 5,
+              _ => throw new InvalidOperationException($"{nameof(TimeInterval)} of '{interval}' not supported"),
+            },
+            Count = item.Count
+          };
+        })
+        .OrderBy(o => o.Order)
+        .ThenBy(o => o.Count)
+        .ToList();
+
+      return results;
     }
 
     public List<OpportunitySearchCriteriaZltoReward> ListOpportunitySearchCriteriaZltoReward(List<PublishedState>? publishedStates)
@@ -752,6 +780,10 @@ namespace Yoma.Core.Domain.Opportunity.Services
 
         query = query.Where(predicate);
       }
+
+      //featured
+      if (filter.Featured == true)
+        query = query.Where(o => o.Featured == true);
 
       //valueContains (includes organizations, types, categories, opportunities and skills)
       if (!string.IsNullOrEmpty(filter.ValueContains))
@@ -1109,6 +1141,23 @@ namespace Yoma.Core.Domain.Opportunity.Services
 
       //modifiedBy preserved
       await _opportunityRepository.Update(opportunity);
+
+      return result;
+    }
+
+    //administrative action only
+    public async Task<Models.Opportunity> UpdateFeatured(Guid id, bool featured)
+    {
+      var result = GetById(id, true, true, false);
+
+      var user = _userService.GetByEmail(HttpContextAccessorHelper.GetUsername(_httpContextAccessor, false), false, false);
+
+      AssertUpdatable(result);
+
+      result.Featured = featured;
+      result.ModifiedByUserId = user.Id;
+
+      result = await _opportunityRepository.Update(result);
 
       return result;
     }
