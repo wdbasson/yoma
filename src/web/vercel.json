@@ -1,12 +1,28 @@
 {
   "rewrites": [
-    {
-      "source": "/organisations/:id/opportunities/:path*",
-      "destination": "/organisations/[id]/opportunities/[...path]"
-    },
-    {
-      "source": "/organisations/:path*",
-      "destination": "/organisations/[...path]"
-    }
+    { "source": "/organisations/:id/opportunities/:path*", "destination": "/organisations/[id]/opportunities/[[...query]]" },
+    { "source": "/organisations/:path*", "destination": "/organisations/[[...query]]" },
+    { "source": "/yoid/skills/:path*", "destination": "/yoid/skills/[[...query]]" },
+    { "source": "/yoid/opportunities/submitted/:path*", "destination": "/yoid/opportunities/submitted/[[...query]]" },
+    { "source": "/yoid/opportunities/saved/:path*", "destination": "/yoid/opportunities/saved/[[...query]]" },
+    { "source": "/yoid/opportunities/declined/:path*", "destination": "/yoid/opportunities/declined/[[...query]]" },
+    { "source": "/yoid/opportunities/completed/:path*", "destination": "/yoid/opportunities/completed/[[...query]]" },
+    { "source": "/yoid/credentials/:path*", "destination": "/yoid/credentials/[[...query]]" },
+    { "source": "/organisations/:id/verify", "destination": "/organisations/[id]/verify" },
+    { "source": "/organisations/:id/verifications/:path*", "destination": "/organisations/[id]/verifications/[[...query]]" },
+    { "source": "/organisations/:id/opportunities/:opportunityId/info", "destination": "/organisations/[id]/opportunities/[opportunityId]/info" },
+    { "source": "/organisations/:id/opportunities/:opportunityId", "destination": "/organisations/[id]/opportunities/[opportunityId]" },
+    { "source": "/organisations/:id/links/create", "destination": "/organisations/[id]/links/create" },
+    { "source": "/organisations/:id/links/:path*", "destination": "/organisations/[id]/links/[[...query]]" },
+    { "source": "/organisations/:id/info", "destination": "/organisations/[id]/info" },
+    { "source": "/organisations/:id", "destination": "/organisations/[id]" },
+    { "source": "/organisations/:id/edit", "destination": "/organisations/[id]/edit" },
+    { "source": "/opportunities/actionLink/verify/:linkId", "destination": "/opportunities/actionLink/verify/[linkId]" },
+    { "source": "/opportunities/:opportunityId", "destination": "/opportunities/[opportunityId]" },
+    { "source": "/opportunities/:path*", "destination": "/opportunities/[[...query]]" },
+    { "source": "/marketplace/:country", "destination": "/marketplace/[country]" },
+    { "source": "/admin/schemas/:id", "destination": "/admin/schemas/[id]" },
+    { "source": "/admin/schemas/:path*", "destination": "/admin/schemas/[[...query]]" },
+    { "source": "/admin/opportunities/:path*", "destination": "/admin/opportunities/[[...query]]" }
   ]
 }
