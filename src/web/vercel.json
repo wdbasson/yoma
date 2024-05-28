@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+  "routes": [
+    { "src": "/organisations", "dest": "/organisations" },
+    { "src": "/organisations/:id/opportunity/:query*", "dest": "/organisations/[id]/opportunity/[[...query]]" }
+  ]
 }
