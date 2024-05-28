@@ -61,46 +61,46 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   try {
     // 👇 prefetch queries on server
-    const data = await getOpportunitiesAdmin(
-      {
-        organizations: [id],
-        pageNumber: page ? parseInt(page.toString()) : 1,
-        pageSize: PAGE_SIZE,
-        startDate: null,
-        endDate: null,
-        statuses:
-          status === "active"
-            ? [Status.Active]
-            : status === "inactive"
-              ? [Status.Inactive]
-              : status === "expired"
-                ? [Status.Expired]
-                : status === "deleted"
-                  ? [Status.Deleted]
-                  : [
-                      Status.Active,
-                      Status.Expired,
-                      Status.Inactive,
-                      Status.Deleted,
-                    ],
-        types: null,
-        categories: null,
-        languages: null,
-        countries: null,
-        valueContains: query?.toString() ?? null,
-        commitmentIntervals: null,
-        zltoRewardRanges: null,
-        featured: null,
-      },
-      context,
-    );
+    // const data = await getOpportunitiesAdmin(
+    //   {
+    //     organizations: [id],
+    //     pageNumber: page ? parseInt(page.toString()) : 1,
+    //     pageSize: PAGE_SIZE,
+    //     startDate: null,
+    //     endDate: null,
+    //     statuses:
+    //       status === "active"
+    //         ? [Status.Active]
+    //         : status === "inactive"
+    //           ? [Status.Inactive]
+    //           : status === "expired"
+    //             ? [Status.Expired]
+    //             : status === "deleted"
+    //               ? [Status.Deleted]
+    //               : [
+    //                   Status.Active,
+    //                   Status.Expired,
+    //                   Status.Inactive,
+    //                   Status.Deleted,
+    //                 ],
+    //     types: null,
+    //     categories: null,
+    //     languages: null,
+    //     countries: null,
+    //     valueContains: query?.toString() ?? null,
+    //     commitmentIntervals: null,
+    //     zltoRewardRanges: null,
+    //     featured: null,
+    //   },
+    //   context,
+    // );
 
-    await queryClient.prefetchQuery({
-      queryKey: [
-        `OpportunitiesActive_${id}_${query?.toString()}_${page?.toString()}_${status?.toString()}`,
-      ],
-      queryFn: () => data,
-    });
+    // await queryClient.prefetchQuery({
+    //   queryKey: [
+    //     `OpportunitiesActive_${id}_${query?.toString()}_${page?.toString()}_${status?.toString()}`,
+    //   ],
+    //   queryFn: () => data,
+    // });
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status) {
       if (error.response.status === 404) {
