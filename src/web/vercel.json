@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "en/organisations/:id/opportunities/:path*", "destination": "/organisations/[id]/opportunities/[[...query]]" },
+    { "source": "/en/organisations/:id/opportunities/:path*", "destination": "/organisations/[id]/opportunities/[[...query]]" },
     { "source": "/organisations/:path*", "destination": "/organisations/[[...query]]" },
     { "source": "/yoid/skills/:path*", "destination": "/yoid/skills/[[...query]]" },
     { "source": "/yoid/opportunities/submitted/:path*", "destination": "/yoid/opportunities/submitted/[[...query]]" },
