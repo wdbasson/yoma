@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/organisations/:id/opportunities",
+      "destination": "/organisations/[id]/opportunities/[[...query]]"
+    },
+    {
       "source": "/en/organisations/:id/opportunities",
       "destination": "/en/organisations/[id]/opportunities/[[...query]]"
     },
