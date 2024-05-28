@@ -1,3 +1,11 @@
 {
-  "rewrites": [{ "source": "/[^.]+", "destination": "/"}]
+  "rewrites": [    {
+      "source": "/organisations/:id/opportunities/:path*",
+      "destination": "/organisations/[id]/opportunities/[...query]"
+    },
+    {
+      "source": "/organisations",
+      "destination": "/organisations/[...query]"
+    }
+  ]
 }
