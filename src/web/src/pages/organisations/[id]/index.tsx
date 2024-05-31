@@ -9,7 +9,6 @@ import { type ParsedUrlQuery } from "querystring";
 import {
   useRef,
   type ReactElement,
-  useMemo,
   useState,
   useEffect,
   useCallback,
@@ -30,6 +29,7 @@ import {
   searchOrganizationOpportunities,
   searchOrganizationYouth,
   searchOrganizationSso,
+  getCountries,
 } from "~/api/services/organizationDashboard";
 import type { GetServerSidePropsContext } from "next";
 import type {
@@ -39,8 +39,6 @@ import type {
 import { getServerSession } from "next-auth";
 import { Loading } from "~/components/Status/Loading";
 import { OrganisationRowFilter } from "~/components/Organisation/Dashboard/OrganisationRowFilter";
-import FilterBadges from "~/components/FilterBadges";
-import { toISOStringForTimezone } from "~/lib/utils";
 import Link from "next/link";
 import { getThemeFromRole } from "~/lib/utils";
 import Image from "next/image";
@@ -57,7 +55,8 @@ import {
 import NoRowsMessage from "~/components/NoRowsMessage";
 import { PaginationButtons } from "~/components/PaginationButtons";
 import type {
-  OrganizationSearchFilterSummary,
+  OrganizationSearchFilterOpportunity,
+  OrganizationSearchFilterYouth,
   OrganizationSearchResultsOpportunity,
   OrganizationSearchResultsSummary,
   OrganizationSearchResultsYouth,
@@ -81,8 +80,10 @@ import { WorldMapChart } from "~/components/Organisation/Dashboard/WorldMapChart
 import type { Organization } from "~/api/models/organisation";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { SsoChart } from "~/components/Organisation/Dashboard/SsoChart";
+import type { Country } from "~/api/models/lookups";
+import { EngagementRowFilter } from "~/components/Organisation/Dashboard/EngagementRowFilter";
 
-interface OrganizationSearchFilterSummaryViewModel {
+export interface OrganizationSearchFilterSummaryViewModel {
   organization: string;
   opportunities: string[] | null;
   categories: string[] | null;
@@ -90,6 +91,7 @@ interface OrganizationSearchFilterSummaryViewModel {
   endDate: string | null;
   pageSelectedOpportunities: number;
   pageCompletedYouth: number;
+  countries: string[] | null;
 }
 
 interface IParams extends ParsedUrlQuery {
@@ -99,10 +101,8 @@ interface IParams extends ParsedUrlQuery {
 // ⚠️ SSR
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { id } = context.params as IParams;
-  console.log("🚀 ~ file: [id].tsx ~ STARTED", id); //**
   const { opportunities } = context.query;
 
-  console.log("🚀 ~ file: [id].tsx ~ getting user session....", id); //**
   const session = await getServerSession(context.req, context.res, authOptions);
   let errorCode = null;
 
@@ -115,16 +115,13 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     };
   }
   // 👇 set theme based on role
-  console.log("🚀 ~ file: [id].tsx ~ getting theme from role....", id); //**
   const theme = getThemeFromRole(session, id);
 
   const queryClient = new QueryClient(config);
   let lookups_selectedOpportunities;
 
   try {
-    console.log("🚀 ~ file: [id].tsx ~ getting 'getCategoriesAdmin'....", id); //**
     const dataCategories = await getCategoriesAdmin(id, context);
-    console.log("🚀 ~ file: [id].tsx ~ getting 'getOrganisationById'....", id); //**
     const dataOrganisation = await getOrganisationById(id, context);
 
     // 👇 prefetch queries on server
@@ -139,13 +136,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       }),
     ]);
 
-    // HACK: lookup each of the opportunities (to resolve ids to titles)
+    // HACK: lookup each of the opportunities (to resolve ids to titles for filter badges)
     if (opportunities) {
-      console.log(
-        "🚀 ~ file: [id].tsx ~ getting 'searchCriteriaOpportunities'....",
-        id,
-      ); //**
-
       lookups_selectedOpportunities = await searchCriteriaOpportunities(
         {
           opportunities: opportunities.toString().split(",") ?? [],
@@ -159,11 +151,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         context,
       );
     }
-    console.log("🚀 ~ file: [id].tsx ~  DONE!", id); //**
   } catch (error) {
-    console.error("🚀 ~ file: [id].tsx ~ ERROR '....", error, id); //**
-
-    //console.error(error);
+    console.error(error);
     if (axios.isAxiosError(error) && error.response?.status) {
       if (error.response.status === 404) {
         return {
@@ -207,6 +196,11 @@ const OrganisationDashboard: NextPageWithLayout<{
     queryFn: () => getCategoriesAdmin(id),
     enabled: !error,
   });
+  const { data: lookups_countries } = useQuery<Country[]>({
+    queryKey: ["OrganisationDashboardCountries", id],
+    queryFn: () => getCountries(id),
+    enabled: !error,
+  });
   const { data: organisation } = useQuery<Organization>({
     queryKey: ["organisation", id],
     enabled: !error,
@@ -220,17 +214,8 @@ const OrganisationDashboard: NextPageWithLayout<{
     opportunities,
     startDate,
     endDate,
+    countries,
   } = router.query;
-
-  // memo for isSearchPerformed based on filter parameters
-  const isSearchPerformed = useMemo<boolean>(() => {
-    return (
-      categories != undefined ||
-      opportunities != undefined ||
-      startDate != undefined ||
-      endDate != undefined
-    );
-  }, [categories, opportunities, startDate, endDate]);
 
   // QUERY: SEARCH RESULTS
   // the filter values from the querystring are mapped to it's corresponding id
@@ -243,6 +228,7 @@ const OrganisationDashboard: NextPageWithLayout<{
         opportunities,
         startDate,
         endDate,
+        countries,
       ],
       queryFn: async () => {
         return await searchOrganizationEngagement({
@@ -263,11 +249,70 @@ const OrganisationDashboard: NextPageWithLayout<{
             : null,
           startDate: startDate ? startDate.toString() : "",
           endDate: endDate ? endDate.toString() : "",
-          pageNumber: null,
-          pageSize: null,
+          countries:
+            countries != undefined
+              ? countries
+                  ?.toString()
+                  .split("|")
+                  .map((x) => {
+                    const item = lookups_countries?.find((y) => y.name === x);
+                    return item ? item?.id : "";
+                  })
+                  .filter((x) => x != "")
+              : null,
         });
       },
       enabled: !error,
+    });
+
+  // QUERY: COMPLETED YOUTH
+  const { data: completedYouth, isLoading: completedYouthIsLoading } =
+    useQuery<OrganizationSearchResultsYouth>({
+      queryKey: [
+        "OrganizationSearchResultsCompletedYouth",
+        id,
+        pageCompletedYouth,
+        categories,
+        opportunities,
+        startDate,
+        endDate,
+        countries,
+      ],
+      queryFn: () =>
+        searchOrganizationYouth({
+          organization: id,
+          categories:
+            categories != undefined
+              ? categories
+                  ?.toString()
+                  .split(",")
+                  .map((x) => {
+                    const item = lookups_categories?.find((y) => y.name === x);
+                    return item ? item?.id : "";
+                  })
+                  .filter((x) => x != "")
+              : null,
+          opportunities: opportunities
+            ? opportunities?.toString().split(",")
+            : null,
+          startDate: startDate ? startDate.toString() : "",
+          endDate: endDate ? endDate.toString() : "",
+          pageNumber: pageCompletedYouth
+            ? parseInt(pageCompletedYouth.toString())
+            : 1,
+          pageSize: PAGE_SIZE,
+          countries:
+            countries != undefined
+              ? countries
+                  ?.toString()
+                  .split("|")
+                  .map((x) => {
+                    const item = lookups_countries?.find((y) => y.name === x);
+                    return item ? item?.id : "";
+                  })
+                  .filter((x) => x != "")
+              : null,
+        }),
     });
 
   // QUERY: SELECTED OPPORTUNITIES
@@ -283,6 +328,7 @@ const OrganisationDashboard: NextPageWithLayout<{
       opportunities,
       startDate,
       endDate,
+      countries,
     ],
     queryFn: () =>
       searchOrganizationOpportunities({
@@ -311,44 +357,6 @@ const OrganisationDashboard: NextPageWithLayout<{
     enabled: !error,
   });
 
-  // QUERY: COMPLETED YOUTH
-  const { data: completedYouth, isLoading: completedYouthIsLoading } =
-    useQuery<OrganizationSearchResultsYouth>({
-      queryKey: [
-        "OrganizationSearchResultsCompletedYouth",
-        id,
-        pageCompletedYouth,
-        categories,
-        opportunities,
-        startDate,
-        endDate,
-      ],
-      queryFn: () =>
-        searchOrganizationYouth({
-          organization: id,
-          categories:
-            categories != undefined
-              ? categories
-                  ?.toString()
-                  .split(",")
-                  .map((x) => {
-                    const item = lookups_categories?.find((y) => y.name === x);
-                    return item ? item?.id : "";
-                  })
-                  .filter((x) => x != "")
-              : null,
-          opportunities: opportunities
-            ? opportunities?.toString().split(",")
-            : null,
-          startDate: startDate ? startDate.toString() : "",
-          endDate: endDate ? endDate.toString() : "",
-          pageNumber: pageCompletedYouth
-            ? parseInt(pageCompletedYouth.toString())
-            : 1,
-          pageSize: PAGE_SIZE,
-        }),
-    });
-
   // QUERY: SSO
   const { data: ssoData, isLoading: ssoDataIsLoading } =
     useQuery<OrganizationSearchSso>({
@@ -356,24 +364,8 @@ const OrganisationDashboard: NextPageWithLayout<{
       queryFn: () =>
         searchOrganizationSso({
           organization: id,
-          categories:
-            categories != undefined
-              ? categories
-                  ?.toString()
-                  .split(",")
-                  .map((x) => {
-                    const item = lookups_categories?.find((y) => y.name === x);
-                    return item ? item?.id : "";
-                  })
-                  .filter((x) => x != "")
-              : null,
-          opportunities: opportunities
-            ? opportunities?.toString().split(",")
-            : null,
           startDate: startDate ? startDate.toString() : "",
           endDate: endDate ? endDate.toString() : "",
-          pageNumber: null,
-          pageSize: null,
         }),
     });
 
@@ -391,31 +383,32 @@ const OrganisationDashboard: NextPageWithLayout<{
       opportunities: null,
       startDate: "",
       endDate: "",
+      countries: null,
     });
 
   // sets the filter values from the querystring to the filter state
   useEffect(() => {
-    if (isSearchPerformed)
-      setSearchFilter({
-        pageSelectedOpportunities: pageSelectedOpportunities
-          ? parseInt(pageSelectedOpportunities.toString())
-          : 1,
-        pageCompletedYouth: pageCompletedYouth
-          ? parseInt(pageCompletedYouth.toString())
-          : 1,
-        organization: id,
-        categories:
-          categories != undefined ? categories?.toString().split(",") : null,
-        opportunities:
-          opportunities != undefined && opportunities != null
-            ? opportunities?.toString().split(",")
-            : null,
-        startDate: startDate != undefined ? startDate.toString() : "",
-        endDate: endDate != undefined ? endDate.toString() : "",
-      });
+    setSearchFilter({
+      pageSelectedOpportunities: pageSelectedOpportunities
+        ? parseInt(pageSelectedOpportunities.toString())
+        : 1,
+      pageCompletedYouth: pageCompletedYouth
+        ? parseInt(pageCompletedYouth.toString())
+        : 1,
+      organization: id,
+      categories:
+        categories != undefined ? categories?.toString().split(",") : null,
+      opportunities:
+        opportunities != undefined && opportunities != null
+          ? opportunities?.toString().split(",")
+          : null,
+      startDate: startDate != undefined ? startDate.toString() : "",
+      endDate: endDate != undefined ? endDate.toString() : "",
+      countries:
+        countries != undefined ? countries?.toString().split("|") : null,
+    });
   }, [
     setSearchFilter,
-    isSearchPerformed,
     id,
     pageSelectedOpportunities,
     pageCompletedYouth,
@@ -423,13 +416,14 @@ const OrganisationDashboard: NextPageWithLayout<{
     opportunities,
     startDate,
     endDate,
+    countries,
   ]);
 
-  // Carousel data
-  const fetchDataAndUpdateCache = useCallback(
+  // carousel data
+  const fetchDataAndUpdateCache_Opportunities = useCallback(
     async (
-      queryKey: string[],
-      filter: any,
+      queryKey: unknown[],
+      filter: OrganizationSearchFilterOpportunity,
     ): Promise<OrganizationSearchResultsOpportunity> => {
       const cachedData =
         queryClient.getQueryData<OrganizationSearchResultsOpportunity>(
@@ -448,8 +442,28 @@ const OrganisationDashboard: NextPageWithLayout<{
     },
     [queryClient],
   );
+  const fetchDataAndUpdateCache_Youth = useCallback(
+    async (
+      queryKey: unknown[],
+      filter: OrganizationSearchFilterYouth,
+    ): Promise<OrganizationSearchResultsYouth> => {
+      const cachedData =
+        queryClient.getQueryData<OrganizationSearchResultsYouth>(queryKey);
 
-  const loadDataSelected = useCallback(
+      if (cachedData) {
+        return cachedData;
+      }
+
+      const data = await searchOrganizationYouth(filter);
+
+      queryClient.setQueryData(queryKey, data);
+
+      return data;
+    },
+    [queryClient],
+  );
+
+  const loadData_Opportunities = useCallback(
     async (startRow: number) => {
       if (startRow >= (selectedOpportunities?.totalCount ?? 0)) {
         return {
@@ -459,12 +473,68 @@ const OrganisationDashboard: NextPageWithLayout<{
       }
       const pageNumber = Math.ceil(startRow / PAGE_SIZE_MINIMUM);
 
-      return fetchDataAndUpdateCache(
+      return fetchDataAndUpdateCache_Opportunities(
+        ["OrganizationSearchResultsSelectedOpportunities", searchFilter],
+        {
+          pageNumber: pageNumber,
+          pageSize: PAGE_SIZE_MINIMUM,
+          organization: id,
+          categories:
+            categories != undefined
+              ? categories
+                  ?.toString()
+                  .split(",")
+                  .map((x) => {
+                    const item = lookups_categories?.find((y) => y.name === x);
+                    return item ? item?.id : "";
+                  })
+                  .filter((x) => x != "")
+              : null,
+          opportunities: opportunities
+            ? opportunities?.toString().split(",")
+            : null,
+          startDate: startDate ? startDate.toString() : "",
+          endDate: endDate ? endDate.toString() : "",
+        },
+      );
+    },
+    [
+      selectedOpportunities,
+      fetchDataAndUpdateCache_Opportunities,
+      categories,
+      opportunities,
+      startDate,
+      endDate,
+      searchFilter,
+      id,
+      lookups_categories,
+    ],
+  );
+
+  const loadData_Youth = useCallback(
+    async (startRow: number) => {
+      if (startRow >= (completedYouth?.totalCount ?? 0)) {
+        return {
+          items: [],
+          totalCount: 0,
+        };
+      }
+      const pageNumber = Math.ceil(startRow / PAGE_SIZE_MINIMUM);
+
+      return fetchDataAndUpdateCache_Youth(
         [
-          "OrganizationSearchResultsSelectedOpportunities",
-          pageNumber.toString(),
+          "OrganizationSearchResultsCompletedYouth",
+          id,
+          pageNumber,
+          categories,
+          opportunities,
+          startDate,
+          endDate,
+          countries,
         ],
         {
+          pageNumber: pageNumber,
+          pageSize: PAGE_SIZE_MINIMUM,
           organization: id,
           categories:
             categories != undefined
@@ -482,89 +552,47 @@ const OrganisationDashboard: NextPageWithLayout<{
             : null,
           startDate: startDate ? startDate.toString() : "",
           endDate: endDate ? endDate.toString() : "",
-          pageNumber: pageNumber,
-          pageSize: PAGE_SIZE_MINIMUM,
-          enabled: !error,
-        },
-      );
-    },
-    [
-      selectedOpportunities,
-      fetchDataAndUpdateCache,
-      categories,
-      opportunities,
-      startDate,
-      endDate,
-      id,
-      lookups_categories,
-      error,
-    ],
-  );
-
-  const loadDataYouth = useCallback(
-    async (startRow: number) => {
-      if (startRow >= (selectedOpportunities?.totalCount ?? 0)) {
-        return {
-          items: [],
-          totalCount: 0,
-        };
-      }
-      const pageNumber = Math.ceil(startRow / PAGE_SIZE_MINIMUM);
-
-      return fetchDataAndUpdateCache(
-        ["OrganizationSearchResultsCompletedYouth", pageNumber.toString()],
-        {
-          organization: id,
-          categories:
-            categories != undefined
-              ? categories
+          countries:
+            countries != undefined
+              ? countries
                   ?.toString()
-                  .split(",")
+                  .split("|")
                   .map((x) => {
-                    const item = lookups_categories?.find((y) => y.name === x);
+                    const item = lookups_countries?.find((y) => y.name === x);
                     return item ? item?.id : "";
                   })
                   .filter((x) => x != "")
               : null,
-          opportunities: opportunities
-            ? opportunities?.toString().split(",")
-            : null,
-          startDate: startDate ? startDate.toString() : "",
-          endDate: endDate ? endDate.toString() : "",
-          pageNumber: pageNumber,
-          pageSize: PAGE_SIZE_MINIMUM,
         },
       );
     },
     [
-      selectedOpportunities,
-      fetchDataAndUpdateCache,
+      completedYouth,
+      fetchDataAndUpdateCache_Youth,
       categories,
       opportunities,
       startDate,
       endDate,
+      countries,
       id,
       lookups_categories,
+      lookups_countries,
     ],
   );
 
-  // Calculate counts
+  // calculate counts
   useEffect(() => {
-    const calculateCounts = () => {
-      if (!selectedOpportunities?.items) return;
+    if (!selectedOpportunities?.items) return;
 
-      const inactiveCount = selectedOpportunities.items.filter(
-        (opportunity) => opportunity.status === ("Inactive" as any),
-      ).length;
-      const expiredCount = selectedOpportunities.items.filter(
-        (opportunity) => opportunity.status === ("Expired" as any),
-      ).length;
+    const inactiveCount = selectedOpportunities.items.filter(
+      (opportunity) => opportunity.status === ("Inactive" as any),
+    ).length;
+    const expiredCount = selectedOpportunities.items.filter(
+      (opportunity) => opportunity.status === ("Expired" as any),
+    ).length;
 
-      setInactiveOpportunitiesCount(inactiveCount);
-      setExpiredOpportunitiesCount(expiredCount);
-    };
-
-    calculateCounts();
+    setInactiveOpportunitiesCount(inactiveCount);
+    setExpiredOpportunitiesCount(expiredCount);
   }, [selectedOpportunities]);
 
   // 🎈 FUNCTIONS
@@ -598,6 +626,12 @@ const OrganisationDashboard: NextPageWithLayout<{
 
       if (opportunitySearchFilter.endDate)
         params.append("endDate", opportunitySearchFilter.endDate);
+
+      if (
+        opportunitySearchFilter?.countries?.length !== undefined &&
+        opportunitySearchFilter.countries.length > 0
+      )
+        params.append("countries", opportunitySearchFilter.countries.join("|"));
 
       if (
         opportunitySearchFilter.pageSelectedOpportunities !== null &&
@@ -640,7 +674,8 @@ const OrganisationDashboard: NextPageWithLayout<{
 
   // filter popup handlers
   const onSubmitFilter = useCallback(
-    (val: OrganizationSearchFilterSummary) => {
+    (val: OrganizationSearchFilterSummaryViewModel) => {
+      console.table(val);
       redirectWithSearchFilterParams({
         categories: val.categories,
         opportunities: val.opportunities,
@@ -652,8 +687,8 @@ const OrganisationDashboard: NextPageWithLayout<{
         pageCompletedYouth: pageCompletedYouth
           ? parseInt(pageCompletedYouth.toString())
           : 1,
-
         organization: id,
+        countries: val.countries,
       });
     },
     [
@@ -714,9 +749,12 @@ const OrganisationDashboard: NextPageWithLayout<{
         <title>Yoma | Organisation Dashboard</title>
       </Head>
 
-      <PageBackground className="h-[350px] lg:h-[275px]" />
+      <PageBackground className="h-[450px] lg:h-[320px]" />
 
-      {isSearchPerformed && isLoading && <Loading />}
+      {(isLoading ||
+        selectedOpportunitiesIsLoading ||
+        completedYouthIsLoading ||
+        ssoDataIsLoading) && <Loading />}
 
       {/* REFERENCE FOR FILTER POPUP: fix menu z-index issue */}
       <div ref={myRef} />
@@ -724,103 +762,72 @@ const OrganisationDashboard: NextPageWithLayout<{
       <div className="container z-10 mt-[6rem] max-w-7xl overflow-hidden px-4 py-1 md:py-4">
         <div className="flex flex-col gap-4">
           {/* HEADER */}
-          <div className="mb-4 flex flex-col">
-            {/* LOGO & TITLE */}
-            {/* <div className="-mb-4 -mt-2 flex flex-row font-semibold text-white">
-              <LogoTitle
-                logoUrl={organisation?.logoURL}
-                title={organisation?.name}
-              />
-              <LimitedFunctionalityBadge />
-            </div> */}
+          <div className="flex flex-col gap-2">
             {/* WELCOME MSG */}
-            <div className="text-2xl font-semibold text-white md:text-3xl">
+            <div className="overflow-hidden text-ellipsis whitespace-nowrap text-xl font-semibold text-white md:text-2xl">
               <span>
                 {timeOfDayEmoji} Good {timeOfDay}&nbsp;
-                <span className="">{user?.name}</span>, here is your reports
-                for&nbsp;
-                <span className="hidden md:block" />
-                <span className="line-clamp-2 font-semibold">
-                  {organisation?.name}
-                </span>
+                <span className="">{user?.name}!</span>
               </span>
             </div>
 
             {/* DESCRIPTION */}
-            <div className="mt-2 flex flex-col gap-1 leading-4 text-white lg:flex-row">
-              <span>Your dashboard progress so far.</span>
-
-              {searchResults?.dateStamp && (
-                <span>
-                  Last updated on{" "}
-                  <span className="font-semibold">
-                    {moment(new Date(searchResults?.dateStamp)).format(
-                      DATETIME_FORMAT_HUMAN,
-                    )}
-                  </span>
-                </span>
-              )}
+            <div className="gap-2 overflow-hidden text-ellipsis whitespace-nowrap text-white">
+              Here&apos;s your reports for{" "}
+              <span className="max-w-[600px] overflow-hidden text-ellipsis whitespace-nowrap font-bold">
+                {organisation?.name}
+              </span>
             </div>
+
+            {searchResults?.dateStamp && (
+              <div className="text-sm">
+                Last updated on{" "}
+                <span className="font-semibold">
+                  {moment(new Date(searchResults?.dateStamp)).format(
+                    DATETIME_FORMAT_HUMAN,
+                  )}
+                </span>
+              </div>
+            )}
+
             <LimitedFunctionalityBadge />
           </div>
 
           {/* FILTERS */}
-          <div className="mt-16 flex lg:mt-16">
+          <div>
             {!lookups_categories && <div>Loading...</div>}
             {lookups_categories && (
-              <div className="flex flex-grow flex-col gap-3">
-                <OrganisationRowFilter
-                  organisationId={id}
-                  htmlRef={myRef.current!}
-                  searchFilter={{
-                    categories: searchFilter.categories,
-                    opportunities: searchFilter.opportunities,
-                    startDate: searchFilter.startDate,
-                    endDate: searchFilter.endDate,
-                    organization: id,
-                    pageNumber: null,
-                    pageSize: null,
-                  }}
-                  lookups_categories={lookups_categories}
-                  onSubmit={(e) => onSubmitFilter(e)}
-                />
-
-                {/* FILTER BADGES */}
-                <FilterBadges
-                  searchFilter={searchFilter}
-                  excludeKeys={[
-                    "pageSelectedOpportunities",
-                    "pageCompletedYouth",
-                    "pageSize",
-                    "organization",
-                  ]}
-                  resolveValue={(key, value) => {
-                    if (key === "startDate" || key === "endDate")
-                      return value
-                        ? toISOStringForTimezone(new Date(value)).split("T")[0]
-                        : "";
-                    else if (key === "opportunities") {
-                      // HACK: resolve opportunity ids to titles
-                      const lookup = lookups_selectedOpportunities?.items.find(
-                        (x) => x.id === value,
-                      );
-                      return lookup?.title ?? value;
-                    } else {
-                      return value;
-                    }
-                  }}
-                  onSubmit={(e) => onSubmitFilter(e)}
-                />
-              </div>
+              <OrganisationRowFilter
+                organisationId={id}
+                htmlRef={myRef.current!}
+                searchFilter={searchFilter}
+                lookups_categories={lookups_categories}
+                lookups_selectedOpportunities={lookups_selectedOpportunities}
+                onSubmit={(e) => onSubmitFilter(e)}
+              />
             )}
           </div>
 
           {/* SUMMARY */}
           {searchResults ? (
-            <div className="flex flex-col gap-4 md:-mt-2">
+            <div className="mt-4 flex flex-col gap-4">
               {/* ENGAGEMENT */}
               <div className="flex flex-col gap-2">
                 <div className="text-3xl font-semibold">Engagement</div>
+
+                {/* FILTERS */}
+                <div className="">
+                  {!lookups_countries && <div>Loading...</div>}
+
+                  {lookups_countries && (
+                    <EngagementRowFilter
+                      htmlRef={myRef.current!}
+                      searchFilter={searchFilter}
+                      lookups_countries={lookups_countries}
+                      onSubmit={(e) => onSubmitFilter(e)}
+                    />
+                  )}
+                </div>
 
                 <div className="mt-2 flex flex-col gap-4 md:flex-row">
                   {/* VIEWED COMPLETED */}
@@ -898,7 +905,7 @@ const OrganisationDashboard: NextPageWithLayout<{
               </div>
 
               <div className="flex flex-col">
-                <div className="mb-4 flex gap-4">
+                <div className="flex gap-4">
                   <div className="text-xl font-semibold">Countries</div>
                 </div>
                 <div className="flex flex-col gap-4 md:flex-row">
@@ -1068,6 +1075,122 @@ const OrganisationDashboard: NextPageWithLayout<{
             </div>
           )}
 
+          {/* COMPLETED YOUTH */}
+          <div className="flex flex-col">
+            <div className="text-xl font-semibold">Completed by Youth</div>
+
+            {completedYouthIsLoading && <LoadingSkeleton />}
+
+            {/* COMPLETED YOUTH */}
+            {!completedYouthIsLoading && (
+              <div id="results">
+                <div className="mb-6 flex flex-row items-center justify-end"></div>
+                <div className="rounded-lg bg-transparent p-0 shadow-none md:bg-white md:p-4 md:shadow">
+                  {/* NO ROWS */}
+                  {(!completedYouth || completedYouth.items?.length === 0) && (
+                    <div className="flex flex-col place-items-center py-16">
+                      <NoRowsMessage
+                        title={"No completed opportunities found"}
+                        description={
+                          "Opportunities completed by youth will be displayed here."
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {/* GRID */}
+                  {completedYouth && completedYouth.items?.length > 0 && (
+                    <div>
+                      {/* DESKTOP */}
+                      <div className="hidden overflow-x-auto md:block">
+                        <table className="table">
+                          <thead>
+                            <tr className="border-gray-light text-gray-dark">
+                              <th>Student</th>
+                              <th>Opportunity</th>
+                              <th>Date completed</th>
+                              <th className="text-center">Verified</th>
+                              <th className="text-center">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {completedYouth.items.map((opportunity) => (
+                              <tr
+                                key={`completedYouth_${opportunity.opportunityId}_${opportunity.userId}`}
+                                className="border-gray-light"
+                              >
+                                <td>
+                                  <div className="w-max py-2">
+                                    {opportunity.userDisplayName}
+                                  </div>
+                                </td>
+                                <td>
+                                  <Link
+                                    href={`/organisations/${id}/opportunities/${
+                                      opportunity.opportunityId
+                                    }/info?returnUrl=${encodeURIComponent(
+                                      router.asPath,
+                                    )}`}
+                                    className="text-center"
+                                  >
+                                    {opportunity.opportunityTitle}
+                                  </Link>
+                                </td>
+                                <td className="whitespace-nowrap text-center">
+                                  {opportunity.dateCompleted
+                                    ? moment(
+                                        new Date(opportunity.dateCompleted),
+                                      ).format("MMM D YYYY")
+                                    : ""}
+                                </td>
+                                <td className="whitespace-nowrap text-center">
+                                  {opportunity.verified
+                                    ? "Verified"
+                                    : "Not verified"}
+                                </td>
+                                <td className="text-center">
+                                  {opportunity.opportunityStatus}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* MOBILE */}
+                      <div className="flex flex-col gap-2 md:hidden">
+                        <DashboardCarousel
+                          orgId={id}
+                          slides={completedYouth.items}
+                          totalSildes={completedYouth?.totalCount}
+                          loadData={loadData_Youth}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* PAGINATION */}
+                  {completedYouth && completedYouth.totalCount > 0 && (
+                    <div className="mt-2 grid place-items-center justify-center">
+                      <PaginationButtons
+                        currentPage={
+                          pageCompletedYouth
+                            ? parseInt(pageCompletedYouth.toString())
+                            : 1
+                        }
+                        totalItems={completedYouth.totalCount}
+                        pageSize={PAGE_SIZE}
+                        showPages={false}
+                        showInfo={true}
+                        onClick={handlePagerChangeCompletedYouth}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* DIVIDER */}
           <div className="border-px mb-2 mt-8 border-t border-gray" />
 
@@ -1104,6 +1227,7 @@ const OrganisationDashboard: NextPageWithLayout<{
                       {inactiveOpportunitiesCount}
                     </div>
                   </div>
+
                   {/* EXPIRED */}
                   <div className="mt-4 flex h-32 w-full flex-col gap-2 rounded-lg bg-white p-4 shadow md:w-72">
                     <div className="flex h-min items-center gap-2">
@@ -1214,12 +1338,13 @@ const OrganisationDashboard: NextPageWithLayout<{
                               </tbody>
                             </table>
                           </div>
+
                           {/* MOBILE */}
                           <div className="flex flex-col gap-2 md:hidden">
                             <DashboardCarousel
                               orgId={id}
                               slides={selectedOpportunities.items}
-                              loadData={loadDataSelected}
+                              loadData={loadData_Opportunities}
                               totalSildes={selectedOpportunities?.totalCount}
                             />
                           </div>
@@ -1256,121 +1381,6 @@ const OrganisationDashboard: NextPageWithLayout<{
               />
             </div>
           )}
-
-          {/* COMPLETED YOUTH */}
-          <div className="my-8 flex flex-col">
-            <div className="text-xl font-semibold">Completed by Youth</div>
-
-            {completedYouthIsLoading && <LoadingSkeleton />}
-
-            {/* COMPLETED YOUTH */}
-            {!completedYouthIsLoading && (
-              <div id="results">
-                <div className="mb-6 flex flex-row items-center justify-end"></div>
-                <div className="rounded-lg bg-transparent p-0 shadow-none md:bg-white md:p-4 md:shadow">
-                  {/* NO ROWS */}
-                  {(!completedYouth || completedYouth.items?.length === 0) && (
-                    <div className="flex flex-col place-items-center py-16">
-                      <NoRowsMessage
-                        title={"No completed opportunities found"}
-                        description={
-                          "Opportunities completed by youth will be displayed here."
-                        }
-                      />
-                    </div>
-                  )}
-
-                  {/* GRID */}
-                  {completedYouth && completedYouth.items?.length > 0 && (
-                    <div>
-                      {/* DESKTOP */}
-                      <div className="hidden overflow-x-auto md:block">
-                        <table className="table">
-                          <thead>
-                            <tr className="border-gray-light text-gray-dark">
-                              <th>Student</th>
-                              <th>Opportunity</th>
-                              <th>Date completed</th>
-                              <th className="text-center">Verified</th>
-                              <th className="text-center">Status</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {completedYouth.items.map((opportunity) => (
-                              <tr
-                                key={`completedYouth_${opportunity.opportunityId}_${opportunity.userId}`}
-                                className="border-gray-light"
-                              >
-                                <td>
-                                  <div className="w-max py-2">
-                                    {opportunity.userDisplayName}
-                                  </div>
-                                </td>
-                                <td>
-                                  <Link
-                                    href={`/organisations/${id}/opportunities/${
-                                      opportunity.opportunityId
-                                    }/info?returnUrl=${encodeURIComponent(
-                                      router.asPath,
-                                    )}`}
-                                    className="text-center"
-                                  >
-                                    {opportunity.opportunityTitle}
-                                  </Link>
-                                </td>
-                                <td className="whitespace-nowrap text-center">
-                                  {opportunity.dateCompleted
-                                    ? moment(
-                                        new Date(opportunity.dateCompleted),
-                                      ).format("MMM D YYYY")
-                                    : ""}
-                                </td>
-                                <td className="whitespace-nowrap text-center">
-                                  {opportunity.verified
-                                    ? "Verified"
-                                    : "Not verified"}
-                                </td>
-                                <td className="text-center">
-                                  {opportunity.opportunityStatus}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      {/* MOBILE */}
-                      <div className="flex flex-col gap-2 md:hidden">
-                        <DashboardCarousel
-                          orgId={id}
-                          slides={completedYouth.items}
-                          totalSildes={completedYouth?.totalCount}
-                          loadData={loadDataYouth}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* PAGINATION */}
-                  {completedYouth && completedYouth.totalCount > 0 && (
-                    <div className="mt-2 grid place-items-center justify-center">
-                      <PaginationButtons
-                        currentPage={
-                          pageCompletedYouth
-                            ? parseInt(pageCompletedYouth.toString())
-                            : 1
-                        }
-                        totalItems={completedYouth.totalCount}
-                        pageSize={PAGE_SIZE}
-                        showPages={false}
-                        showInfo={true}
-                        onClick={handlePagerChangeCompletedYouth}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* DIVIDER */}
           {isAdmin && ssoData && (
