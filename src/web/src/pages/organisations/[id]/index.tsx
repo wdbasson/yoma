@@ -515,7 +515,6 @@ const OrganisationDashboard: NextPageWithLayout<{
       opportunities,
       startDate,
       endDate,
-      searchFilter,
       id,
       lookups_categories,
     ],
@@ -839,7 +838,7 @@ const OrganisationDashboard: NextPageWithLayout<{
                     <LineChart
                       data={dataEngagement.opportunities.viewedCompleted}
                       opportunityCount={
-                        dataEngagement?.opportunities?.selected?.count ?? 0
+                        dataEngagement?.opportunities?.engaged?.count ?? 0
                       }
                     />
                   )}
