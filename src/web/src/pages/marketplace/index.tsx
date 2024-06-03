@@ -178,6 +178,7 @@ const Marketplace: NextPageWithLayout<{
                     (c) => c.value === selectedCountry,
                   )}
                   placeholder="Country"
+                  inputId="input_country" // e2e
                   // fix menu z-index issue
                   // menuPortalTarget={myRef.current!}
                   // styles={{
