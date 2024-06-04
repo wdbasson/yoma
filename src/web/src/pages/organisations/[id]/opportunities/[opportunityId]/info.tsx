@@ -208,6 +208,10 @@ const OpportunityDetails: NextPageWithLayout<{
         await queryClient.invalidateQueries({
           queryKey: ["opportunityInfo", opportunityId],
         });
+        //NB: this is the query on the opportunities page
+        await queryClient.invalidateQueries({
+          queryKey: ["opportunities", id],
+        });
 
         toast.success("Opportunity status updated");
       } catch (error) {
@@ -217,13 +221,18 @@ const OpportunityDetails: NextPageWithLayout<{
           autoClose: false,
           icon: false,
         });
-        //captureException(error);
       }
       setIsLoading(false);
 
       return;
     },
-    [opportunityId, queryClient, setManageOpportunityMenuVisible, modalContext],
+    [
+      id,
+      opportunityId,
+      queryClient,
+      setManageOpportunityMenuVisible,
+      modalContext,
+    ],
   );
 
   const updateFeaturedFlag = useCallback(
@@ -260,7 +269,6 @@ const OpportunityDetails: NextPageWithLayout<{
           autoClose: false,
           icon: false,
         });
-        //captureException(error);
       }
       setIsLoading(false);
 
