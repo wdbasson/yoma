@@ -72,9 +72,11 @@ namespace Yoma.Core.Domain.Opportunity.Models
 
     public string CommitmentIntervalDescription { get; set; }
 
+    #region Verification Limits and Counts
     public int? ParticipantLimit { get; set; }
 
     public int? ParticipantCount { get; set; }
+    #endregion Verification Limits and Counts
 
     public Guid StatusId { get; set; }
 
@@ -94,6 +96,10 @@ namespace Yoma.Core.Domain.Opportunity.Models
     public string? SSISchemaName { get; set; }
 
     public bool? Featured { get; set; }
+
+    public Guid? EngagementTypeId { get; set; }
+
+    public string? EngagementType { get; set; }
 
     public DateTimeOffset DateCreated { get; set; }
 

@@ -61,10 +61,13 @@ export interface Opportunity {
   dateEnd: string | null;
   credentialIssuanceEnabled: boolean;
   ssiSchemaName: string | null;
+  featured: boolean | null;
+  engagementTypeId: string | null;
+  engagementType: string | null;
   dateCreated: string;
-  createdBy: string;
+  createdByUserId: string;
   dateModified: string;
-  modifiedBy: string;
+  modifiedByUserId: string;
   published: boolean;
   categories: OpportunityCategory[] | null;
   countries: Country[] | null;
@@ -81,35 +84,41 @@ export interface OpportunityInfo {
   organizationId: string;
   organizationName: string;
   organizationLogoURL: string | null;
+  summary: string | null;
   instructions: string | null;
-  url: string | null; //NB:
+  url: string | null;
   zltoReward: number | null;
+  zltoRewardCumulative: number | null;
   yomaReward: number | null;
+  yomaRewardCumulative: number | null;
+  verificationEnabled: boolean;
+  verificationMethod: VerificationMethod | null | string; //NB: comes back as string
   difficulty: string;
   commitmentInterval: string;
   commitmentIntervalCount: number;
   commitmentIntervalDescription: string;
   participantLimit: number | null;
-  participantCountVerificationCompleted: number;
-  participantCountVerificationPending: number;
+  participantCountCompleted: number;
+  participantCountPending: number;
   participantCountTotal: number;
   participantLimitReached: boolean;
+  countViewed: number;
+  countNavigatedExternalLink: number;
   statusId: string;
-  status: Status | string; //NB: hack comes back as string
+  status: Status | string; //NB: comes back as string
   keywords: string[] | null;
   dateStart: string;
   dateEnd: string | null;
+  featured: boolean;
+  engagementType: string | null;
   published: boolean;
+  yomaInfoURL: string;
   categories: OpportunityCategory[] | null;
   countries: Country[] | null;
   languages: Language[] | null;
   skills: Skill[] | null;
-  verificationEnabled: boolean;
-  verificationMethod: /*VerificationMethod*/ string | null; //ISSUE: comes back as string
   verificationTypes: OpportunityVerificationType[] | null;
-  featured: boolean;
 }
-
 export interface OpportunitySearchFilter extends OpportunitySearchFilterBase {
   publishedStates: PublishedState[] | null | string[]; //NB
   mostViewed: boolean | null;
@@ -224,6 +233,7 @@ export interface OpportunityRequestBase {
   dateEnd: string | null;
   credentialIssuanceEnabled: boolean;
   ssiSchemaName: string | null;
+  engagementTypeId: string | null;
   categories: string[];
   countries: string[];
   languages: string[];

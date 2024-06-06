@@ -42,6 +42,7 @@ import {
   getLanguages,
   getSkills,
   getTimeIntervals,
+  getEngagementTypes,
 } from "~/api/services/lookups";
 import {
   updateOpportunity,
@@ -190,8 +191,7 @@ const OpportunityDetails: NextPageWithLayout<{
   const [isLoading, setIsLoading] = useState(false);
 
   // 👇 prevent scrolling on the page when the dialogs are open
-  useDisableBodyScroll(oppExpiredModalVisible);
-  useDisableBodyScroll(saveChangesDialogVisible);
+  useDisableBodyScroll(oppExpiredModalVisible || saveChangesDialogVisible);
 
   // 👇 use prefetched queries from server
   const { data: categories } = useQuery<SelectOption[]>({
@@ -253,12 +253,20 @@ const OpportunityDetails: NextPageWithLayout<{
       })),
     enabled: !error,
   });
+  const { data: engagementTypes } = useQuery<SelectOption[]>({
+    queryKey: ["engagementTypes", "selectOptions"],
+    queryFn: async () =>
+      (await getEngagementTypes()).map((c) => ({
+        value: c.id,
+        label: c.name,
+      })),
+    enabled: !error,
+  });
   const { data: schemas } = useQuery({
     queryKey: ["schemas"],
     queryFn: async () => getSchemas(SchemaType.Opportunity),
     enabled: !error,
   });
-
   const schemasOptions = useMemo<SelectOption[]>(
     () =>
       schemas?.map((c) => ({
@@ -281,7 +289,6 @@ const OpportunityDetails: NextPageWithLayout<{
     typeId: opportunity?.typeId ?? "",
     categories: opportunity?.categories?.map((x) => x.id) ?? [],
     uRL: opportunity?.url ?? "",
-
     languages: opportunity?.languages?.map((x) => x.id) ?? [],
     countries: opportunity?.countries?.map((x) => x.id) ?? [],
     difficultyId: opportunity?.difficultyId ?? "",
@@ -290,24 +297,20 @@ const OpportunityDetails: NextPageWithLayout<{
     dateStart: opportunity?.dateStart ?? null,
     dateEnd: opportunity?.dateEnd ?? null,
     participantLimit: opportunity?.participantLimit ?? null,
-
     zltoReward: opportunity?.zltoReward ?? null,
     zltoRewardPool: opportunity?.zltoRewardPool ?? null,
     yomaReward: opportunity?.yomaReward ?? null,
     yomaRewardPool: opportunity?.yomaRewardPool ?? null,
     skills: opportunity?.skills?.map((x) => x.id) ?? [],
     keywords: opportunity?.keywords ?? [],
-
     verificationEnabled: opportunity?.verificationEnabled ?? null,
-    // enum value comes as string from server, convert to number
     verificationMethod: opportunity?.verificationMethod
       ? VerificationMethod[opportunity.verificationMethod]
       : null,
     verificationTypes: opportunity?.verificationTypes ?? [],
-
     credentialIssuanceEnabled: opportunity?.credentialIssuanceEnabled ?? false,
     ssiSchemaName: opportunity?.ssiSchemaName ?? null,
-
+    engagementTypeId: opportunity?.engagementTypeId ?? null,
     organizationId: id,
     postAsActive: opportunity?.published ?? false,
     instructions: opportunity?.instructions ?? "",
@@ -320,6 +323,7 @@ const OpportunityDetails: NextPageWithLayout<{
       .max(255, "Opportunity title cannot exceed 255 characters."),
     description: z.string().min(1, "Description is required."),
     typeId: z.string().min(1, "Opportunity type is required."),
+    engagementTypeId: z.union([z.string(), z.null()]).optional(),
     categories: z
       .array(z.string(), { required_error: "Category is required" })
       .min(1, "Category is required."),
@@ -999,8 +1003,8 @@ const OpportunityDetails: NextPageWithLayout<{
             </p>
 
             <p className="w-80 text-center text-base">
-              Once you’re happy with the opportunity changes, you can set it to
-              active.
+              Once you&apos;re happy with the opportunity changes, you can set
+              it to active.
             </p>
             <p className="w-80 text-center text-base">
               Please make sure to set the end date in the future, else it will
@@ -1419,6 +1423,47 @@ const OpportunityDetails: NextPageWithLayout<{
                         <label className="label -mb-5">
                           <span className="label-text-alt italic text-red-500">
                             {`${formStateStep1.errors.typeId.message}`}
+                          </span>
+                        </label>
+                      )}
+                    </div>
+
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text font-bold">
+                          Engagement type
+                        </span>
+                      </label>
+                      <Controller
+                        control={controlStep1}
+                        name="engagementTypeId"
+                        render={({ field: { onChange, value } }) => (
+                          <Select
+                            instanceId="engagementTypeId"
+                            classNames={{
+                              control: () => "input !border-gray",
+                            }}
+                            options={engagementTypes}
+                            onChange={(val) => onChange(val ? val.value : null)}
+                            value={engagementTypes?.find(
+                              (c) => c.value === value,
+                            )}
+                            styles={{
+                              placeholder: (base) => ({
+                                ...base,
+                                color: "#A3A6AF",
+                              }),
+                            }}
+                            isClearable={true}
+                            inputId="input_engagementTypeId" // e2e
+                          />
+                        )}
+                      />
+
+                      {formStateStep1.errors.engagementTypeId && (
+                        <label className="label -mb-5">
+                          <span className="label-text-alt italic text-red-500">
+                            {`${formStateStep1.errors.engagementTypeId.message}`}
                           </span>
                         </label>
                       )}
@@ -2789,6 +2834,27 @@ const OpportunityDetails: NextPageWithLayout<{
                     <div className="form-control">
                       <label className="label">
                         <span className="label-text font-semibold">
+                          Engagement type
+                        </span>
+                      </label>
+                      <label className="label label-text pt-0 text-sm ">
+                        {
+                          engagementTypes?.find(
+                            (x) => x.value == formData.engagementTypeId,
+                          )?.label
+                        }
+                      </label>
+                      {formStateStep1.errors.engagementTypeId && (
+                        <label className="label -mb-5">
+                          <span className="label-text-alt italic text-red-500">
+                            {`${formStateStep1.errors.engagementTypeId.message}`}
+                          </span>
+                        </label>
+                      )}
+                    </div>
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text font-semibold">
                           Opportunity keywords
                         </span>
                       </label>
@@ -2849,7 +2915,9 @@ const OpportunityDetails: NextPageWithLayout<{
                     </div>
                     <div className="form-control">
                       <label className="label">
-                        <h5 className="font-bold">Opportunity languages</h5>
+                        <span className="label-text font-semibold">
+                          Opportunity languages
+                        </span>
                       </label>
                       <label className="label label-text pt-0 text-sm ">
                         {formData.languages
