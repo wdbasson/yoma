@@ -9,7 +9,7 @@ export async function fetchClientEnv() {
       let resp: Response;
       if (typeof window === "undefined") {
         // Running on the server
-        resp = await fetch("https://yoma-six.vercel.app/api/config/client-env");
+        resp = await fetch(`${process.env.NEXTAUTH_URL}/api/config/client-env`);
       } else {
         // Running in the browser
         resp = await fetch("/api/config/client-env");
